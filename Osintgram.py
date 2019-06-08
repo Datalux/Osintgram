@@ -45,7 +45,6 @@ class Osintgram:
     def __getAdressesTimes__(self, id):
         only_id = {} #var only for max_next_id parameter | pagination
         photos = [] # only photos
-        hashtags = []
         a = None #helper
         while True:
             if (a == None):
@@ -56,7 +55,7 @@ class Osintgram:
                 self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
-
+                
             photos.append(a)
 
             if not 'next_max_id' in only_id:
