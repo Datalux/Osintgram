@@ -4,6 +4,8 @@ OSINT is a fork of https://github.com/LevPasha/Instagram-API-python and https://
 
 **I don't assume any responsability for the use of this tool**
 
+The tools use Python3.
+
 ## Tools
 ![Imgur](https://imgur.com/RJ1JplI.jpg)
 
@@ -17,15 +19,17 @@ OSINT is a fork of https://github.com/LevPasha/Instagram-API-python and https://
 
     `cd Osintgram`
 
+3. Run `pip3 install -r requirements.txt`
 
-3. Create a subdirectory `config`
+
+4. Create a subdirectory `config`
 
     `mkdir config`
 
-4. Create in `config` folder the file: `username.conf` and write your Instagram account username
+5. Create in `config` folder the file: `username.conf` and write your Instagram account username
 
-5. Create in `config` folder the file: `pw.conf` and write your Instagram account password
+6. Create in `config` folder the file: `pw.conf` and write your Instagram account password
 
-6. Run the main.py script 
+7. Run the main.py script 
 
-    `python main.py <target username>`
+    `python3 main.py <target username>`
