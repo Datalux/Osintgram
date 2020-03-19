@@ -17,6 +17,7 @@ class Osintgram:
     geolocator = Nominatim()
     user_id = None
     target = ""
+    writeFile = False
 
     def __init__(self, target):
         self.target = target
@@ -82,6 +83,18 @@ class Osintgram:
         sort_addresses = sorted(address.items(), key=lambda p: p[1], reverse=True)  #sorting
 
         return sort_addresses 
+
+    def setWriteFile(self, bool):
+        if(bool):
+            pc.printout("Write to file: ")
+            pc.printout("enabled", pc.GREEN)
+            pc.printout("\n")
+        else:
+            pc.printout("Write to file: ")
+            pc.printout("disabled", pc.RED)
+            pc.printout("\n")
+
+        self.writeFile = bool
 
 
     def __getUserFollowigs__(self, id):
@@ -166,8 +179,18 @@ class Osintgram:
 
         sortE = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
 
+        if(self.writeFile):
+            file_name = self.target + "_hashtags.txt"
+            file = open(file_name, "w")
+            for k,v in sortE:
+                file.write(str(v) + ". " + str(k.decode('utf-8'))+"\n")
+            file.close()
+            
+
         for k,v in sortE:
             print( str(v) + ". " + str(k.decode('utf-8')))
+        
+
 
     def getTotalLikes(self, id):
         pc.printout("Searching for target total likes...\n")
@@ -195,6 +218,13 @@ class Osintgram:
 
             if not 'next_max_id' in only_id:
                 break
+
+        if(self.writeFile):
+            file_name = self.target + "_likes.txt"
+            file = open(file_name, "w")
+            file.write(str(like_counter) + " likes in " + str(counter) + " posts\n")
+            file.close()
+
         pc.printout(str(like_counter), pc.MAGENTA)
         pc.printout(" likes in " + str(counter) + " posts\n")
     
@@ -224,6 +254,13 @@ class Osintgram:
 
             if not 'next_max_id' in only_id:
                 break
+
+        if(self.writeFile):
+            file_name = self.target + "_comments.txt"
+            file = open(file_name, "w")
+            file.write(str(comment_counter) + " comments in " + str(counter) + " posts\n")
+            file.close()
+
         pc.printout(str(comment_counter), pc.MAGENTA)
         pc.printout(" comments in " + str(counter) + " posts\n")
 
@@ -282,6 +319,12 @@ class Osintgram:
             for i in range(len(ids)):
                 t.add_row([post[i], full_name[i], username[i], str(ids[i])])
 
+            if(self.writeFile):
+                file_name = self.target + "_tagged.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
             print(t)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
@@ -303,6 +346,13 @@ class Osintgram:
         for address, time in addrs:
             t.add_row([str(i), address, time])
             i = i + 1
+
+        if(self.writeFile):
+                file_name = self.target + "_addrs.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
         print(t)
 
     def getFollowers(self, id):
@@ -316,6 +366,13 @@ class Osintgram:
         
         for i in followers:
             t.add_row([str(i['pk']), i['username'], i['full_name']])
+
+        if(self.writeFile):
+                file_name = self.target + "_followers.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()        
+
         print(t)
 
     def getFollowings(self, id):
@@ -326,9 +383,16 @@ class Osintgram:
         t.align["ID"] = "l"
         t.align["Username"] = "l"
         t.align["Full Name"] = "l"
-        
+
         for i in followings:
             t.add_row([str(i['pk']), i['username'], i['full_name']])
+
+        if(self.writeFile):
+                file_name = self.target + "_followings.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
         print(t)
 
     def getUserID(self, username):
@@ -340,6 +404,12 @@ class Osintgram:
                 sys.exit(2)
 
         data = json.load(content)
+
+        if(self.writeFile):
+            file_name = self.target + "_user_id.txt"
+            file = open(file_name, "w")
+            file.write(str(data['graphql']['user']['id']))
+            file.close()
         return data['graphql']['user']['id']
 
     def getUserInfo(self):
@@ -390,6 +460,14 @@ class Osintgram:
                 node = i.get('node')
                 t.add_row([str(count), node.get('accessibility_caption')])
                 count += 1
+
+            if(self.writeFile):
+                file_name = self.target + "_photodes.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()                
+
+                
             print(t)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
