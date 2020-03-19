@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/version-0.1-green)](https://img.shields.io/badge/version-0.1-green)
+[![](https://img.shields.io/badge/version-0.2-green)](https://img.shields.io/badge/version-0.2-green)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 
 
@@ -10,8 +10,12 @@ OSINT is a fork of https://github.com/LevPasha/Instagram-API-python and https://
 
 The tools use Python3.
 
+## Changelog
+- v0.1 initial release
+- v0.2 added feature to write in file the output of commands
+
 ## Tools
-![Imgur](https://imgur.com/RJ1JplI.jpg)
+![](cmd.png)
 
 ## Installation
 1. Fork/Clone/Download this repo
