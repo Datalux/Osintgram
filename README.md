@@ -37,3 +37,7 @@ The tools use Python3.
 7. Run the main.py script 
 
     `python3 main.py <target username>`
+
+## Updating
+
+Run `git pull` in Osintgram directory
