@@ -1,3 +1,7 @@
+[![](https://img.shields.io/badge/version-0.1-green)](https://img.shields.io/badge/version-0.1-green)
+[![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
+
+
 # Osintgram
 Osintgram is a tool for **OSINT** on Instagram.
 OSINT is a fork of https://github.com/LevPasha/Instagram-API-python and https://github.com/woj-ciech/OSINT/tree/master/insta.
