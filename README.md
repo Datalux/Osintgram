@@ -4,10 +4,22 @@
 
 # Osintgram
 Osintgram is a tool for **OSINT** on Instagram.
-OSINT is a fork of https://github.com/LevPasha/Instagram-API-python and https://github.com/woj-ciech/OSINT/tree/master/insta.
+Osintgram is a fork of https://github.com/LevPasha/Instagram-API-python and https://github.com/woj-ciech/OSINT/tree/master/insta.
 
 **I don't assume any responsability for the use of this tool**
 
+Osintgram offers an interactive shell to perform analysis on Instagram account of any users from his nickname. You can get:
+```
+- info            Get target info
+- addrs           Get all registered addressed by target photos
+- followers       Get target followers
+- followings      Get users followed by target
+- hashtags        Get hashtags used by target
+- likes           Get total likes of target's posts
+- comments        Get total comments of target's posts
+- tagged          Get list of users tagged by target
+- photodes        Get description of target's photos
+```
 The tools use Python3.
 
 ## Changelog
