@@ -48,6 +48,8 @@ def cmdlist():
     print("Get description of target's photos")
     pc.printout("photo\t\t")
     print("Download user's photo in output folder")
+    pc.printout("captions\t")
+    print("Get user's photo captions")
 
 
 printlogo()
@@ -94,6 +96,8 @@ while True:
         api.setWriteFile(False)
     elif cmd == "photo":
         api.getUserPhoto(id)
+    elif cmd == "captions":
+        api.getCaptions(id)
     
     else:
         pc.printout("Unknown command\n", pc.RED)

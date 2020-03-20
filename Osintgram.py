@@ -61,8 +61,8 @@ class Osintgram:
 
             if not 'next_max_id' in only_id:
                 break
-
-
+        
+        
         locations = {}
 
         for i in photos: #extract location from photos, related
@@ -540,6 +540,68 @@ class Osintgram:
         sys.stdout.flush()         
 
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
+
+
+    def getCaptions(self, id):
+        pc.printout("Searching for target captions...\n")
+        
+        a = None #helper
+        counter = 0
+        captions = []
+        while True:
+            if (a == None):
+                self.api.getUserFeed(id)
+                a = self.api.LastJson['items']#photos 00, 01, 02...
+                only_id = self.api.LastJson #all LastJson with max_id param
+                
+            else:
+                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                only_id = self.api.LastJson
+                a = self.api.LastJson['items']
+
+            try:
+                for item in a:
+                    if "caption" in item:
+                        if item["caption"] != None:
+                            text = item["caption"]["text"]
+                            captions.append(text)
+                            counter = counter + 1
+                            sys.stdout.write("\rFound %i" % counter)
+                            sys.stdout.flush()
+
+            except AttributeError:
+                pass
+            
+            except KeyError:
+                pass
+
+            if not 'next_max_id' in only_id:
+                break
+            
+        sys.stdout.write(" captions")
+        sys.stdout.flush()  
+
+        if counter > 0:
+            pc.printout("\nWoohoo! We found " + str(counter) + " captions\n", pc.GREEN)
+
+               
+
+            if(self.writeFile):
+                file_name = "output/" + self.target + "_captions.txt"
+                file = open(file_name, "w")
+                for s in captions:
+                    file.write(s + "\n")
+                file.close()
+
+            for s in captions:
+                print(s + "\n")
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+        
+        return
+
+
 
 
 
