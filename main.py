@@ -26,10 +26,8 @@ def printlogo():
 def cmdlist():
     #print("set <username>\t Set user to analize")
     #print("clear\t\t Remove the user setted")
-    pc.printout("FILE=y/n\t\t")
-    print("Write all output in a '<target username>_<command>.txt' file'")
-    pc.printout("FILE=y\t\t")
-    print("Write all output in a '<target username>_<command>.txt' file'")
+    pc.printout("FILE=y/n\t")
+    print("Enable/disable output in a '<target username>_<command>.txt' file'")
     pc.printout("info\t\t")
     print("Get target info")
     pc.printout("addrs\t\t")
