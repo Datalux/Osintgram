@@ -14,7 +14,7 @@ def printlogo():
     pc.printout("\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
     pc.printout("        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
     print('\n')
-    pc.printout("Version 0.2 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
+    pc.printout("Version 0.3 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
@@ -46,6 +46,8 @@ def cmdlist():
     print("Get list of users tagged by target")
     pc.printout("photodes\t")
     print("Get description of target's photos")
+    pc.printout("photo\t\t")
+    print("Download user's photo in output folder")
 
 
 printlogo()
@@ -90,6 +92,8 @@ while True:
         api.setWriteFile(True)
     elif cmd == "FILE=n":
         api.setWriteFile(False)
+    elif cmd == "photo":
+        api.getUserPhoto(id)
     
     else:
         pc.printout("Unknown command\n", pc.RED)
