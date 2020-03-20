@@ -602,6 +602,66 @@ class Osintgram:
         return
 
 
+    def getMediaType(self, id):
+        pc.printout("Searching for target captions...\n")
+        
+        a = None #helper
+        counter = 0
+        photo_counter = 0
+        video_counter = 0
+        
+        while True:
+            if (a == None):
+                self.api.getUserFeed(id)
+                a = self.api.LastJson['items']#photos 00, 01, 02...
+                only_id = self.api.LastJson #all LastJson with max_id param
+                
+            else:
+                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                only_id = self.api.LastJson
+                a = self.api.LastJson['items']
+
+            try:
+                for item in a:
+                    if "media_type" in item:
+                        if item["media_type"] == 1:
+                            photo_counter = photo_counter + 1
+                        elif item["media_type"] == 2:
+                            video_counter = video_counter + 1
+
+                        counter = counter + 1
+                        sys.stdout.write("\rChecked %i" % counter)
+                        sys.stdout.flush()
+
+            except AttributeError:
+                pass
+            
+            except KeyError:
+                pass
+
+            if not 'next_max_id' in only_id:
+                break
+            
+        sys.stdout.write(" posts")
+        sys.stdout.flush()  
+
+        if counter > 0:              
+
+            if(self.writeFile):
+                file_name = "output/" + self.target + "_mediatype.txt"
+                file = open(file_name, "w")
+                file.write(str(photo_counter) + " photos and " + str(video_counter) \
+                        + " video posted by target\n")
+                file.close()
+
+
+            pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) \
+                        + " video posted by target\n", pc.GREEN)
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+        
+        return
 
 
 
