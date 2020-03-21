@@ -19,12 +19,20 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - comments        Get total comments of target's posts
 - tagged          Get list of users tagged by target
 - photodes        Get description of target's photos
+- photos          Download user's photos in output folder
+- captions        Get user's photos captions
+- mediatype       Get user's posts type (photo or video)
+- propic          Download user's profile picture
+
 ```
+
+
 The tools use Python3.
 
 ## Changelog
 - v0.1 initial release
 - v0.2 added feature to write in file the output of commands
+- v0.3 added features: photos, captions, mediatype, propic
 
 ## Tools
 ![](cmd.png)
