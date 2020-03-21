@@ -51,7 +51,9 @@ def cmdlist():
     pc.printout("captions\t")
     print("Get user's photos captions")
     pc.printout("mediatype\t")
-    print("Get user's posts type (photo or video)")    
+    print("Get user's posts type (photo or video)") 
+    pc.printout("propic\t\t")
+    print("Download user's profile picture")     
 
 
 printlogo()
@@ -101,7 +103,9 @@ while True:
     elif cmd == "captions":
         api.getCaptions(id)
     elif cmd == "mediatype":
-        api.getMediaType(id)        
+        api.getMediaType(id)    
+    elif cmd == "propic":
+        api.getUserPropic()   
     
     else:
         pc.printout("Unknown command\n", pc.RED)

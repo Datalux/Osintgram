@@ -663,6 +663,41 @@ class Osintgram:
         
         return
 
+    
+    
+    def getUserPropic(self):
+        try:
+            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1" )
+        except urllib.error.HTTPError as err: 
+            if(err.code == 404):
+                print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
+                sys.exit(2)
+
+        data = json.load(content)
+
+        URL = ""
+
+        uurl = data["graphql"]["user"]
+        if "profile_pic_url_hd" in uurl:
+            URL = data["graphql"]["user"]["profile_pic_url_hd"]
+        else:
+            URL = data["graphql"]["user"]["profile_pic_url"]
+
+        if URL != "":
+            end = "output/" + self.target +  "_propic.jpg"
+            urllib.request.urlretrieve(URL, end)
+            pc.printout("Target propic saved in output folder\n", pc.GREEN)
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+
+
+        
+
+
+
+
 
 
 
