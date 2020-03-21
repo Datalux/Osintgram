@@ -47,13 +47,13 @@ def cmdlist():
     pc.printout("photodes\t")
     print("Get description of target's photos")
     pc.printout("photos\t\t")
-    print("Download user's photos in output folder")
+    print("Download target's photos in output folder")
     pc.printout("captions\t")
-    print("Get user's photos captions")
+    print("Get target's photos captions")
     pc.printout("mediatype\t")
-    print("Get user's posts type (photo or video)") 
+    print("Get target's posts type (photo or video)") 
     pc.printout("propic\t\t")
-    print("Download user's profile picture")     
+    print("Download target's profile picture")     
 
 
 printlogo()
