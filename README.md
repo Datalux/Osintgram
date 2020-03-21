@@ -8,7 +8,7 @@ Osintgram is a fork of https://github.com/LevPasha/Instagram-API-python and http
 
 **I don't assume any responsability for the use of this tool**
 
-Osintgram offers an interactive shell to perform analysis on Instagram account of any users from his nickname. You can get:
+Osintgram offers an interactive shell to perform analysis on Instagram account of any users by its nickname. You can get:
 ```
 - info            Get target info
 - addrs           Get all registered addressed by target photos
