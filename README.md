@@ -25,6 +25,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - propic          Download user's profile picture
 
 ```
+You can find detailed commands usage [here](commands.md).
 
 
 The tools use Python3.
