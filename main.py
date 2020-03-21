@@ -46,10 +46,14 @@ def cmdlist():
     print("Get list of users tagged by target")
     pc.printout("photodes\t")
     print("Get description of target's photos")
-    pc.printout("photo\t\t")
-    print("Download user's photo in output folder")
+    pc.printout("photos\t\t")
+    print("Download user's photos in output folder")
     pc.printout("captions\t")
-    print("Get user's photo captions")
+    print("Get user's photos captions")
+    pc.printout("mediatype\t")
+    print("Get user's posts type (photo or video)") 
+    pc.printout("propic\t\t")
+    print("Download user's profile picture")     
 
 
 printlogo()
@@ -70,7 +74,7 @@ while True:
     if(cmd == "quit" or cmd == "exit"):
         pc.printout("Goodbye!\n", pc.RED)
         sys.exit(0)
-    elif cmd == "list":
+    elif cmd == "list" or cmd=="help":
         cmdlist()
     elif cmd == "addrs":
         api.getAddrs(id)
@@ -94,10 +98,14 @@ while True:
         api.setWriteFile(True)
     elif cmd == "FILE=n":
         api.setWriteFile(False)
-    elif cmd == "photo":
+    elif cmd == "photos":
         api.getUserPhoto(id)
     elif cmd == "captions":
         api.getCaptions(id)
+    elif cmd == "mediatype":
+        api.getMediaType(id)    
+    elif cmd == "propic":
+        api.getUserPropic()   
     
     else:
         pc.printout("Unknown command\n", pc.RED)

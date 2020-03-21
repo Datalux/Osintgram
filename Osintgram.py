@@ -508,24 +508,24 @@ class Osintgram:
                         break
                     if "image_versions2" in item:
                         counter = counter + 1
-                        sys.stdout.write("\rDownloaded %i" % counter)
-                        sys.stdout.flush()
                         url = item["image_versions2"]["candidates"][0]["url"]
                         photo_id = item["id"]
                         end = "output/" + self.target +  "_" + photo_id +  ".jpg"
-                        urllib.request.urlretrieve(url, end)    
-                else:
-                    carousel = item["carousel_media"]
-                    for i in carousel:
-                        if counter == limit:
-                            break
-                        counter = counter + 1
+                        urllib.request.urlretrieve(url, end) 
                         sys.stdout.write("\rDownloaded %i" % counter)
-                        sys.stdout.flush()                        
-                        url = item["image_versions2"]["candidates"][0]["url"]
-                        photo_id = item["id"]
-                        end = "output/" + self.target +  "_" + photo_id +  ".jpg"
-                        urllib.request.urlretrieve(url, end)
+                        sys.stdout.flush()   
+                    else:
+                        carousel = item["carousel_media"]
+                        for i in carousel:
+                            if counter == limit:
+                                break
+                            counter = counter + 1                     
+                            url = i["image_versions2"]["candidates"][0]["url"]
+                            photo_id = i["id"]
+                            end = "output/" + self.target +  "_" + photo_id +  ".jpg"
+                            urllib.request.urlretrieve(url, end)
+                            sys.stdout.write("\rDownloaded %i" % counter)
+                            sys.stdout.flush()   
 
             except AttributeError:
                 pass
@@ -536,7 +536,7 @@ class Osintgram:
             if not 'next_max_id' in only_id:
                 break
             
-        sys.stdout.write(" posts")
+        sys.stdout.write(" photos")
         sys.stdout.flush()         
 
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
@@ -600,6 +600,101 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
         
         return
+
+
+    def getMediaType(self, id):
+        pc.printout("Searching for target captions...\n")
+        
+        a = None #helper
+        counter = 0
+        photo_counter = 0
+        video_counter = 0
+        
+        while True:
+            if (a == None):
+                self.api.getUserFeed(id)
+                a = self.api.LastJson['items']#photos 00, 01, 02...
+                only_id = self.api.LastJson #all LastJson with max_id param
+                
+            else:
+                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                only_id = self.api.LastJson
+                a = self.api.LastJson['items']
+
+            try:
+                for item in a:
+                    if "media_type" in item:
+                        if item["media_type"] == 1:
+                            photo_counter = photo_counter + 1
+                        elif item["media_type"] == 2:
+                            video_counter = video_counter + 1
+
+                        counter = counter + 1
+                        sys.stdout.write("\rChecked %i" % counter)
+                        sys.stdout.flush()
+
+            except AttributeError:
+                pass
+            
+            except KeyError:
+                pass
+
+            if not 'next_max_id' in only_id:
+                break
+            
+        sys.stdout.write(" posts")
+        sys.stdout.flush()  
+
+        if counter > 0:              
+
+            if(self.writeFile):
+                file_name = "output/" + self.target + "_mediatype.txt"
+                file = open(file_name, "w")
+                file.write(str(photo_counter) + " photos and " + str(video_counter) \
+                        + " video posted by target\n")
+                file.close()
+
+
+            pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) \
+                        + " video posted by target\n", pc.GREEN)
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+        
+        return
+
+    
+    
+    def getUserPropic(self):
+        try:
+            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1" )
+        except urllib.error.HTTPError as err: 
+            if(err.code == 404):
+                print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
+                sys.exit(2)
+
+        data = json.load(content)
+
+        URL = ""
+
+        uurl = data["graphql"]["user"]
+        if "profile_pic_url_hd" in uurl:
+            URL = data["graphql"]["user"]["profile_pic_url_hd"]
+        else:
+            URL = data["graphql"]["user"]["profile_pic_url"]
+
+        if URL != "":
+            end = "output/" + self.target +  "_propic.jpg"
+            urllib.request.urlretrieve(URL, end)
+            pc.printout("Target propic saved in output folder\n", pc.GREEN)
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+
+
+        
+
 
 
 
