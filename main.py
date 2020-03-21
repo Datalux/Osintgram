@@ -46,7 +46,7 @@ def cmdlist():
     print("Get list of users tagged by target")
     pc.printout("photodes\t")
     print("Get description of target's photos")
-    pc.printout("photo\t\t")
+    pc.printout("photos\t\t")
     print("Download user's photos in output folder")
     pc.printout("captions\t")
     print("Get user's photos captions")
@@ -96,7 +96,7 @@ while True:
         api.setWriteFile(True)
     elif cmd == "FILE=n":
         api.setWriteFile(False)
-    elif cmd == "photo":
+    elif cmd == "photos":
         api.getUserPhoto(id)
     elif cmd == "captions":
         api.getCaptions(id)

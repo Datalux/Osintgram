@@ -508,24 +508,24 @@ class Osintgram:
                         break
                     if "image_versions2" in item:
                         counter = counter + 1
-                        sys.stdout.write("\rDownloaded %i" % counter)
-                        sys.stdout.flush()
                         url = item["image_versions2"]["candidates"][0]["url"]
                         photo_id = item["id"]
                         end = "output/" + self.target +  "_" + photo_id +  ".jpg"
-                        urllib.request.urlretrieve(url, end)    
-                else:
-                    carousel = item["carousel_media"]
-                    for i in carousel:
-                        if counter == limit:
-                            break
-                        counter = counter + 1
+                        urllib.request.urlretrieve(url, end) 
                         sys.stdout.write("\rDownloaded %i" % counter)
-                        sys.stdout.flush()                        
-                        url = item["image_versions2"]["candidates"][0]["url"]
-                        photo_id = item["id"]
-                        end = "output/" + self.target +  "_" + photo_id +  ".jpg"
-                        urllib.request.urlretrieve(url, end)
+                        sys.stdout.flush()   
+                    else:
+                        carousel = item["carousel_media"]
+                        for i in carousel:
+                            if counter == limit:
+                                break
+                            counter = counter + 1                     
+                            url = i["image_versions2"]["candidates"][0]["url"]
+                            photo_id = i["id"]
+                            end = "output/" + self.target +  "_" + photo_id +  ".jpg"
+                            urllib.request.urlretrieve(url, end)
+                            sys.stdout.write("\rDownloaded %i" % counter)
+                            sys.stdout.flush()   
 
             except AttributeError:
                 pass
@@ -536,7 +536,7 @@ class Osintgram:
             if not 'next_max_id' in only_id:
                 break
             
-        sys.stdout.write(" posts")
+        sys.stdout.write(" photos")
         sys.stdout.flush()         
 
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
