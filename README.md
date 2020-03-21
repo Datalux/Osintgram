@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/version-0.2-green)](https://img.shields.io/badge/version-0.2-green)
+[![](https://img.shields.io/badge/version-0.3-green)](https://img.shields.io/badge/version-0.3-green)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 
 
