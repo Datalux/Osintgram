@@ -17,6 +17,7 @@ class Osintgram:
     geolocator = Nominatim()
     user_id = None
     target = ""
+    writeFile = False
 
     def __init__(self, target):
         self.target = target
@@ -60,8 +61,8 @@ class Osintgram:
 
             if not 'next_max_id' in only_id:
                 break
-
-
+        
+        
         locations = {}
 
         for i in photos: #extract location from photos, related
@@ -82,6 +83,18 @@ class Osintgram:
         sort_addresses = sorted(address.items(), key=lambda p: p[1], reverse=True)  #sorting
 
         return sort_addresses 
+
+    def setWriteFile(self, bool):
+        if(bool):
+            pc.printout("Write to file: ")
+            pc.printout("enabled", pc.GREEN)
+            pc.printout("\n")
+        else:
+            pc.printout("Write to file: ")
+            pc.printout("disabled", pc.RED)
+            pc.printout("\n")
+
+        self.writeFile = bool
 
 
     def __getUserFollowigs__(self, id):
@@ -166,8 +179,18 @@ class Osintgram:
 
         sortE = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
 
+        if(self.writeFile):
+            file_name = "output/" + self.target + "_hashtags.txt"
+            file = open(file_name, "w")
+            for k,v in sortE:
+                file.write(str(v) + ". " + str(k.decode('utf-8'))+"\n")
+            file.close()
+            
+
         for k,v in sortE:
             print( str(v) + ". " + str(k.decode('utf-8')))
+        
+
 
     def getTotalLikes(self, id):
         pc.printout("Searching for target total likes...\n")
@@ -195,6 +218,13 @@ class Osintgram:
 
             if not 'next_max_id' in only_id:
                 break
+
+        if(self.writeFile):
+            file_name = "output/" + self.target + "_likes.txt"
+            file = open(file_name, "w")
+            file.write(str(like_counter) + " likes in " + str(counter) + " posts\n")
+            file.close()
+
         pc.printout(str(like_counter), pc.MAGENTA)
         pc.printout(" likes in " + str(counter) + " posts\n")
     
@@ -224,6 +254,13 @@ class Osintgram:
 
             if not 'next_max_id' in only_id:
                 break
+
+        if(self.writeFile):
+            file_name = "output/" + self.target + "_comments.txt"
+            file = open(file_name, "w")
+            file.write(str(comment_counter) + " comments in " + str(counter) + " posts\n")
+            file.close()
+
         pc.printout(str(comment_counter), pc.MAGENTA)
         pc.printout(" comments in " + str(counter) + " posts\n")
 
@@ -282,6 +319,12 @@ class Osintgram:
             for i in range(len(ids)):
                 t.add_row([post[i], full_name[i], username[i], str(ids[i])])
 
+            if(self.writeFile):
+                file_name = "output/" + self.target + "_tagged.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
             print(t)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
@@ -303,6 +346,13 @@ class Osintgram:
         for address, time in addrs:
             t.add_row([str(i), address, time])
             i = i + 1
+
+        if(self.writeFile):
+                file_name = "output/" + self.target + "_addrs.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
         print(t)
 
     def getFollowers(self, id):
@@ -316,6 +366,13 @@ class Osintgram:
         
         for i in followers:
             t.add_row([str(i['pk']), i['username'], i['full_name']])
+
+        if(self.writeFile):
+                file_name = "output/" + self.target + "_followers.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()        
+
         print(t)
 
     def getFollowings(self, id):
@@ -326,9 +383,16 @@ class Osintgram:
         t.align["ID"] = "l"
         t.align["Username"] = "l"
         t.align["Full Name"] = "l"
-        
+
         for i in followings:
             t.add_row([str(i['pk']), i['username'], i['full_name']])
+
+        if(self.writeFile):
+                file_name = "output/" + self.target + "_followings.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
         print(t)
 
     def getUserID(self, username):
@@ -340,6 +404,12 @@ class Osintgram:
                 sys.exit(2)
 
         data = json.load(content)
+
+        if(self.writeFile):
+            file_name = "output/" + self.target + "_user_id.txt"
+            file = open(file_name, "w")
+            file.write(str(data['graphql']['user']['id']))
+            file.close()
         return data['graphql']['user']['id']
 
     def getUserInfo(self):
@@ -390,12 +460,245 @@ class Osintgram:
                 node = i.get('node')
                 t.add_row([str(count), node.get('accessibility_caption')])
                 count += 1
+
+            if(self.writeFile):
+                file_name = "output/" + self.target + "_photodes.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()                
+
+                
             print(t)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
 
+    def getUserPhoto(self, id):
+        limit = -1
+        pc.printout("How many photos you want to download (default all): ", pc.YELLOW)
+        l = input()
+        try:
+            if l == "":
+                pc.printout("Downloading all photos avaible...\n")
+            else:
+                limit = int(l)
+                pc.printout("Downloading " + l + " photos...\n")
+
+        except ValueError:
+            pc.printout("Wrong value entered\n", pc.RED)
+            return
+
+        
+        a = None #helper
+        counter = 0
+        while True:
+            if (a == None):
+                self.api.getUserFeed(id)
+                a = self.api.LastJson['items']#photos 00, 01, 02...
+                only_id = self.api.LastJson #all LastJson with max_id param
+                
+            else:
+                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                only_id = self.api.LastJson
+                a = self.api.LastJson['items']
+
+            try:
+                for item in a:
+                    if counter == limit:
+                        break
+                    if "image_versions2" in item:
+                        counter = counter + 1
+                        url = item["image_versions2"]["candidates"][0]["url"]
+                        photo_id = item["id"]
+                        end = "output/" + self.target +  "_" + photo_id +  ".jpg"
+                        urllib.request.urlretrieve(url, end) 
+                        sys.stdout.write("\rDownloaded %i" % counter)
+                        sys.stdout.flush()   
+                    else:
+                        carousel = item["carousel_media"]
+                        for i in carousel:
+                            if counter == limit:
+                                break
+                            counter = counter + 1                     
+                            url = i["image_versions2"]["candidates"][0]["url"]
+                            photo_id = i["id"]
+                            end = "output/" + self.target +  "_" + photo_id +  ".jpg"
+                            urllib.request.urlretrieve(url, end)
+                            sys.stdout.write("\rDownloaded %i" % counter)
+                            sys.stdout.flush()   
+
+            except AttributeError:
+                pass
             
+            except KeyError:
+                pass
+
+            if not 'next_max_id' in only_id:
+                break
+            
+        sys.stdout.write(" photos")
+        sys.stdout.flush()         
+
+        pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
+
+
+    def getCaptions(self, id):
+        pc.printout("Searching for target captions...\n")
+        
+        a = None #helper
+        counter = 0
+        captions = []
+        while True:
+            if (a == None):
+                self.api.getUserFeed(id)
+                a = self.api.LastJson['items']#photos 00, 01, 02...
+                only_id = self.api.LastJson #all LastJson with max_id param
+                
+            else:
+                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                only_id = self.api.LastJson
+                a = self.api.LastJson['items']
+
+            try:
+                for item in a:
+                    if "caption" in item:
+                        if item["caption"] != None:
+                            text = item["caption"]["text"]
+                            captions.append(text)
+                            counter = counter + 1
+                            sys.stdout.write("\rFound %i" % counter)
+                            sys.stdout.flush()
+
+            except AttributeError:
+                pass
+            
+            except KeyError:
+                pass
+
+            if not 'next_max_id' in only_id:
+                break
+            
+        sys.stdout.write(" captions")
+        sys.stdout.flush()  
+
+        if counter > 0:
+            pc.printout("\nWoohoo! We found " + str(counter) + " captions\n", pc.GREEN)
+
+               
+
+            if(self.writeFile):
+                file_name = "output/" + self.target + "_captions.txt"
+                file = open(file_name, "w")
+                for s in captions:
+                    file.write(s + "\n")
+                file.close()
+
+            for s in captions:
+                print(s + "\n")
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+        
+        return
+
+
+    def getMediaType(self, id):
+        pc.printout("Searching for target captions...\n")
+        
+        a = None #helper
+        counter = 0
+        photo_counter = 0
+        video_counter = 0
+        
+        while True:
+            if (a == None):
+                self.api.getUserFeed(id)
+                a = self.api.LastJson['items']#photos 00, 01, 02...
+                only_id = self.api.LastJson #all LastJson with max_id param
+                
+            else:
+                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                only_id = self.api.LastJson
+                a = self.api.LastJson['items']
+
+            try:
+                for item in a:
+                    if "media_type" in item:
+                        if item["media_type"] == 1:
+                            photo_counter = photo_counter + 1
+                        elif item["media_type"] == 2:
+                            video_counter = video_counter + 1
+
+                        counter = counter + 1
+                        sys.stdout.write("\rChecked %i" % counter)
+                        sys.stdout.flush()
+
+            except AttributeError:
+                pass
+            
+            except KeyError:
+                pass
+
+            if not 'next_max_id' in only_id:
+                break
+            
+        sys.stdout.write(" posts")
+        sys.stdout.flush()  
+
+        if counter > 0:              
+
+            if(self.writeFile):
+                file_name = "output/" + self.target + "_mediatype.txt"
+                file = open(file_name, "w")
+                file.write(str(photo_counter) + " photos and " + str(video_counter) \
+                        + " video posted by target\n")
+                file.close()
+
+
+            pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) \
+                        + " video posted by target\n", pc.GREEN)
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+        
+        return
+
+    
+    
+    def getUserPropic(self):
+        try:
+            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1" )
+        except urllib.error.HTTPError as err: 
+            if(err.code == 404):
+                print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
+                sys.exit(2)
+
+        data = json.load(content)
+
+        URL = ""
+
+        uurl = data["graphql"]["user"]
+        if "profile_pic_url_hd" in uurl:
+            URL = data["graphql"]["user"]["profile_pic_url_hd"]
+        else:
+            URL = data["graphql"]["user"]["profile_pic_url"]
+
+        if URL != "":
+            end = "output/" + self.target +  "_propic.jpg"
+            urllib.request.urlretrieve(URL, end)
+            pc.printout("Target propic saved in output folder\n", pc.GREEN)
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+
+
+        
+
+
+
+
+
 
 
         
