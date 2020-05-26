@@ -278,6 +278,8 @@ class Osintgram:
             if (a == None):
                 self.api.getUserFeed(id)
                 a = self.api.LastJson['items']#photos 00, 01, 02...
+                with open('jj.json', 'w') as outfile:
+                    json.dump(a, outfile)
                 only_id = self.api.LastJson #all LastJson with max_id param
 
                 
@@ -288,18 +290,22 @@ class Osintgram:
 
             try:
                 for i in a:
-                    c = i.get('usertags').get('in')
-                    for cc in c:
-                        if cc.get('user').get('pk') not in ids:
-                            ids.append(cc.get('user').get('pk'))
-                            username.append(cc.get('user').get('username'))
-                            full_name.append(cc.get('user').get('full_name'))
-                            post.append(1)
-                        else:
-                            index = ids.index(cc.get('user').get('pk'))
-                            post[index] += 1
-                        counter = counter +1
-            except AttributeError:
+                    if "usertags" in i:
+                        c = i.get('usertags').get('in')
+                        for cc in c:
+                            if cc.get('user').get('pk') not in ids:
+                                ids.append(cc.get('user').get('pk'))
+                                username.append(cc.get('user').get('username'))
+                                full_name.append(cc.get('user').get('full_name'))
+                                post.append(1)
+                            else:
+                                index = ids.index(cc.get('user').get('pk'))
+                                post[index] += 1
+                            counter = counter +1
+            except AttributeError as ae:
+                pc.printout("\nERROR: an error occurred: ", pc.RED)
+                print(ae)
+                print("")
                 pass
 
             if not 'next_max_id' in only_id:
