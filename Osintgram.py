@@ -44,16 +44,16 @@ class Osintgram:
         return p
 
     def __getAdressesTimes__(self, id):
-        only_id = {} #var only for max_next_id parameter | pagination
-        photos = [] # only photos
-        a = None #helper
+        only_id = {} 
+        photos = []
+        a = None 
         while True:
             if (a == None):
                 self.api.getUserFeed(id)
-                a = self.api.LastJson['items']#photos 00, 01, 02...
-                only_id = self.api.LastJson #all LastJson with max_id param
+                a = self.api.LastJson['items']
+                only_id = self.api.LastJson
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                self.api.getUserFeed(id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
                 
@@ -65,7 +65,7 @@ class Osintgram:
         
         locations = {}
 
-        for i in photos: #extract location from photos, related
+        for i in photos:
             for j in i:
                 if 'lat' in j.keys():
                     lat = j.get('lat')
@@ -75,12 +75,12 @@ class Osintgram:
 
         address = {}
         for k,v in locations.items():
-            details = self.geolocator.reverse(k) #locate for key
-            unix_timestamp = datetime.datetime.fromtimestamp(v) # read timestamp as a value
+            details = self.geolocator.reverse(k)
+            unix_timestamp = datetime.datetime.fromtimestamp(v)
             address[details.address] = unix_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
 
-        sort_addresses = sorted(address.items(), key=lambda p: p[1], reverse=True)  #sorting
+        sort_addresses = sorted(address.items(), key=lambda p: p[1], reverse=True) 
 
         return sort_addresses 
 
@@ -136,19 +136,19 @@ class Osintgram:
 
         text = []
         only_id = {}
-        a = None #helper
+        a = None 
         hashtags = []
         counter = 1
         while True:
             if (a == None):
                 self.api.getUserFeed(id)
-                a = self.api.LastJson['items']#photos 00, 01, 02...
-                only_id = self.api.LastJson #all LastJson with max_id param
+                a = self.api.LastJson['items']
+                only_id = self.api.LastJson
                 with open('data.json', 'w') as outfile:
                     json.dump(only_id, outfile)
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                self.api.getUserFeed(id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -156,7 +156,6 @@ class Osintgram:
                 for i in a:
                     c = i.get('caption', {}).get('text')
                     text.append(c)
-                    #print str(counter) + ' ' + c
                     counter = counter +1
             except AttributeError:
                 pass
@@ -197,15 +196,15 @@ class Osintgram:
 
         like_counter = 0
         only_id = {}
-        a = None #helper
+        a = None 
         counter = 0
         while True:
             if (a == None):
                 self.api.getUserFeed(id)
-                a = self.api.LastJson['items']#photos 00, 01, 02...
-                only_id = self.api.LastJson #all LastJson with max_id param
+                a = self.api.LastJson['items']
+                only_id = self.api.LastJson 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                self.api.getUserFeed(id, only_id['next_max_id']) 
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
             try:
@@ -233,15 +232,15 @@ class Osintgram:
 
         comment_counter = 0
         only_id = {}
-        a = None #helper
+        a = None 
         counter = 0
         while True:
             if (a == None):
                 self.api.getUserFeed(id)
-                a = self.api.LastJson['items']#photos 00, 01, 02...
-                only_id = self.api.LastJson #all LastJson with max_id param
+                a = self.api.LastJson['items']
+                only_id = self.api.LastJson
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                self.api.getUserFeed(id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
             try:
@@ -272,19 +271,19 @@ class Osintgram:
         full_name = []
         post = []
         only_id = {}
-        a = None #helper
+        a = None 
         counter = 1
         while True:
             if (a == None):
                 self.api.getUserFeed(id)
-                a = self.api.LastJson['items']#photos 00, 01, 02...
+                a = self.api.LastJson['items']
                 with open('jj.json', 'w') as outfile:
                     json.dump(a, outfile)
-                only_id = self.api.LastJson #all LastJson with max_id param
+                only_id = self.api.LastJson
 
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                self.api.getUserFeed(id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -495,16 +494,16 @@ class Osintgram:
             return
 
         
-        a = None #helper
+        a = None 
         counter = 0
         while True:
             if (a == None):
                 self.api.getUserFeed(id)
-                a = self.api.LastJson['items']#photos 00, 01, 02...
-                only_id = self.api.LastJson #all LastJson with max_id param
+                a = self.api.LastJson['items']
+                only_id = self.api.LastJson 
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                self.api.getUserFeed(id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -551,17 +550,17 @@ class Osintgram:
     def getCaptions(self, id):
         pc.printout("Searching for target captions...\n")
         
-        a = None #helper
+        a = None 
         counter = 0
         captions = []
         while True:
             if (a == None):
                 self.api.getUserFeed(id)
-                a = self.api.LastJson['items']#photos 00, 01, 02...
-                only_id = self.api.LastJson #all LastJson with max_id param
+                a = self.api.LastJson['items']
+                only_id = self.api.LastJson 
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                self.api.getUserFeed(id, only_id['next_max_id']) 
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -611,7 +610,7 @@ class Osintgram:
     def getMediaType(self, id):
         pc.printout("Searching for target captions...\n")
         
-        a = None #helper
+        a = None 
         counter = 0
         photo_counter = 0
         video_counter = 0
@@ -619,11 +618,11 @@ class Osintgram:
         while True:
             if (a == None):
                 self.api.getUserFeed(id)
-                a = self.api.LastJson['items']#photos 00, 01, 02...
-                only_id = self.api.LastJson #all LastJson with max_id param
+                a = self.api.LastJson['items']
+                only_id = self.api.LastJson
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) #passing parameter max_id
+                self.api.getUserFeed(id, only_id['next_max_id']) 
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -696,33 +695,3 @@ class Osintgram:
 
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
-
-
-
-        
-
-
-
-
-
-
-
-        
-        
-
-
-        
-
-
-
-    
-
-
-        
-
-
-
-    
-
-
-
