@@ -36,7 +36,10 @@ The tools use Python3.
 - v0.3 added features: photos, captions, mediatype, propic
 
 ## Tools
-![](cmd.png)
+<p align="center">
+<img align="center" src="cmd.png" width="600">
+</p>
+
 
 ## Installation
 1. Fork/Clone/Download this repo
