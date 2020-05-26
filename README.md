@@ -3,7 +3,7 @@
 
 
 # Osintgram
-Osintgram is a tool for **OSINT** on Instagram.
+Osintgram is a **OSINT** tool on Instagram.
 Osintgram is a fork of https://github.com/LevPasha/Instagram-API-python and https://github.com/woj-ciech/OSINT/tree/master/insta.
 
 **I don't assume any responsability for the use of this tool**
