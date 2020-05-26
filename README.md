@@ -41,7 +41,7 @@ The tools use Python3.
 </p>
 
 
-## Installation
+# Installation
 1. Fork/Clone/Download this repo
 
     `git clone https://github.com/Datalux/Osintgram.git`
@@ -69,3 +69,6 @@ The tools use Python3.
 ## Updating
 
 Run `git pull` in Osintgram directory
+
+# Contributing
+You can propose a feature request opening an issue or a pull request.
