@@ -695,3 +695,21 @@ class Osintgram:
 
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+
+    def getUserStories(self, id):
+        endpoint = 'feed/user/{id!s}/story/'.format(**{'id': id})
+        content = self.api.SendRequest(endpoint)
+        data = self.api.LastJson['reel']['items']
+        
+        # for debug
+        with open('data2.json', 'w') as outfile:
+            json.dump(data, outfile)
+        
+        for i in data:
+            story_id = i["id"]
+            if i["media_type"] == 1: # it's a photo
+                url = i['image_versions2']['candidates'][0]['url']
+                end = "output/" + self.target +  "_" + story_id +  ".jpg"
+                urllib.request.urlretrieve(url, end)
+
