@@ -23,7 +23,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - captions        Get user's photos captions
 - mediatype       Get user's posts type (photo or video)
 - propic          Download user's profile picture
-
+- stories         Download user's stories  
 ```
 You can find detailed commands usage [here](commands.md).
 
