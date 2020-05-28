@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/version-0.4-green)](https://img.shields.io/badge/version-0.4-green)
+[![](https://img.shields.io/badge/version-0.4-green)](https://github.com/Datalux/Osintgram/releases/tag/0.4)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 
 
