@@ -19,9 +19,6 @@ def printlogo():
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
 
-    
-
-
 
 def cmdlist():
     #print("set <username>\t Set user to analize")
@@ -66,7 +63,6 @@ parser.add_argument('id', type=str, # var = id
 args = parser.parse_args()
 
 api = Osintgram(args.id) 
-
 id = api.getUserID(args.id)
 
 
@@ -109,9 +105,13 @@ while True:
     elif cmd == "propic":
         api.getUserPropic()
     elif cmd == "stories":
-        api.getUserStories(id)     
+        api.getUserStories(id)
+    elif cmd == "target":
+        api.changeTarget()
     
     else:
         pc.printout("Unknown command\n", pc.RED)
+
+
         
 
