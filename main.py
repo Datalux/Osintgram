@@ -19,9 +19,6 @@ def printlogo():
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
 
-    
-
-
 
 def cmdlist():
     #print("set <username>\t Set user to analize")
@@ -67,8 +64,6 @@ args = parser.parse_args()
 
 api = Osintgram(args.id) 
 
-id = api.getUserID(args.id)
-
 
 while True:
     pc.printout("Run a command: ", pc.YELLOW)
@@ -79,21 +74,21 @@ while True:
     elif cmd == "list" or cmd=="help":
         cmdlist()
     elif cmd == "addrs":
-        api.getAddrs(id)
+        api.getAddrs()
     elif cmd == "followers":
-        api.getFollowers(id)
+        api.getFollowers()
     elif cmd == "followings":
-        api.getFollowings(id)
+        api.getFollowings()
     elif cmd == "hashtags":
-        api.getHashtags(id)
+        api.getHashtags()
     elif cmd == "likes":
-        api.getTotalLikes(id)
+        api.getTotalLikes()
     elif cmd == "comments":
-        api.getTotalComments(id)
+        api.getTotalComments()
     elif cmd == "info":
         api.getUserInfo()
     elif cmd == "tagged":
-        api.getPeopleTaggedByUser(id)
+        api.getPeopleTaggedByUser()
     elif cmd == "photodes":
         api.getPhotoDescription()
     elif cmd == "FILE=y":
@@ -101,17 +96,17 @@ while True:
     elif cmd == "FILE=n":
         api.setWriteFile(False)
     elif cmd == "photos":
-        api.getUserPhoto(id)
+        api.getUserPhoto()
     elif cmd == "captions":
-        api.getCaptions(id)
+        api.getCaptions()
     elif cmd == "mediatype":
-        api.getMediaType(id)    
+        api.getMediaType()    
     elif cmd == "propic":
         api.getUserPropic()
     elif cmd == "stories":
-        api.getUserStories(id)     
+        api.getUserStories()
+    elif cmd == "target":
+        api.changeTarget()
     
     else:
         pc.printout("Unknown command\n", pc.RED)
-        
-
