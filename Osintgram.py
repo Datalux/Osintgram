@@ -17,6 +17,7 @@ class Osintgram:
     geolocator = Nominatim()
     user_id = None
     target_id = None
+    is_private = True
     target = ""
     writeFile = False
 
@@ -24,14 +25,16 @@ class Osintgram:
         u = self.__getUsername__()
         p = self.__getPassword__()
         self.api = InstagramAPI(u, p)
-        print("\nAttempt to login...\n")
+        print("\nAttempt to login...")
         self.api.login()
         self.setTarget(target)
 
 
     def setTarget(self, target):
         self.target = target
-        self.target_id = self.getUserID(target)
+        user = self.getUser(target)
+        self.target_id = user['id']
+        self.is_private = user['is_private']
         self.__printTargetBanner__()
 
 
@@ -87,11 +90,12 @@ class Osintgram:
         return sort_addresses 
 
     def __printTargetBanner__(self):
-        pc.printout("Logged as ", pc.GREEN)
+        pc.printout("\nLogged as ", pc.GREEN)
         pc.printout(self.api.username, pc.CYAN)
         pc.printout(" (" + str(self.api.username_id) + ") ")
         pc.printout("target: ", pc.GREEN)
         pc.printout(str(self.target), pc.CYAN)
+        pc.printout(" (private: " + str(self.is_private) + ")")
         print('\n')
 
     def setWriteFile(self, bool):
@@ -347,6 +351,10 @@ class Osintgram:
 
 
     def getAddrs(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         pc.printout("Searching for target address... this may take a few minutes...\n")
         addrs = self.__getAdressesTimes__(self.target_id)
         t = PrettyTable()
@@ -371,6 +379,10 @@ class Osintgram:
         print(t)
 
     def getFollowers(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         pc.printout("Searching for target followers...\n")
 
         followers = self.__getTotalFollowers__(self.target_id)
@@ -391,6 +403,10 @@ class Osintgram:
         print(t)
 
     def getFollowings(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         pc.printout("Searching for target followings...\n")
 
         followings = self.__getUserFollowigs__(self.target_id)
@@ -410,7 +426,7 @@ class Osintgram:
 
         print(t)
 
-    def getUserID(self, username):
+    def getUser(self, username):
         try:
             content = urllib.request.urlopen("https://www.instagram.com/" + username + "/?__a=1" )
         except urllib.error.HTTPError as err: 
@@ -425,7 +441,12 @@ class Osintgram:
             file = open(file_name, "w")
             file.write(str(data['graphql']['user']['id']))
             file.close()
-        return data['graphql']['user']['id']
+
+        user = dict()
+        user['id'] = data['graphql']['user']['id']
+        user['is_private'] = data['graphql']['user']['is_private']
+        
+        return user
 
     def getUserInfo(self):
         try:
@@ -456,8 +477,11 @@ class Osintgram:
         pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
         pc.printout(str(data['is_verified']) + '\n')
 
-
     def getPhotoDescription(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         content = self.api.SendRequest2(self.target + '/?__a=1')
         data = self.api.LastJson
         dd = data['graphql']['user']['edge_owner_to_timeline_media']['edges']
@@ -487,8 +511,11 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
-
     def getUserPhoto(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         limit = -1
         pc.printout("How many photos you want to download (default all): ", pc.YELLOW)
         l = input()
@@ -556,8 +583,11 @@ class Osintgram:
 
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
 
-
     def getCaptions(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         pc.printout("Searching for target captions...\n")
         
         a = None 
@@ -616,8 +646,11 @@ class Osintgram:
         
         return
 
-
     def getMediaType(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         pc.printout("Searching for target captions...\n")
         
         a = None 
@@ -677,8 +710,6 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
         
         return
-
-    
     
     def getUserPropic(self):
         try:
@@ -706,8 +737,11 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
-
     def getUserStories(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         pc.printout("Searching for target stories...\n")
 
         endpoint = 'feed/user/{id!s}/story/'.format(**{'id': self.target_id})
@@ -735,7 +769,6 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
             
-    
     def changeTarget(self):
         pc.printout("Insert new target username: ", pc.YELLOW)
         l = input()
