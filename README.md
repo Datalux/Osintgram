@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/version-0.3-green)](https://img.shields.io/badge/version-0.3-green)
+[![](https://img.shields.io/badge/version-0.4-green)](https://img.shields.io/badge/version-0.4-green)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 
 
@@ -34,6 +34,7 @@ The tools use Python3.
 - v0.1 initial release
 - v0.2 added feature to write in file the output of commands
 - v0.3 added features: photos, captions, mediatype, propic
+- v0.4 [changelog](https://github.com/Datalux/Osintgram/releases/tag/0.4)
 
 ## Tools
 <p align="center">
