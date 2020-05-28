@@ -111,7 +111,3 @@ while True:
     
     else:
         pc.printout("Unknown command\n", pc.RED)
-
-
-        
-
