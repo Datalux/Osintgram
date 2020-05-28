@@ -725,5 +725,7 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
             
-        
-
+    
+        def changeTarget(self):
+        #TODO(fun to change target during a session)
+        return
