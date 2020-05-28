@@ -16,22 +16,24 @@ class Osintgram:
     api = None
     geolocator = Nominatim()
     user_id = None
+    target_id = None
     target = ""
     writeFile = False
 
     def __init__(self, target):
-        self.target = target
         u = self.__getUsername__()
         p = self.__getPassword__()
         self.api = InstagramAPI(u, p)
         print("\nAttempt to login...\n")
         self.api.login()
-        pc.printout("Logged as ", pc.GREEN)
-        pc.printout(self.api.username, pc.CYAN)
-        pc.printout(" (" + str(self.api.username_id) + ") ")
-        pc.printout("target: ", pc.GREEN)
-        pc.printout(str(self.target), pc.CYAN)
-        print('\n')
+        self.setTarget(target)
+
+
+    def setTarget(self, target):
+        self.target = target
+        self.target_id = self.getUserID(target)
+        self.__printTargetBanner__()
+
 
     def __getUsername__(self):
         u = open("config/username.conf", "r").read()
@@ -84,6 +86,14 @@ class Osintgram:
 
         return sort_addresses 
 
+    def __printTargetBanner__(self):
+        pc.printout("Logged as ", pc.GREEN)
+        pc.printout(self.api.username, pc.CYAN)
+        pc.printout(" (" + str(self.api.username_id) + ") ")
+        pc.printout("target: ", pc.GREEN)
+        pc.printout(str(self.target), pc.CYAN)
+        print('\n')
+
     def setWriteFile(self, bool):
         if(bool):
             pc.printout("Write to file: ")
@@ -131,7 +141,7 @@ class Osintgram:
         return followers
 
         
-    def getHashtags(self, id):
+    def getHashtags(self):
         pc.printout("Searching for target hashtags...\n")
 
         text = []
@@ -141,14 +151,14 @@ class Osintgram:
         counter = 1
         while True:
             if (a == None):
-                self.api.getUserFeed(id)
+                self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
                 with open('data.json', 'w') as outfile:
                     json.dump(only_id, outfile)
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id'])
+                self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -191,7 +201,7 @@ class Osintgram:
         
 
 
-    def getTotalLikes(self, id):
+    def getTotalLikes(self):
         pc.printout("Searching for target total likes...\n")
 
         like_counter = 0
@@ -200,11 +210,11 @@ class Osintgram:
         counter = 0
         while True:
             if (a == None):
-                self.api.getUserFeed(id)
+                self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) 
+                self.api.getUserFeed(self.target_id, only_id['next_max_id']) 
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
             try:
@@ -227,7 +237,7 @@ class Osintgram:
         pc.printout(str(like_counter), pc.MAGENTA)
         pc.printout(" likes in " + str(counter) + " posts\n")
     
-    def getTotalComments(self, id):
+    def getTotalComments(self):
         pc.printout("Searching for target total comments...\n")
 
         comment_counter = 0
@@ -236,11 +246,11 @@ class Osintgram:
         counter = 0
         while True:
             if (a == None):
-                self.api.getUserFeed(id)
+                self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
             else:
-                self.api.getUserFeed(id, only_id['next_max_id'])
+                self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
             try:
@@ -263,7 +273,7 @@ class Osintgram:
         pc.printout(str(comment_counter), pc.MAGENTA)
         pc.printout(" comments in " + str(counter) + " posts\n")
 
-    def getPeopleTaggedByUser(self, id):
+    def getPeopleTaggedByUser(self):
         pc.printout("Searching for users tagged by target...\n")
         
         ids = []
@@ -275,7 +285,7 @@ class Osintgram:
         counter = 1
         while True:
             if (a == None):
-                self.api.getUserFeed(id)
+                self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 with open('jj.json', 'w') as outfile:
                     json.dump(a, outfile)
@@ -283,7 +293,7 @@ class Osintgram:
 
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id'])
+                self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -336,9 +346,9 @@ class Osintgram:
 
 
 
-    def getAddrs(self, id):
+    def getAddrs(self):
         pc.printout("Searching for target address... this may take a few minutes...\n")
-        addrs = self.__getAdressesTimes__(id)
+        addrs = self.__getAdressesTimes__(self.target_id)
         t = PrettyTable()
 
         t.field_names = ['Post', 'Address', 'time']
@@ -360,10 +370,10 @@ class Osintgram:
 
         print(t)
 
-    def getFollowers(self, id):
+    def getFollowers(self):
         pc.printout("Searching for target followers...\n")
 
-        followers = self.__getTotalFollowers__(id)
+        followers = self.__getTotalFollowers__(self.target_id)
         t = PrettyTable(['ID', 'Username', 'Full Name'])
         t.align["ID"] = "l"
         t.align["Username"] = "l"
@@ -380,10 +390,10 @@ class Osintgram:
 
         print(t)
 
-    def getFollowings(self, id):
+    def getFollowings(self):
         pc.printout("Searching for target followings...\n")
 
-        followings = self.__getUserFollowigs__(id)
+        followings = self.__getUserFollowigs__(self.target_id)
         t = PrettyTable(['ID', 'Username', 'Full Name'])
         t.align["ID"] = "l"
         t.align["Username"] = "l"
@@ -478,7 +488,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
 
-    def getUserPhoto(self, id):
+    def getUserPhoto(self):
         limit = -1
         pc.printout("How many photos you want to download (default all): ", pc.YELLOW)
         l = input()
@@ -498,12 +508,12 @@ class Osintgram:
         counter = 0
         while True:
             if (a == None):
-                self.api.getUserFeed(id)
+                self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson 
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id'])
+                self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -547,7 +557,7 @@ class Osintgram:
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
 
 
-    def getCaptions(self, id):
+    def getCaptions(self):
         pc.printout("Searching for target captions...\n")
         
         a = None 
@@ -555,12 +565,12 @@ class Osintgram:
         captions = []
         while True:
             if (a == None):
-                self.api.getUserFeed(id)
+                self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson 
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) 
+                self.api.getUserFeed(self.target_id, only_id['next_max_id']) 
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -607,7 +617,7 @@ class Osintgram:
         return
 
 
-    def getMediaType(self, id):
+    def getMediaType(self):
         pc.printout("Searching for target captions...\n")
         
         a = None 
@@ -617,12 +627,12 @@ class Osintgram:
         
         while True:
             if (a == None):
-                self.api.getUserFeed(id)
+                self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
                 
             else:
-                self.api.getUserFeed(id, only_id['next_max_id']) 
+                self.api.getUserFeed(self.target_id, only_id['next_max_id']) 
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -697,10 +707,10 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
 
-    def getUserStories(self, id):
+    def getUserStories(self):
         pc.printout("Searching for target stories...\n")
 
-        endpoint = 'feed/user/{id!s}/story/'.format(**{'id': id})
+        endpoint = 'feed/user/{id!s}/story/'.format(**{'id': self.target_id})
         content = self.api.SendRequest(endpoint)
         data = self.api.LastJson
         counter = 0
@@ -725,3 +735,10 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
             
+    
+    def changeTarget(self):
+        pc.printout("Insert new target username: ", pc.YELLOW)
+        l = input()
+        self.setTarget(l)
+        
+        return
