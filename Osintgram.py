@@ -705,10 +705,6 @@ class Osintgram:
         data = self.api.LastJson
         counter = 0
         
-        # for debug
-        with open('data3.json', 'w') as outfile:
-            json.dump(data, outfile)
-        
         if data['reel'] != None: # no stories avaibile
             for i in data['reel']['items']:
                 story_id = i["id"]
