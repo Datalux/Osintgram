@@ -291,8 +291,6 @@ class Osintgram:
             if (a == None):
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
-                with open('jj.json', 'w') as outfile:
-                    json.dump(a, outfile)
                 only_id = self.api.LastJson
 
                 
