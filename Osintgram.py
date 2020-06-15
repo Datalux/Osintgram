@@ -146,6 +146,10 @@ class Osintgram:
 
         
     def getHashtags(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+        
         pc.printout("Searching for target hashtags...\n")
 
         text = []
@@ -206,6 +210,10 @@ class Osintgram:
 
 
     def getTotalLikes(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
         pc.printout("Searching for target total likes...\n")
 
         like_counter = 0
@@ -242,6 +250,10 @@ class Osintgram:
         pc.printout(" likes in " + str(counter) + " posts\n")
     
     def getTotalComments(self):
+        if(self.is_private):
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+        
         pc.printout("Searching for target total comments...\n")
 
         comment_counter = 0
