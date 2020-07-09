@@ -1,15 +1,13 @@
-from InstagramAPI import InstagramAPI 
-from geopy.geocoders import Nominatim
-import sys
-import argparse
 import datetime
-from collections import OrderedDict
 import json
-from prettytable import PrettyTable
+import sys
 import urllib
-from requests.exceptions import HTTPError
-import printcolors as pc
 
+from geopy.geocoders import Nominatim
+from prettytable import PrettyTable
+
+import printcolors as pc
+from InstagramAPI import InstagramAPI
 
 
 class Osintgram:
@@ -29,7 +27,6 @@ class Osintgram:
         self.api.login()
         self.setTarget(target)
 
-
     def setTarget(self, target):
         self.target = target
         user = self.getUser(target)
@@ -37,23 +34,22 @@ class Osintgram:
         self.is_private = user['is_private']
         self.__printTargetBanner__()
 
-
     def __getUsername__(self):
         u = open("config/username.conf", "r").read()
         u = u.replace("\n", "")
         return u
-    
+
     def __getPassword__(self):
         p = open("config/pw.conf", "r").read()
         p = p.replace("\n", "")
         return p
 
     def __getAdressesTimes__(self, id):
-        only_id = {} 
+        only_id = {}
         photos = []
-        a = None 
+        a = None
         while True:
-            if (a == None):
+            if a is None:
                 self.api.getUserFeed(id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
@@ -61,13 +57,12 @@ class Osintgram:
                 self.api.getUserFeed(id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
-                
+
             photos.append(a)
 
             if not 'next_max_id' in only_id:
                 break
-        
-        
+
         locations = {}
 
         for i in photos:
@@ -79,15 +74,14 @@ class Osintgram:
                     locations[str(lat) + ', ' + str(lng)] = j.get('taken_at')
 
         address = {}
-        for k,v in locations.items():
+        for k, v in locations.items():
             details = self.geolocator.reverse(k)
             unix_timestamp = datetime.datetime.fromtimestamp(v)
             address[details.address] = unix_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
+        sort_addresses = sorted(address.items(), key=lambda p: p[1], reverse=True)
 
-        sort_addresses = sorted(address.items(), key=lambda p: p[1], reverse=True) 
-
-        return sort_addresses 
+        return sort_addresses
 
     def __printTargetBanner__(self):
         pc.printout("\nLogged as ", pc.GREEN)
@@ -98,8 +92,8 @@ class Osintgram:
         pc.printout(" (private: " + str(self.is_private) + ")")
         print('\n')
 
-    def setWriteFile(self, bool):
-        if(bool):
+    def setWriteFile(self, flag):
+        if flag:
             pc.printout("Write to file: ")
             pc.printout("enabled", pc.GREEN)
             pc.printout("\n")
@@ -108,17 +102,16 @@ class Osintgram:
             pc.printout("disabled", pc.RED)
             pc.printout("\n")
 
-        self.writeFile = bool
+        self.writeFile = flag
 
-
-    def __getUserFollowigs__(self, id):
+    def __getUserFollowigs__(self, user_id):
         following = []
         next_max_id = True
         while next_max_id:
             # first iteration hack
             if next_max_id is True:
                 next_max_id = ''
-            _ = self.api.getUserFollowings(id, maxid=next_max_id)
+            _ = self.api.getUserFollowings(user_id, maxid=next_max_id)
             following.extend(self.api.LastJson.get('users', []))
             next_max_id = self.api.LastJson.get('next_max_id', '')
 
@@ -144,27 +137,26 @@ class Osintgram:
 
         return followers
 
-        
     def getHashtags(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
-        
+
         pc.printout("Searching for target hashtags...\n")
 
         text = []
         only_id = {}
-        a = None 
+        a = None
         hashtags = []
         counter = 1
         while True:
-            if (a == None):
+            if a is None:
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
                 with open('data.json', 'w') as outfile:
                     json.dump(only_id, outfile)
-                
+
             else:
                 self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
@@ -174,7 +166,7 @@ class Osintgram:
                 for i in a:
                     c = i.get('caption', {}).get('text')
                     text.append(c)
-                    counter = counter +1
+                    counter = counter + 1
             except AttributeError:
                 pass
 
@@ -196,21 +188,18 @@ class Osintgram:
 
         sortE = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
 
-        if(self.writeFile):
+        if self.writeFile:
             file_name = "output/" + self.target + "_hashtags.txt"
             file = open(file_name, "w")
-            for k,v in sortE:
-                file.write(str(v) + ". " + str(k.decode('utf-8'))+"\n")
+            for k, v in sortE:
+                file.write(str(v) + ". " + str(k.decode('utf-8')) + "\n")
             file.close()
-            
 
-        for k,v in sortE:
-            print( str(v) + ". " + str(k.decode('utf-8')))
-        
-
+        for k, v in sortE:
+            print(str(v) + ". " + str(k.decode('utf-8')))
 
     def getTotalLikes(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
@@ -218,29 +207,29 @@ class Osintgram:
 
         like_counter = 0
         only_id = {}
-        a = None 
+        a = None
         counter = 0
         while True:
             if (a == None):
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
-                only_id = self.api.LastJson 
+                only_id = self.api.LastJson
             else:
-                self.api.getUserFeed(self.target_id, only_id['next_max_id']) 
+                self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
             try:
                 for i in a:
                     c = int(i.get('like_count'))
                     like_counter += c
-                    counter = counter +1
+                    counter = counter + 1
             except AttributeError:
                 pass
 
             if not 'next_max_id' in only_id:
                 break
 
-        if(self.writeFile):
+        if (self.writeFile):
             file_name = "output/" + self.target + "_likes.txt"
             file = open(file_name, "w")
             file.write(str(like_counter) + " likes in " + str(counter) + " posts\n")
@@ -248,17 +237,17 @@ class Osintgram:
 
         pc.printout(str(like_counter), pc.MAGENTA)
         pc.printout(" likes in " + str(counter) + " posts\n")
-    
+
     def getTotalComments(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
-        
+
         pc.printout("Searching for target total comments...\n")
 
         comment_counter = 0
         only_id = {}
-        a = None 
+        a = None
         counter = 0
         while True:
             if (a == None):
@@ -273,14 +262,14 @@ class Osintgram:
                 for i in a:
                     c = int(i.get('comment_count'))
                     comment_counter += c
-                    counter = counter +1
+                    counter = counter + 1
             except AttributeError:
                 pass
 
             if not 'next_max_id' in only_id:
                 break
 
-        if(self.writeFile):
+        if self.writeFile:
             file_name = "output/" + self.target + "_comments.txt"
             file = open(file_name, "w")
             file.write(str(comment_counter) + " comments in " + str(counter) + " posts\n")
@@ -291,21 +280,19 @@ class Osintgram:
 
     def getPeopleTaggedByUser(self):
         pc.printout("Searching for users tagged by target...\n")
-        
+
         ids = []
         username = []
         full_name = []
         post = []
         only_id = {}
-        a = None 
+        a = None
         counter = 1
         while True:
-            if (a == None):
+            if a is None:
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
-
-                
             else:
                 self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
@@ -324,14 +311,14 @@ class Osintgram:
                             else:
                                 index = ids.index(cc.get('user').get('pk'))
                                 post[index] += 1
-                            counter = counter +1
+                            counter = counter + 1
             except AttributeError as ae:
                 pc.printout("\nERROR: an error occurred: ", pc.RED)
                 print(ae)
                 print("")
                 pass
 
-            if not 'next_max_id' in only_id:
+            if 'next_max_id' not in only_id:
                 break
 
         if len(ids) > 0:
@@ -342,13 +329,13 @@ class Osintgram:
             t.align["Full Name"] = "l"
             t.align["Username"] = "l"
             t.align["ID"] = "l"
-            
+
             pc.printout("\nWoohoo! We found " + str(len(ids)) + " (" + str(counter) + ") users\n", pc.GREEN)
 
             for i in range(len(ids)):
                 t.add_row([post[i], full_name[i], username[i], str(ids[i])])
 
-            if(self.writeFile):
+            if self.writeFile:
                 file_name = "output/" + self.target + "_tagged.txt"
                 file = open(file_name, "w")
                 file.write(str(t))
@@ -358,10 +345,8 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
-
-
     def getAddrs(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
@@ -380,16 +365,16 @@ class Osintgram:
             t.add_row([str(i), address, time])
             i = i + 1
 
-        if(self.writeFile):
-                file_name = "output/" + self.target + "_addrs.txt"
-                file = open(file_name, "w")
-                file.write(str(t))
-                file.close()
+        if self.writeFile:
+            file_name = "output/" + self.target + "_addrs.txt"
+            file = open(file_name, "w")
+            file.write(str(t))
+            file.close()
 
         print(t)
 
     def getFollowers(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
@@ -400,20 +385,20 @@ class Osintgram:
         t.align["ID"] = "l"
         t.align["Username"] = "l"
         t.align["Full Name"] = "l"
-        
+
         for i in followers:
             t.add_row([str(i['pk']), i['username'], i['full_name']])
 
-        if(self.writeFile):
-                file_name = "output/" + self.target + "_followers.txt"
-                file = open(file_name, "w")
-                file.write(str(t))
-                file.close()        
+        if self.writeFile:
+            file_name = "output/" + self.target + "_followers.txt"
+            file = open(file_name, "w")
+            file.write(str(t))
+            file.close()
 
         print(t)
 
     def getFollowings(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
@@ -428,67 +413,68 @@ class Osintgram:
         for i in followings:
             t.add_row([str(i['pk']), i['username'], i['full_name']])
 
-        if(self.writeFile):
-                file_name = "output/" + self.target + "_followings.txt"
-                file = open(file_name, "w")
-                file.write(str(t))
-                file.close()
+        if self.writeFile:
+            file_name = "output/" + self.target + "_followings.txt"
+            file = open(file_name, "w")
+            file.write(str(t))
+            file.close()
 
         print(t)
 
     def getUser(self, username):
         try:
-            content = urllib.request.urlopen("https://www.instagram.com/" + username + "/?__a=1" )
-        except urllib.error.HTTPError as err: 
-            if(err.code == 404):
+            content = urllib.request.urlopen("https://www.instagram.com/" + username + "/?__a=1")
+            data = json.load(content)
+            if self.writeFile:
+                file_name = "output/" + self.target + "_user_id.txt"
+                file = open(file_name, "w")
+                file.write(str(data['graphql']['user']['id']))
+                file.close()
+
+            user = dict()
+            user['id'] = data['graphql']['user']['id']
+            user['is_private'] = data['graphql']['user']['is_private']
+
+            return user
+
+        except urllib.error.HTTPError as err:
+            if err.code == 404:
                 print("Oops... " + username + " non exist, please enter a valid username.")
                 sys.exit(2)
 
-        data = json.load(content)
-
-        if(self.writeFile):
-            file_name = "output/" + self.target + "_user_id.txt"
-            file = open(file_name, "w")
-            file.write(str(data['graphql']['user']['id']))
-            file.close()
-
-        user = dict()
-        user['id'] = data['graphql']['user']['id']
-        user['is_private'] = data['graphql']['user']['is_private']
-        
-        return user
+        return None
 
     def getUserInfo(self):
         try:
-            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1" )
-        except urllib.error.HTTPError as err: 
-            if(err.code == 404):
+            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+            data = json.load(content)
+            data = data['graphql']['user']
+
+            pc.printout("[ID] ", pc.GREEN)
+            pc.printout(str(data['id']) + '\n')
+            pc.printout("[FULL NAME] ", pc.RED)
+            pc.printout(str(data['full_name']) + '\n')
+            pc.printout("[BIOGRAPHY] ", pc.CYAN)
+            pc.printout(str(data['biography']) + '\n')
+            pc.printout("[FOLLOWED] ", pc.GREEN)
+            pc.printout(str(data['edge_followed_by']['count']) + '\n')
+            pc.printout("[FOLLOW] ", pc.BLUE)
+            pc.printout(str(data['edge_follow']['count']) + '\n')
+            pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
+            pc.printout(str(data['is_business_account']) + '\n')
+            if data['is_business_account']:
+                pc.printout("[BUSINESS CATEGORY] ")
+                pc.printout(str(data['business_category_name']) + '\n')
+            pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
+            pc.printout(str(data['is_verified']) + '\n')
+
+        except urllib.error.HTTPError as err:
+            if err.code == 404:
                 print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
                 sys.exit(2)
 
-        data = json.load(content)
-        data = data['graphql']['user']
-
-        pc.printout("[ID] ", pc.GREEN)
-        pc.printout(str(data['id']) + '\n')
-        pc.printout("[FULL NAME] ", pc.RED)
-        pc.printout(str(data['full_name']) + '\n')
-        pc.printout("[BIOGRAPHY] ", pc.CYAN)
-        pc.printout(str(data['biography']) + '\n')
-        pc.printout("[FOLLOWED] ", pc.GREEN)
-        pc.printout(str(data['edge_followed_by']['count']) + '\n')
-        pc.printout("[FOLLOW] ", pc.BLUE)
-        pc.printout(str(data['edge_follow']['count']) + '\n')
-        pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
-        pc.printout(str(data['is_business_account']) + '\n')
-        if data['is_business_account'] == True:
-            pc.printout("[BUSINESS CATEGORY] ")
-            pc.printout(str(data['business_category_name']) + '\n')
-        pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
-        pc.printout(str(data['is_verified']) + '\n')
-
     def getPhotoDescription(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
@@ -504,25 +490,24 @@ class Osintgram:
             t = PrettyTable(['Photo', 'Description'])
             t.align["Photo"] = "l"
             t.align["Description"] = "l"
-            
+
             for i in dd:
                 node = i.get('node')
                 t.add_row([str(count), node.get('accessibility_caption')])
                 count += 1
 
-            if(self.writeFile):
+            if self.writeFile:
                 file_name = "output/" + self.target + "_photodes.txt"
                 file = open(file_name, "w")
                 file.write(str(t))
-                file.close()                
+                file.close()
 
-                
             print(t)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def getUserPhoto(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
@@ -540,15 +525,14 @@ class Osintgram:
             pc.printout("Wrong value entered\n", pc.RED)
             return
 
-        
-        a = None 
+        a = None
         counter = 0
         while True:
-            if (a == None):
+            if a is None:
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
-                only_id = self.api.LastJson 
-                
+                only_id = self.api.LastJson
+
             else:
                 self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
@@ -562,62 +546,62 @@ class Osintgram:
                         counter = counter + 1
                         url = item["image_versions2"]["candidates"][0]["url"]
                         photo_id = item["id"]
-                        end = "output/" + self.target +  "_" + photo_id +  ".jpg"
-                        urllib.request.urlretrieve(url, end) 
+                        end = "output/" + self.target + "_" + photo_id + ".jpg"
+                        urllib.request.urlretrieve(url, end)
                         sys.stdout.write("\rDownloaded %i" % counter)
-                        sys.stdout.flush()   
+                        sys.stdout.flush()
                     else:
                         carousel = item["carousel_media"]
                         for i in carousel:
                             if counter == limit:
                                 break
-                            counter = counter + 1                     
+                            counter = counter + 1
                             url = i["image_versions2"]["candidates"][0]["url"]
                             photo_id = i["id"]
-                            end = "output/" + self.target +  "_" + photo_id +  ".jpg"
+                            end = "output/" + self.target + "_" + photo_id + ".jpg"
                             urllib.request.urlretrieve(url, end)
                             sys.stdout.write("\rDownloaded %i" % counter)
-                            sys.stdout.flush()   
+                            sys.stdout.flush()
 
             except AttributeError:
                 pass
-            
+
             except KeyError:
                 pass
 
             if not 'next_max_id' in only_id:
                 break
-            
+
         sys.stdout.write(" photos")
-        sys.stdout.flush()         
+        sys.stdout.flush()
 
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
 
     def getCaptions(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
         pc.printout("Searching for target captions...\n")
-        
-        a = None 
+
+        a = None
         counter = 0
         captions = []
         while True:
-            if (a == None):
+            if a is None:
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
-                only_id = self.api.LastJson 
-                
+                only_id = self.api.LastJson
+
             else:
-                self.api.getUserFeed(self.target_id, only_id['next_max_id']) 
+                self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
             try:
                 for item in a:
                     if "caption" in item:
-                        if item["caption"] != None:
+                        if item["caption"] is not None:
                             text = item["caption"]["text"]
                             captions.append(text)
                             counter = counter + 1
@@ -626,22 +610,20 @@ class Osintgram:
 
             except AttributeError:
                 pass
-            
+
             except KeyError:
                 pass
 
             if not 'next_max_id' in only_id:
                 break
-            
+
         sys.stdout.write(" captions")
-        sys.stdout.flush()  
+        sys.stdout.flush()
 
         if counter > 0:
             pc.printout("\nWoohoo! We found " + str(counter) + " captions\n", pc.GREEN)
 
-               
-
-            if(self.writeFile):
+            if self.writeFile:
                 file_name = "output/" + self.target + "_captions.txt"
                 file = open(file_name, "w")
                 for s in captions:
@@ -653,29 +635,29 @@ class Osintgram:
 
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
-        
+
         return
 
     def getMediaType(self):
-        if(self.is_private):
+        if (self.is_private):
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
         pc.printout("Searching for target captions...\n")
-        
-        a = None 
+
+        a = None
         counter = 0
         photo_counter = 0
         video_counter = 0
-        
+
         while True:
-            if (a == None):
+            if a is None:
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
-                
+
             else:
-                self.api.getUserFeed(self.target_id, only_id['next_max_id']) 
+                self.api.getUserFeed(self.target_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -693,39 +675,38 @@ class Osintgram:
 
             except AttributeError:
                 pass
-            
+
             except KeyError:
                 pass
 
             if not 'next_max_id' in only_id:
                 break
-            
+
         sys.stdout.write(" posts")
-        sys.stdout.flush()  
+        sys.stdout.flush()
 
-        if counter > 0:              
+        if counter > 0:
 
-            if(self.writeFile):
+            if self.writeFile:
                 file_name = "output/" + self.target + "_mediatype.txt"
                 file = open(file_name, "w")
                 file.write(str(photo_counter) + " photos and " + str(video_counter) \
-                        + " video posted by target\n")
+                           + " video posted by target\n")
                 file.close()
-
 
             pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) \
                         + " video posted by target\n", pc.GREEN)
 
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
-        
+
         return
-    
+
     def getUserPropic(self):
         try:
-            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1" )
-        except urllib.error.HTTPError as err: 
-            if(err.code == 404):
+            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+        except urllib.error.HTTPError as err:
+            if err.code == 404:
                 print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
                 sys.exit(2)
 
@@ -740,7 +721,7 @@ class Osintgram:
             URL = data["graphql"]["user"]["profile_pic_url"]
 
         if URL != "":
-            end = "output/" + self.target +  "_propic.jpg"
+            end = "output/" + self.target + "_propic.jpg"
             urllib.request.urlretrieve(URL, end)
             pc.printout("Target propic saved in output folder\n", pc.GREEN)
 
@@ -748,7 +729,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def getUserStories(self):
-        if(self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
@@ -758,19 +739,19 @@ class Osintgram:
         content = self.api.SendRequest(endpoint)
         data = self.api.LastJson
         counter = 0
-        
-        if data['reel'] != None: # no stories avaibile
+
+        if data['reel'] is not None:  # no stories avaibile
             for i in data['reel']['items']:
                 story_id = i["id"]
-                if i["media_type"] == 1: # it's a photo
+                if i["media_type"] == 1:  # it's a photo
                     url = i['image_versions2']['candidates'][0]['url']
-                    end = "output/" + self.target +  "_" + story_id +  ".jpg"
+                    end = "output/" + self.target + "_" + story_id + ".jpg"
                     urllib.request.urlretrieve(url, end)
                     counter += 1
-                
-                elif i["media_type"] == 2: # it's a gif or video
+
+                elif i["media_type"] == 2:  # it's a gif or video
                     url = i['video_versions'][0]['url']
-                    end = "output/" + self.target +  "_" + story_id +  ".mp4"
+                    end = "output/" + self.target + "_" + story_id + ".mp4"
                     urllib.request.urlretrieve(url, end)
                     counter += 1
 
@@ -778,10 +759,10 @@ class Osintgram:
             pc.printout(str(counter) + " target stories saved in output folder\n", pc.GREEN)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
-            
+
     def changeTarget(self):
         pc.printout("Insert new target username: ", pc.YELLOW)
-        l = input()
-        self.setTarget(l)
-        
+        line = input()
+        self.setTarget(line)
+
         return
