@@ -6,6 +6,7 @@ import argparse
 import printcolors as pc
 import sys
 
+
 def printlogo():
     pc.printout("________         .__        __                               \n", pc.YELLOW)
     pc.printout("\_____  \   _____|__| _____/  |_  ________________    _____  \n", pc.YELLOW)
@@ -21,8 +22,6 @@ def printlogo():
 
 
 def cmdlist():
-    #print("set <username>\t Set user to analize")
-    #print("clear\t\t Remove the user setted")
     pc.printout("FILE=y/n\t")
     print("Enable/disable output in a '<target username>_<command>.txt' file'")
     pc.printout("info\t\t")
@@ -48,30 +47,29 @@ def cmdlist():
     pc.printout("captions\t")
     print("Get target's photos captions")
     pc.printout("mediatype\t")
-    print("Get target's posts type (photo or video)") 
+    print("Get target's posts type (photo or video)")
     pc.printout("propic\t\t")
-    print("Download target's profile picture")     
+    print("Download target's profile picture")
     pc.printout("stories\t\t")
-    print("Download target's sories") 
+    print("Download target's sories")
 
 
 printlogo()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('id', type=str, # var = id
+parser.add_argument('id', type=str,  # var = id
                     help='username')
 args = parser.parse_args()
 
-api = Osintgram(args.id) 
-
+api = Osintgram(args.id)
 
 while True:
     pc.printout("Run a command: ", pc.YELLOW)
     cmd = input()
-    if(cmd == "quit" or cmd == "exit"):
+    if (cmd == "quit" or cmd == "exit"):
         pc.printout("Goodbye!\n", pc.RED)
         sys.exit(0)
-    elif cmd == "list" or cmd=="help":
+    elif cmd == "list" or cmd == "help":
         cmdlist()
     elif cmd == "addrs":
         api.getAddrs()
@@ -100,13 +98,13 @@ while True:
     elif cmd == "captions":
         api.getCaptions()
     elif cmd == "mediatype":
-        api.getMediaType()    
+        api.getMediaType()
     elif cmd == "propic":
         api.getUserPropic()
     elif cmd == "stories":
         api.getUserStories()
     elif cmd == "target":
         api.changeTarget()
-    
+
     else:
         pc.printout("Unknown command\n", pc.RED)
