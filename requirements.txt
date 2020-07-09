@@ -1,4 +1,4 @@
-requests==2.20.0
+requests==2.24.0
 requests-toolbelt==0.9.1
 moviepy==0.2.2.11
 geopy==1.11
