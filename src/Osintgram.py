@@ -6,8 +6,8 @@ import urllib
 from geopy.geocoders import Nominatim
 from prettytable import PrettyTable
 
-import printcolors as pc
-from InstagramAPI import InstagramAPI
+from src import printcolors as pc
+from src.InstagramAPI import InstagramAPI
 
 
 class Osintgram:

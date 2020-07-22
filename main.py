@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from Osintgram import Osintgram
+from src.Osintgram import Osintgram
 import argparse
-import printcolors as pc
+from src import printcolors as pc
 import sys
 
 
