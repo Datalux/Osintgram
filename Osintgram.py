@@ -35,14 +35,24 @@ class Osintgram:
         self.__printTargetBanner__()
 
     def __getUsername__(self):
-        u = open("config/username.conf", "r").read()
-        u = u.replace("\n", "")
-        return u
+        try:
+            u = open("config/username.conf", "r").read()
+            u = u.replace("\n", "")
+            return u
+        except FileNotFoundError:
+            pc.printout("Error: file \"config/username.conf\" not found!", pc.RED)
+            pc.printout("\n")
+            sys.exit(0)
 
     def __getPassword__(self):
-        p = open("config/pw.conf", "r").read()
-        p = p.replace("\n", "")
-        return p
+        try:
+            p = open("config/pw.conf", "r").read()
+            p = p.replace("\n", "")
+            return p
+        except FileNotFoundError:
+            pc.printout("Error: file \"config/pw.conf\" not found!", pc.RED)
+            pc.printout("\n")
+            sys.exit(0)
 
     def __getAdressesTimes__(self, id):
         only_id = {}
