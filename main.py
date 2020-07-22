@@ -66,7 +66,7 @@ api = Osintgram(args.id)
 while True:
     pc.printout("Run a command: ", pc.YELLOW)
     cmd = input()
-    if (cmd == "quit" or cmd == "exit"):
+    if cmd == "quit" or cmd == "exit":
         pc.printout("Goodbye!\n", pc.RED)
         sys.exit(0)
     elif cmd == "list" or cmd == "help":
