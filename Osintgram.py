@@ -18,6 +18,7 @@ class Osintgram:
     is_private = True
     target = ""
     writeFile = False
+    jsonDump = False
 
     def __init__(self, target):
         u = self.__getUsername__()
@@ -766,3 +767,15 @@ class Osintgram:
         self.setTarget(line)
 
         return
+
+    def setJsonDump(self, flag):
+        if flag:
+            pc.printout("Export to JSON: ")
+            pc.printout("enabled", pc.GREEN)
+            pc.printout("\n")
+        else:
+            pc.printout("Export to JSON: ")
+            pc.printout("disabled", pc.RED)
+            pc.printout("\n")
+
+        self.jsonDump = flag
