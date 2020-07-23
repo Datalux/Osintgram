@@ -251,6 +251,15 @@ class Osintgram:
             file.write(str(like_counter) + " likes in " + str(counter) + " posts\n")
             file.close()
 
+        if self.jsonDump:
+            json_data = {
+                'like_counter': like_counter,
+                'posts': counter
+            }
+            json_file_name = "output/" + self.target + "_likes.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
+
         pc.printout(str(like_counter), pc.MAGENTA)
         pc.printout(" likes in " + str(counter) + " posts\n")
 
@@ -290,6 +299,15 @@ class Osintgram:
             file = open(file_name, "w")
             file.write(str(comment_counter) + " comments in " + str(counter) + " posts\n")
             file.close()
+
+        if self.jsonDump:
+            json_data = {
+                'comment_counter': comment_counter,
+                'posts': counter
+            }
+            json_file_name = "output/" + self.target + "_comments.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
 
         pc.printout(str(comment_counter), pc.MAGENTA)
         pc.printout(" comments in " + str(counter) + " posts\n")
@@ -348,14 +366,32 @@ class Osintgram:
 
             pc.printout("\nWoohoo! We found " + str(len(ids)) + " (" + str(counter) + ") users\n", pc.GREEN)
 
+            json_data = {}
+            tagged_list = []
+
             for i in range(len(ids)):
                 t.add_row([post[i], full_name[i], username[i], str(ids[i])])
+
+                if self.jsonDump:
+                    tag = {
+                        'post': post[i],
+                        'full_name': full_name[i],
+                        'username': username[i],
+                        'id': ids[i]
+                    }
+                    tagged_list.append(tag)
 
             if self.writeFile:
                 file_name = "output/" + self.target + "_tagged.txt"
                 file = open(file_name, "w")
                 file.write(str(t))
                 file.close()
+
+            if self.jsonDump:
+                json_data['tagged'] = tagged_list
+                json_file_name = "output/" + self.target + "_tagged.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
 
             print(t)
         else:
@@ -377,8 +413,20 @@ class Osintgram:
         pc.printout("\nWoohoo! We found " + str(len(addrs)) + " addresses\n", pc.GREEN)
 
         i = 1
+
+        json_data = {}
+        addrs_list = []
+
         for address, time in addrs:
             t.add_row([str(i), address, time])
+
+            if self.jsonDump:
+                addr = {
+                    'address': address,
+                    'time': time
+                }
+                addrs_list.append(addr)
+
             i = i + 1
 
         if self.writeFile:
@@ -386,6 +434,12 @@ class Osintgram:
             file = open(file_name, "w")
             file.write(str(t))
             file.close()
+
+        if self.jsonDump:
+            json_data['address'] = addrs_list
+            json_file_name = "output/" + self.target + "_addrs.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
 
         print(t)
 
@@ -402,14 +456,31 @@ class Osintgram:
         t.align["Username"] = "l"
         t.align["Full Name"] = "l"
 
+        json_data = {}
+        followers_list = []
+
         for i in followers:
             t.add_row([str(i['pk']), i['username'], i['full_name']])
+
+            if self.jsonDump:
+                follower = {
+                    'id': i['pk'],
+                    'username': i['username'],
+                    'full_name': i['full_name']
+                }
+                followers_list.append(follower)
 
         if self.writeFile:
             file_name = "output/" + self.target + "_followers.txt"
             file = open(file_name, "w")
             file.write(str(t))
             file.close()
+
+        if self.jsonDump:
+            json_data['followers'] = followers_list
+            json_file_name = "output/" + self.target + "_followers.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
 
         print(t)
 
@@ -426,14 +497,31 @@ class Osintgram:
         t.align["Username"] = "l"
         t.align["Full Name"] = "l"
 
+        json_data = {}
+        followings_list = []
+
         for i in followings:
             t.add_row([str(i['pk']), i['username'], i['full_name']])
+
+            if self.jsonDump:
+                follow = {
+                    'id': i['pk'],
+                    'username': i['username'],
+                    'full_name': i['full_name']
+                }
+                followings_list.append(follow)
 
         if self.writeFile:
             file_name = "output/" + self.target + "_followings.txt"
             file = open(file_name, "w")
             file.write(str(t))
             file.close()
+
+        if self.jsonDump:
+            json_data['followings'] = followings_list
+            json_file_name = "output/" + self.target + "_followings.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
 
         print(t)
 
@@ -484,6 +572,20 @@ class Osintgram:
             pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
             pc.printout(str(data['is_verified']) + '\n')
 
+            if self.jsonDump:
+                user = {
+                    'id': data['id'],
+                    'full_name': data['full_name'],
+                    'biography': data['biography'],
+                    'edge_followed_by': data['edge_followed_by']['count'],
+                    'edge_follow': data['edge_follow']['count'],
+                    'is_business_account': data['is_business_account'],
+                    'is_verified': data['is_verified']
+                }
+                json_file_name = "output/" + self.target + "_info.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(user, f)
+
         except urllib.error.HTTPError as err:
             if err.code == 404:
                 print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
@@ -507,9 +609,20 @@ class Osintgram:
             t.align["Photo"] = "l"
             t.align["Description"] = "l"
 
+            json_data = {}
+            descriptions_list = []
+
             for i in dd:
                 node = i.get('node')
-                t.add_row([str(count), node.get('accessibility_caption')])
+                descr = node.get('accessibility_caption')
+                t.add_row([str(count), descr])
+
+                if self.jsonDump:
+                    description = {
+                        'description': descr
+                    }
+                    descriptions_list.append(description)
+
                 count += 1
 
             if self.writeFile:
@@ -517,6 +630,12 @@ class Osintgram:
                 file = open(file_name, "w")
                 file.write(str(t))
                 file.close()
+
+            if self.jsonDump:
+                json_data['descriptions'] = descriptions_list
+                json_file_name = "output/" + self.target + "_descriptions.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
 
             print(t)
         else:
@@ -712,6 +831,15 @@ class Osintgram:
 
             pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) \
                         + " video posted by target\n", pc.GREEN)
+
+            if self.jsonDump:
+                json_data = {
+                    "photos": photo_counter,
+                    "videos": video_counter
+                }
+                json_file_name = "output/" + self.target + "_mediatype.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
 
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
