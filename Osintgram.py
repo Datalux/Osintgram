@@ -189,15 +189,30 @@ class Osintgram:
 
         sortE = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
 
+        file = None
+        json_data = {}
+        hashtags_list = []
+
         if self.writeFile:
             file_name = "output/" + self.target + "_hashtags.txt"
             file = open(file_name, "w")
-            for k, v in sortE:
-                file.write(str(v) + ". " + str(k.decode('utf-8')) + "\n")
-            file.close()
 
         for k, v in sortE:
-            print(str(v) + ". " + str(k.decode('utf-8')))
+            hashtag = str(k.decode('utf-8'))
+            print(str(v) + ". " + hashtag)
+            if self.writeFile:
+                file.write(str(v) + ". " + hashtag + "\n")
+            if self.jsonDump:
+                hashtags_list.append(hashtag)
+
+        if file is not None:
+            file.close()
+
+        if self.jsonDump:
+            json_data['hashtags'] = hashtags_list
+            json_file_name = "output/" + self.target + "_hashtags.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
 
     def getTotalLikes(self):
         if self.is_private:
