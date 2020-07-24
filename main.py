@@ -15,15 +15,20 @@ def printlogo():
     pc.printout("\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
     pc.printout("        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
     print('\n')
-    pc.printout("Version 0.3 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
+    pc.printout("Version 0.4 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
+    pc.printout("Type 'JSON=y' to export results to a JSON files like '<target username>_<command>.json (deafult is "
+                "disabled)'\n")
+    pc.printout("Type 'JSON=n' to disable exporting to files'\n")
 
 
 def cmdlist():
     pc.printout("FILE=y/n\t")
     print("Enable/disable output in a '<target username>_<command>.txt' file'")
+    pc.printout("JSON=y/n\t")
+    print("Enable/disable export in a '<target username>_<command>.json' file'")
     pc.printout("info\t\t")
     print("Get target info")
     pc.printout("addrs\t\t")
@@ -93,6 +98,10 @@ while True:
         api.setWriteFile(True)
     elif cmd == "FILE=n":
         api.setWriteFile(False)
+    elif cmd == "JSON=y":
+        api.setJsonDump(True)
+    elif cmd == "JSON=n":
+        api.setJsonDump(False)
     elif cmd == "photos":
         api.getUserPhoto()
     elif cmd == "captions":
