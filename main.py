@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from Osintgram import Osintgram
+from src.Osintgram import Osintgram
 import argparse
-import printcolors as pc
+from src import printcolors as pc
 import sys
 
 
@@ -71,7 +71,7 @@ api = Osintgram(args.id)
 while True:
     pc.printout("Run a command: ", pc.YELLOW)
     cmd = input()
-    if (cmd == "quit" or cmd == "exit"):
+    if cmd == "quit" or cmd == "exit":
         pc.printout("Goodbye!\n", pc.RED)
         sys.exit(0)
     elif cmd == "list" or cmd == "help":

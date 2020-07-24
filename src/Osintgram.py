@@ -6,8 +6,8 @@ import urllib
 from geopy.geocoders import Nominatim
 from prettytable import PrettyTable
 
-import printcolors as pc
-from InstagramAPI import InstagramAPI
+from src import printcolors as pc
+from src.InstagramAPI import InstagramAPI
 
 
 class Osintgram:
@@ -55,17 +55,17 @@ class Osintgram:
             pc.printout("\n")
             sys.exit(0)
 
-    def __getAdressesTimes__(self, id):
+    def __getAdressesTimes__(self, user_id):
         only_id = {}
         photos = []
         a = None
         while True:
             if a is None:
-                self.api.getUserFeed(id)
+                self.api.getUserFeed(user_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
             else:
-                self.api.getUserFeed(id, only_id['next_max_id'])
+                self.api.getUserFeed(user_id, only_id['next_max_id'])
                 only_id = self.api.LastJson
                 a = self.api.LastJson['items']
 
@@ -236,7 +236,7 @@ class Osintgram:
         a = None
         counter = 0
         while True:
-            if (a == None):
+            if a is None:
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
@@ -255,7 +255,7 @@ class Osintgram:
             if not 'next_max_id' in only_id:
                 break
 
-        if (self.writeFile):
+        if self.writeFile:
             file_name = "output/" + self.target + "_likes.txt"
             file = open(file_name, "w")
             file.write(str(like_counter) + " likes in " + str(counter) + " posts\n")
@@ -285,7 +285,7 @@ class Osintgram:
         a = None
         counter = 0
         while True:
-            if (a == None):
+            if a is None:
                 self.api.getUserFeed(self.target_id)
                 a = self.api.LastJson['items']
                 only_id = self.api.LastJson
@@ -658,13 +658,13 @@ class Osintgram:
 
         limit = -1
         pc.printout("How many photos you want to download (default all): ", pc.YELLOW)
-        l = input()
+        user_input = input()
         try:
-            if l == "":
+            if user_input == "":
                 pc.printout("Downloading all photos avaible...\n")
             else:
-                limit = int(l)
-                pc.printout("Downloading " + l + " photos...\n")
+                limit = int(user_input)
+                pc.printout("Downloading " + user_input + " photos...\n")
 
         except ValueError:
             pc.printout("Wrong value entered\n", pc.RED)
@@ -784,7 +784,7 @@ class Osintgram:
         return
 
     def getMediaType(self):
-        if (self.is_private):
+        if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
@@ -859,28 +859,28 @@ class Osintgram:
     def getUserPropic(self):
         try:
             content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+
+            data = json.load(content)
+
+            URL = ""
+
+            uurl = data["graphql"]["user"]
+            if "profile_pic_url_hd" in uurl:
+                URL = data["graphql"]["user"]["profile_pic_url_hd"]
+            else:
+                URL = data["graphql"]["user"]["profile_pic_url"]
+
+            if URL != "":
+                end = "output/" + self.target + "_propic.jpg"
+                urllib.request.urlretrieve(URL, end)
+                pc.printout("Target propic saved in output folder\n", pc.GREEN)
+
+            else:
+                pc.printout("Sorry! No results found :-(\n", pc.RED)
         except urllib.error.HTTPError as err:
             if err.code == 404:
                 print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
                 sys.exit(2)
-
-        data = json.load(content)
-
-        URL = ""
-
-        uurl = data["graphql"]["user"]
-        if "profile_pic_url_hd" in uurl:
-            URL = data["graphql"]["user"]["profile_pic_url_hd"]
-        else:
-            URL = data["graphql"]["user"]["profile_pic_url"]
-
-        if URL != "":
-            end = "output/" + self.target + "_propic.jpg"
-            urllib.request.urlretrieve(URL, end)
-            pc.printout("Target propic saved in output folder\n", pc.GREEN)
-
-        else:
-            pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def getUserStories(self):
         if self.is_private:
