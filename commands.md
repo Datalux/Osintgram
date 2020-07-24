@@ -24,12 +24,16 @@ Exit from Osintgram
 
 ### FILE
 Can set preference to save commands output in output folder. It save output in `<target username>_<command>.txt` file.
+
 With `FILE=y` you can enable saving in file.
+
 With `FILE=n` you can disable saving in file.
 
 ### JSON
 Can set preference to export commands output as JSON in output folder. It save output in `<target username>_<command>.JSON` file.
+
 With `JSON=y` you can enable JSON exporting.
+
 With `JSON=n` you can disable JSON exporting.
 
 ### info
