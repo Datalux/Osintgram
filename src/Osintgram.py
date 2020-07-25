@@ -26,6 +26,7 @@ class Osintgram:
         self.api = InstagramAPI(u, p)
         print("\nAttempt to login...")
         self.api.login()
+        self.api.login()
         self.setTarget(target)
 
     def setTarget(self, target):
@@ -414,44 +415,48 @@ class Osintgram:
 
         pc.printout("Searching for target address... this may take a few minutes...\n")
         addrs = self.__getAdressesTimes__(self.target_id)
-        t = PrettyTable()
 
-        t.field_names = ['Post', 'Address', 'time']
-        t.align["Post"] = "l"
-        t.align["Address"] = "l"
-        t.align["Time"] = "l"
-        pc.printout("\nWoohoo! We found " + str(len(addrs)) + " addresses\n", pc.GREEN)
+        if len(addrs) > 0:
+            t = PrettyTable()
 
-        i = 1
+            t.field_names = ['Post', 'Address', 'time']
+            t.align["Post"] = "l"
+            t.align["Address"] = "l"
+            t.align["Time"] = "l"
+            pc.printout("\nWoohoo! We found " + str(len(addrs)) + " addresses\n", pc.GREEN)
 
-        json_data = {}
-        addrs_list = []
+            i = 1
 
-        for address, time in addrs:
-            t.add_row([str(i), address, time])
+            json_data = {}
+            addrs_list = []
+
+            for address, time in addrs:
+                t.add_row([str(i), address, time])
+
+                if self.jsonDump:
+                    addr = {
+                        'address': address,
+                        'time': time
+                    }
+                    addrs_list.append(addr)
+
+                i = i + 1
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_addrs.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
 
             if self.jsonDump:
-                addr = {
-                    'address': address,
-                    'time': time
-                }
-                addrs_list.append(addr)
+                json_data['address'] = addrs_list
+                json_file_name = "output/" + self.target + "_addrs.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
 
-            i = i + 1
-
-        if self.writeFile:
-            file_name = "output/" + self.target + "_addrs.txt"
-            file = open(file_name, "w")
-            file.write(str(t))
-            file.close()
-
-        if self.jsonDump:
-            json_data['address'] = addrs_list
-            json_file_name = "output/" + self.target + "_addrs.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
-
-        print(t)
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def getFollowers(self):
         if self.is_private:
