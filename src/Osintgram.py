@@ -71,7 +71,7 @@ class Osintgram:
 
             photos.append(a)
 
-            if not 'next_max_id' in only_id:
+            if 'next_max_id' not in only_id:
                 break
 
         locations = {}
@@ -181,7 +181,7 @@ class Osintgram:
             except AttributeError:
                 pass
 
-            if not 'next_max_id' in only_id:
+            if 'next_max_id' not in only_id:
                 break
 
         hashtag_counter = {}
@@ -252,7 +252,7 @@ class Osintgram:
             except AttributeError:
                 pass
 
-            if not 'next_max_id' in only_id:
+            if 'next_max_id' not in only_id:
                 break
 
         if self.writeFile:
@@ -301,7 +301,7 @@ class Osintgram:
             except AttributeError:
                 pass
 
-            if not 'next_max_id' in only_id:
+            if 'next_max_id' not in only_id:
                 break
 
         if self.writeFile:
@@ -714,7 +714,7 @@ class Osintgram:
             except KeyError:
                 pass
 
-            if not 'next_max_id' in only_id:
+            if 'next_max_id' not in only_id:
                 break
 
         sys.stdout.write(" photos")
@@ -759,7 +759,7 @@ class Osintgram:
             except KeyError:
                 pass
 
-            if not 'next_max_id' in only_id:
+            if 'next_max_id' not in only_id:
                 break
 
         sys.stdout.write(" captions")
@@ -824,7 +824,7 @@ class Osintgram:
             except KeyError:
                 pass
 
-            if not 'next_max_id' in only_id:
+            if 'next_max_id' not in only_id:
                 break
 
         sys.stdout.write(" posts")
