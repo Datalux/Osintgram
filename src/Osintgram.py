@@ -737,6 +737,9 @@ class Osintgram:
         a = None
         counter = 0
         captions = []
+
+        json_data = {}
+
         while True:
             if a is None:
                 self.api.getUserFeed(self.target_id)
@@ -773,15 +776,26 @@ class Osintgram:
         if counter > 0:
             pc.printout("\nWoohoo! We found " + str(counter) + " captions\n", pc.GREEN)
 
+            file = None
+
             if self.writeFile:
                 file_name = "output/" + self.target + "_captions.txt"
                 file = open(file_name, "w")
-                for s in captions:
-                    file.write(s + "\n")
-                file.close()
 
             for s in captions:
                 print(s + "\n")
+
+                if self.writeFile:
+                    file.write(s + "\n")
+
+            if self.jsonDump:
+                json_data['captions'] = captions
+                json_file_name = "output/" + self.target + "_followings.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            if file is not None:
+                file.close()
 
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
