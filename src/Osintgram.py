@@ -25,9 +25,11 @@ class Osintgram:
         p = self.__getPassword__()
         self.api = InstagramAPI(u, p)
         print("\nAttempt to login...")
-        self.api.login()
-        self.api.login()
-        self.setTarget(target)
+        if self.api.login():
+            self.setTarget(target)
+        else:
+            print("Login failed!")
+            sys.exit(0)
 
     def setTarget(self, target):
         self.target = target

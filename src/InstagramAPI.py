@@ -1153,6 +1153,7 @@ class InstagramAPI:
                 self.LastResponse = response
                 self.LastJson = json.loads(response.text)
                 # print(self.LastJson)
+                self.errorHandler(self.LastJson)
             except:
                 pass
             return False
@@ -1258,3 +1259,9 @@ class InstagramAPI:
             except KeyError as e:
                 break
         return liked_items
+
+    def errorHandler(self, response):
+        if response['error_type'] == "checkpoint_challenge_required":
+            print("Ops... Challenge error: Instagram want check your access. Please follow this link: " + response['challenge']['url'])
+        elif response['error_type'] == "rate_limit_error":
+            print("Sorry... Instagram limits your requests. Please wait a few minutes before you try again.")
