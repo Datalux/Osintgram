@@ -20,9 +20,10 @@ class Osintgram:
     writeFile = False
     jsonDump = False
 
-    def __init__(self, target, isJson):
+    def __init__(self, target, isFile, isJson):
         u = self.__getUsername__()
         p = self.__getPassword__()
+        self.writeFile = isFile
         self.jsonDump = isJson
         self.api = InstagramAPI(u, p)
         print("\nAttempt to login...")
