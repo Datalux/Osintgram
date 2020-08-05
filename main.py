@@ -61,12 +61,15 @@ def cmdlist():
 
 printlogo()
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
                     help='username')
+parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
+parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
+
 args = parser.parse_args()
 
-api = Osintgram(args.id)
+api = Osintgram(args.id, args.file, args.json)
 
 while True:
     pc.printout("Run a command: ", pc.YELLOW)
