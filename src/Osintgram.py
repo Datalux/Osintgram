@@ -115,7 +115,6 @@ class Osintgram:
         pc.printout("Insert new target username: ", pc.YELLOW)
         line = input()
         self.setTarget(line)
-
         return
 
     def setJsonDump(self, flag):
@@ -129,6 +128,21 @@ class Osintgram:
             pc.printout("\n")
 
         self.jsonDump = flag
+
+    def __get_feed__(self):
+        data = []
+
+        result = self.api.user_feed(str(self.target_id))
+        data.extend(result.get('items', []))
+
+        next_max_id = result.get('next_max_id')
+        while next_max_id:
+            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
+            data.extend(results.get('items', []))
+            next_max_id = results.get('next_max_id')
+
+        return data
+
 
 
     def getFollowings(self):
@@ -248,14 +262,7 @@ class Osintgram:
         counter = 1
         texts = []
 
-        data = self.api.user_feed(str(self.target_id))
-        texts.extend(data.get('items', []))
-
-        next_max_id = data.get('next_max_id')
-        while next_max_id:
-            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
-            texts.extend(results.get('items', []))
-            next_max_id = results.get('next_max_id')
+        data = self.__get_feed__()
 
         for post in texts:
             if post['caption'] is not None:
@@ -350,18 +357,10 @@ class Osintgram:
 
         pc.printout("Searching for target total likes...\n")
 
-        data = []
         like_counter = 0
         posts = 0
 
-        result = self.api.user_feed(str(self.target_id))
-        data.extend(result.get('items', []))
-
-        next_max_id = result.get('next_max_id')
-        while next_max_id:
-            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
-            data.extend(results.get('items', []))
-            next_max_id = results.get('next_max_id')
+        data = self.__get_feed__()
 
         for post in data:
             like_counter += post['like_count']
@@ -391,18 +390,10 @@ class Osintgram:
 
         pc.printout("Searching for target total comments...\n")
 
-        data = []
         comments_counter = 0
         posts = 0
 
-        result = self.api.user_feed(str(self.target_id))
-        data.extend(result.get('items', []))
-
-        next_max_id = result.get('next_max_id')
-        while next_max_id:
-            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
-            data.extend(results.get('items', []))
-            next_max_id = results.get('next_max_id')
+        data = self.__get_feed__()
 
         for post in data:
             comments_counter += post['comment_count']
@@ -432,19 +423,11 @@ class Osintgram:
 
         pc.printout("Searching for target captions...\n")
 
-        data = []
         counter = 0
         photo_counter = 0
         video_counter = 0
 
-        result = self.api.user_feed(str(self.target_id))
-        data.extend(result.get('items', []))
-
-        next_max_id = result.get('next_max_id')
-        while next_max_id:
-            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
-            data.extend(results.get('items', []))
-            next_max_id = results.get('next_max_id')
+        data = self.__get_feed__()
 
         for post in data:
             if "media_type" in post:
@@ -490,16 +473,7 @@ class Osintgram:
 
         pc.printout("Searching for target localizations...\n")
 
-        data = []
-
-        result = self.api.user_feed(str(self.target_id))
-        data.extend(result.get('items', []))
-
-        next_max_id = result.get('next_max_id')
-        while next_max_id:
-            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
-            data.extend(results.get('items', []))
-            next_max_id = results.get('next_max_id')
+        data = self.__get_feed__()
 
         locations = {}
 
@@ -663,16 +637,7 @@ class Osintgram:
         post = []
         counter = 1
 
-        data = []
-
-        result = self.api.user_feed(str(self.target_id))
-        data.extend(result.get('items', []))
-
-        next_max_id = result.get('next_max_id')
-        while next_max_id:
-            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
-            data.extend(results.get('items', []))
-            next_max_id = results.get('next_max_id')
+        data = self.__get_feed__()
 
         try:
             for i in data:
@@ -769,17 +734,8 @@ class Osintgram:
 
         captions = []
 
-        data = []
+        data = self.__get_feed__()
         counter = 0
-
-        result = self.api.user_feed(str(self.target_id))
-        data.extend(result.get('items', []))
-
-        next_max_id = result.get('next_max_id')
-        while next_max_id:
-            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
-            data.extend(results.get('items', []))
-            next_max_id = results.get('next_max_id')
 
         try:
             for item in data:
