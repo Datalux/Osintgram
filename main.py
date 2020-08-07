@@ -60,9 +60,11 @@ def cmdlist():
     pc.printout("target\t\t")
     print("Set new target")
 
+
 printlogo()
 
-parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell to perform analysis on Instagram account of any users by its nickname ')
+parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell '
+                                             'to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
                     help='username')
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
