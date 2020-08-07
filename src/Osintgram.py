@@ -71,6 +71,20 @@ class Osintgram:
 
         return data
 
+    def __get_comments__(self, media_id):
+        comments = []
+
+        result = self.api.media_comments(str(media_id))
+        comments.extend(result.get('comments', []))
+
+        next_max_id = result.get('next_max_id')
+        while next_max_id:
+            results = self.api.media_comments(str(media_id), max_id=next_max_id)
+            comments.extend(results.get('comments', []))
+            next_max_id = results.get('next_max_id')
+
+        return comments
+
     def __printTargetBanner__(self):
         pc.printout("\nLogged as ", pc.GREEN)
         pc.printout(self.api.username, pc.CYAN)
@@ -379,40 +393,43 @@ class Osintgram:
                         hashtags.append(s.encode('UTF-8'))
                         counter += 1
 
-        hashtag_counter = {}
+        if len(hashtags) > 0:
+            hashtag_counter = {}
 
-        for i in hashtags:
-            if i in hashtag_counter:
-                hashtag_counter[i] += 1
-            else:
-                hashtag_counter[i] = 1
+            for i in hashtags:
+                if i in hashtag_counter:
+                    hashtag_counter[i] += 1
+                else:
+                    hashtag_counter[i] = 1
 
-        ssort = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
+            ssort = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
 
-        file = None
-        json_data = {}
-        hashtags_list = []
+            file = None
+            json_data = {}
+            hashtags_list = []
 
-        if self.writeFile:
-            file_name = "output/" + self.target + "_hashtags.txt"
-            file = open(file_name, "w")
-
-        for k, v in ssort:
-            hashtag = str(k.decode('utf-8'))
-            print(str(v) + ". " + hashtag)
             if self.writeFile:
-                file.write(str(v) + ". " + hashtag + "\n")
+                file_name = "output/" + self.target + "_hashtags.txt"
+                file = open(file_name, "w")
+
+            for k, v in ssort:
+                hashtag = str(k.decode('utf-8'))
+                print(str(v) + ". " + hashtag)
+                if self.writeFile:
+                    file.write(str(v) + ". " + hashtag + "\n")
+                if self.jsonDump:
+                    hashtags_list.append(hashtag)
+
+            if file is not None:
+                file.close()
+
             if self.jsonDump:
-                hashtags_list.append(hashtag)
-
-        if file is not None:
-            file.close()
-
-        if self.jsonDump:
-            json_data['hashtags'] = hashtags_list
-            json_file_name = "output/" + self.target + "_hashtags.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
+                json_data['hashtags'] = hashtags_list
+                json_file_name = "output/" + self.target + "_hashtags.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user_info(self):
         try:
@@ -536,6 +553,65 @@ class Osintgram:
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
 
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_people_who_commented(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for users who commented...\n")
+
+        data = self.__get_feed__()
+        users = []
+
+        for post in data:
+            comments = self.__get_comments__(post['id'])
+            for comment in comments:
+                if not any(u['id'] == comment['user']['pk'] for u in users):
+                    user = {
+                        'id': comment['user']['pk'],
+                        'username': comment['user']['username'],
+                        'full_name': comment['user']['full_name'],
+                        'counter': 1
+                    }
+                    users.append(user)
+                else:
+                    for user in users:
+                        if user['id'] == comment['user']['pk']:
+                            user['counter'] += 1
+                            break
+
+        if len(users) > 0:
+            ssort = sorted(users, key=lambda value: value['counter'], reverse=True)
+
+            json_data = {}
+
+            t = PrettyTable()
+
+            t.field_names = ['Comments', 'ID', 'Username', 'Full Name']
+            t.align["Comments"] = "l"
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+
+            for u in ssort:
+                t.add_row([str(u['counter']), u['id'], u['username'], u['full_name']])
+
+            print(t)
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_users_who_commented.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['users_who_commented'] = ssort
+                json_file_name = "output/" + self.target + "_users_who_commented.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 

@@ -59,6 +59,8 @@ def cmdlist():
     print("Get list of users tagged by target")
     pc.printout("target\t\t")
     print("Set new target")
+    pc.printout("wcommented\t\t")
+    print("Get a list of user who commented target's photos")
 
 
 printlogo()
@@ -112,6 +114,8 @@ while True:
         api.get_people_tagged_by_user()
     elif cmd == "target":
         api.change_target()
+    elif cmd == "wcommented":
+        api.get_people_who_commented()
     elif cmd == "FILE=y":
         api.set_write_file(True)
     elif cmd == "FILE=n":
