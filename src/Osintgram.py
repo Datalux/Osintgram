@@ -65,7 +65,7 @@ class Osintgram:
 
     def setTarget(self, target):
         self.target = target
-        user = self.getUser(target)
+        user = self.get_user(target)
         self.target_id = user['id']
         self.is_private = user['is_private']
         self.__printTargetBanner__()
@@ -90,45 +90,6 @@ class Osintgram:
             pc.printout("\n")
             sys.exit(0)
 
-    def __printTargetBanner__(self):
-        pc.printout("\nLogged as ", pc.GREEN)
-        pc.printout(self.api.username, pc.CYAN)
-        pc.printout(" (" + str(self.api.authenticated_user_id) + ") ")
-        pc.printout("target: ", pc.GREEN)
-        pc.printout(str(self.target), pc.CYAN)
-        pc.printout(" (private: " + str(self.is_private) + ")")
-        print('\n')
-
-    def setWriteFile(self, flag):
-        if flag:
-            pc.printout("Write to file: ")
-            pc.printout("enabled", pc.GREEN)
-            pc.printout("\n")
-        else:
-            pc.printout("Write to file: ")
-            pc.printout("disabled", pc.RED)
-            pc.printout("\n")
-
-        self.writeFile = flag
-
-    def changeTarget(self):
-        pc.printout("Insert new target username: ", pc.YELLOW)
-        line = input()
-        self.setTarget(line)
-        return
-
-    def setJsonDump(self, flag):
-        if flag:
-            pc.printout("Export to JSON: ")
-            pc.printout("enabled", pc.GREEN)
-            pc.printout("\n")
-        else:
-            pc.printout("Export to JSON: ")
-            pc.printout("disabled", pc.RED)
-            pc.printout("\n")
-
-        self.jsonDump = flag
-
     def __get_feed__(self):
         data = []
 
@@ -143,328 +104,25 @@ class Osintgram:
 
         return data
 
-    def getFollowings(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
+    def __printTargetBanner__(self):
+        pc.printout("\nLogged as ", pc.GREEN)
+        pc.printout(self.api.username, pc.CYAN)
+        pc.printout(" (" + str(self.api.authenticated_user_id) + ") ")
+        pc.printout("target: ", pc.GREEN)
+        pc.printout(str(self.target), pc.CYAN)
+        pc.printout(" (private: " + str(self.is_private) + ")")
+        print('\n')
 
-        pc.printout("Searching for target followings...\n")
+    def change_target(self):
+        pc.printout("Insert new target username: ", pc.YELLOW)
+        line = input()
+        self.setTarget(line)
+        return
 
-        followings = []
 
-        rank_token = AppClient.generate_uuid()
-        data = self.api.user_following(str(self.target_id), rank_token=rank_token)
 
-        for user in data['users']:
-            u = {
-                'id': user['pk'],
-                'username': user['username'],
-                'full_name': user['full_name']
-            }
-            followings.append(u)
 
-        t = PrettyTable(['ID', 'Username', 'Full Name'])
-        t.align["ID"] = "l"
-        t.align["Username"] = "l"
-        t.align["Full Name"] = "l"
-
-        json_data = {}
-        followings_list = []
-
-        for node in followings:
-            t.add_row([str(node['id']), node['username'], node['full_name']])
-
-            if self.jsonDump:
-                follow = {
-                    'id': node['id'],
-                    'username': node['username'],
-                    'full_name': node['full_name']
-                }
-                followings_list.append(follow)
-
-        if self.writeFile:
-            file_name = "output/" + self.target + "_followings.txt"
-            file = open(file_name, "w")
-            file.write(str(t))
-            file.close()
-
-        if self.jsonDump:
-            json_data['followings'] = followings_list
-            json_file_name = "output/" + self.target + "_followings.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
-
-        print(t)
-
-    def getFollowers(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
-
-        pc.printout("Searching for target followers...\n")
-
-        followers = []
-
-        rank_token = AppClient.generate_uuid()
-        data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
-
-        for user in data['users']:
-            u = {
-                'id': user['pk'],
-                'username': user['username'],
-                'full_name': user['full_name']
-            }
-            followers.append(u)
-
-        t = PrettyTable(['ID', 'Username', 'Full Name'])
-        t.align["ID"] = "l"
-        t.align["Username"] = "l"
-        t.align["Full Name"] = "l"
-
-        json_data = {}
-        followings_list = []
-
-        for node in followers:
-            t.add_row([str(node['id']), node['username'], node['full_name']])
-
-            if self.jsonDump:
-                follow = {
-                    'id': node['id'],
-                    'username': node['username'],
-                    'full_name': node['full_name']
-                }
-                followings_list.append(follow)
-
-        if self.writeFile:
-            file_name = "output/" + self.target + "_followers.txt"
-            file = open(file_name, "w")
-            file.write(str(t))
-            file.close()
-
-        if self.jsonDump:
-            json_data['followers'] = followers
-            json_file_name = "output/" + self.target + "_followers.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
-
-        print(t)
-
-    def getHashtags(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
-
-        pc.printout("Searching for target hashtags...\n")
-
-        hashtags = []
-        counter = 1
-        texts = []
-
-        data = self.__get_feed__()
-
-        for post in texts:
-            if post['caption'] is not None:
-                caption = post['caption']['text']
-                for s in caption.split():
-                    if s.startswith('#'):
-                        hashtags.append(s.encode('UTF-8'))
-                        counter += 1
-
-        hashtag_counter = {}
-
-        for i in hashtags:
-            if i in hashtag_counter:
-                hashtag_counter[i] += 1
-            else:
-                hashtag_counter[i] = 1
-
-        ssort = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
-
-        file = None
-        json_data = {}
-        hashtags_list = []
-
-        if self.writeFile:
-            file_name = "output/" + self.target + "_hashtags.txt"
-            file = open(file_name, "w")
-
-        for k, v in ssort:
-            hashtag = str(k.decode('utf-8'))
-            print(str(v) + ". " + hashtag)
-            if self.writeFile:
-                file.write(str(v) + ". " + hashtag + "\n")
-            if self.jsonDump:
-                hashtags_list.append(hashtag)
-
-        if file is not None:
-            file.close()
-
-        if self.jsonDump:
-            json_data['hashtags'] = hashtags_list
-            json_file_name = "output/" + self.target + "_hashtags.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
-
-    def getUserInfo(self):
-        try:
-            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
-            data = json.load(content)
-            data = data['graphql']['user']
-
-            pc.printout("[ID] ", pc.GREEN)
-            pc.printout(str(data['id']) + '\n')
-            pc.printout("[FULL NAME] ", pc.RED)
-            pc.printout(str(data['full_name']) + '\n')
-            pc.printout("[BIOGRAPHY] ", pc.CYAN)
-            pc.printout(str(data['biography']) + '\n')
-            pc.printout("[FOLLOWED] ", pc.GREEN)
-            pc.printout(str(data['edge_followed_by']['count']) + '\n')
-            pc.printout("[FOLLOW] ", pc.BLUE)
-            pc.printout(str(data['edge_follow']['count']) + '\n')
-            pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
-            pc.printout(str(data['is_business_account']) + '\n')
-            if data['is_business_account']:
-                pc.printout("[BUSINESS CATEGORY] ")
-                pc.printout(str(data['business_category_name']) + '\n')
-            pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
-            pc.printout(str(data['is_verified']) + '\n')
-
-            if self.jsonDump:
-                user = {
-                    'id': data['id'],
-                    'full_name': data['full_name'],
-                    'biography': data['biography'],
-                    'edge_followed_by': data['edge_followed_by']['count'],
-                    'edge_follow': data['edge_follow']['count'],
-                    'is_business_account': data['is_business_account'],
-                    'is_verified': data['is_verified']
-                }
-                json_file_name = "output/" + self.target + "_info.json"
-                with open(json_file_name, 'w') as f:
-                    json.dump(user, f)
-
-        except urllib.error.HTTPError as err:
-            if err.code == 404:
-                print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
-                sys.exit(2)
-
-    def getTotalLikes(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
-
-        pc.printout("Searching for target total likes...\n")
-
-        like_counter = 0
-        posts = 0
-
-        data = self.__get_feed__()
-
-        for post in data:
-            like_counter += post['like_count']
-
-        if self.writeFile:
-            file_name = "output/" + self.target + "_likes.txt"
-            file = open(file_name, "w")
-            file.write(str(like_counter) + " likes in " + str(like_counter) + " posts\n")
-            file.close()
-
-        if self.jsonDump:
-            json_data = {
-                'like_counter': like_counter,
-                'posts': like_counter
-            }
-            json_file_name = "output/" + self.target + "_likes.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
-
-        pc.printout(str(like_counter), pc.MAGENTA)
-        pc.printout(" likes in " + str(posts) + " posts\n")
-
-    def getTotalComments(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
-
-        pc.printout("Searching for target total comments...\n")
-
-        comments_counter = 0
-        posts = 0
-
-        data = self.__get_feed__()
-
-        for post in data:
-            comments_counter += post['comment_count']
-
-        if self.writeFile:
-            file_name = "output/" + self.target + "_comments.txt"
-            file = open(file_name, "w")
-            file.write(str(comments_counter) + " comments in " + str(posts) + " posts\n")
-            file.close()
-
-        if self.jsonDump:
-            json_data = {
-                'comment_counter': comments_counter,
-                'posts': posts
-            }
-            json_file_name = "output/" + self.target + "_comments.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
-
-        pc.printout(str(comments_counter), pc.MAGENTA)
-        pc.printout(" comments in " + str(posts) + " posts\n")
-
-    def getMediaType(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
-
-        pc.printout("Searching for target captions...\n")
-
-        counter = 0
-        photo_counter = 0
-        video_counter = 0
-
-        data = self.__get_feed__()
-
-        for post in data:
-            if "media_type" in post:
-                if post["media_type"] == 1:
-                    photo_counter = photo_counter + 1
-                elif post["media_type"] == 2:
-                    video_counter = video_counter + 1
-                counter = counter + 1
-                sys.stdout.write("\rChecked %i" % counter)
-                sys.stdout.flush()
-
-        sys.stdout.write(" posts")
-        sys.stdout.flush()
-
-        if counter > 0:
-
-            if self.writeFile:
-                file_name = "output/" + self.target + "_mediatype.txt"
-                file = open(file_name, "w")
-                file.write(str(photo_counter) + " photos and " + str(video_counter) \
-                           + " video posted by target\n")
-                file.close()
-
-            pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) \
-                        + " video posted by target\n", pc.GREEN)
-
-            if self.jsonDump:
-                json_data = {
-                    "photos": photo_counter,
-                    "videos": video_counter
-                }
-                json_file_name = "output/" + self.target + "_mediatype.json"
-                with open(json_file_name, 'w') as f:
-                    json.dump(json_data, f)
-
-        else:
-            pc.printout("Sorry! No results found :-(\n", pc.RED)
-
-    def getAddrs(self):
+    def get_addrs(self):
         if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
@@ -531,7 +189,437 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
-    def getUserPhoto(self):
+    def get_captions(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for target captions...\n")
+
+        captions = []
+
+        data = self.__get_feed__()
+        counter = 0
+
+        try:
+            for item in data:
+                if "caption" in item:
+                    if item["caption"] is not None:
+                        text = item["caption"]["text"]
+                        captions.append(text)
+                        counter = counter + 1
+                        sys.stdout.write("\rFound %i" % counter)
+                        sys.stdout.flush()
+
+        except AttributeError:
+            pass
+
+        except KeyError:
+            pass
+
+        json_data = {}
+
+        if counter > 0:
+            pc.printout("\nWoohoo! We found " + str(counter) + " captions\n", pc.GREEN)
+
+            file = None
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_captions.txt"
+                file = open(file_name, "w")
+
+            for s in captions:
+                print(s + "\n")
+
+                if self.writeFile:
+                    file.write(s + "\n")
+
+            if self.jsonDump:
+                json_data['captions'] = captions
+                json_file_name = "output/" + self.target + "_followings.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            if file is not None:
+                file.close()
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+        return
+
+    def get_total_comments(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for target total comments...\n")
+
+        comments_counter = 0
+        posts = 0
+
+        data = self.__get_feed__()
+
+        for post in data:
+            comments_counter += post['comment_count']
+
+        if self.writeFile:
+            file_name = "output/" + self.target + "_comments.txt"
+            file = open(file_name, "w")
+            file.write(str(comments_counter) + " comments in " + str(posts) + " posts\n")
+            file.close()
+
+        if self.jsonDump:
+            json_data = {
+                'comment_counter': comments_counter,
+                'posts': posts
+            }
+            json_file_name = "output/" + self.target + "_comments.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
+
+        pc.printout(str(comments_counter), pc.MAGENTA)
+        pc.printout(" comments in " + str(posts) + " posts\n")
+
+    def get_followers(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for target followers...\n")
+
+        followers = []
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
+
+        for user in data['users']:
+            u = {
+                'id': user['pk'],
+                'username': user['username'],
+                'full_name': user['full_name']
+            }
+            followers.append(u)
+
+        t = PrettyTable(['ID', 'Username', 'Full Name'])
+        t.align["ID"] = "l"
+        t.align["Username"] = "l"
+        t.align["Full Name"] = "l"
+
+        json_data = {}
+        followings_list = []
+
+        for node in followers:
+            t.add_row([str(node['id']), node['username'], node['full_name']])
+
+            if self.jsonDump:
+                follow = {
+                    'id': node['id'],
+                    'username': node['username'],
+                    'full_name': node['full_name']
+                }
+                followings_list.append(follow)
+
+        if self.writeFile:
+            file_name = "output/" + self.target + "_followers.txt"
+            file = open(file_name, "w")
+            file.write(str(t))
+            file.close()
+
+        if self.jsonDump:
+            json_data['followers'] = followers
+            json_file_name = "output/" + self.target + "_followers.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
+
+        print(t)
+
+    def get_followings(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for target followings...\n")
+
+        followings = []
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_following(str(self.target_id), rank_token=rank_token)
+
+        for user in data['users']:
+            u = {
+                'id': user['pk'],
+                'username': user['username'],
+                'full_name': user['full_name']
+            }
+            followings.append(u)
+
+        t = PrettyTable(['ID', 'Username', 'Full Name'])
+        t.align["ID"] = "l"
+        t.align["Username"] = "l"
+        t.align["Full Name"] = "l"
+
+        json_data = {}
+        followings_list = []
+
+        for node in followings:
+            t.add_row([str(node['id']), node['username'], node['full_name']])
+
+            if self.jsonDump:
+                follow = {
+                    'id': node['id'],
+                    'username': node['username'],
+                    'full_name': node['full_name']
+                }
+                followings_list.append(follow)
+
+        if self.writeFile:
+            file_name = "output/" + self.target + "_followings.txt"
+            file = open(file_name, "w")
+            file.write(str(t))
+            file.close()
+
+        if self.jsonDump:
+            json_data['followings'] = followings_list
+            json_file_name = "output/" + self.target + "_followings.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
+
+        print(t)
+
+    def get_hashtags(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for target hashtags...\n")
+
+        hashtags = []
+        counter = 1
+        texts = []
+
+        data = self.__get_feed__()
+
+        for post in texts:
+            if post['caption'] is not None:
+                caption = post['caption']['text']
+                for s in caption.split():
+                    if s.startswith('#'):
+                        hashtags.append(s.encode('UTF-8'))
+                        counter += 1
+
+        hashtag_counter = {}
+
+        for i in hashtags:
+            if i in hashtag_counter:
+                hashtag_counter[i] += 1
+            else:
+                hashtag_counter[i] = 1
+
+        ssort = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
+
+        file = None
+        json_data = {}
+        hashtags_list = []
+
+        if self.writeFile:
+            file_name = "output/" + self.target + "_hashtags.txt"
+            file = open(file_name, "w")
+
+        for k, v in ssort:
+            hashtag = str(k.decode('utf-8'))
+            print(str(v) + ". " + hashtag)
+            if self.writeFile:
+                file.write(str(v) + ". " + hashtag + "\n")
+            if self.jsonDump:
+                hashtags_list.append(hashtag)
+
+        if file is not None:
+            file.close()
+
+        if self.jsonDump:
+            json_data['hashtags'] = hashtags_list
+            json_file_name = "output/" + self.target + "_hashtags.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
+
+    def get_user_info(self):
+        try:
+            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+            data = json.load(content)
+            data = data['graphql']['user']
+
+            pc.printout("[ID] ", pc.GREEN)
+            pc.printout(str(data['id']) + '\n')
+            pc.printout("[FULL NAME] ", pc.RED)
+            pc.printout(str(data['full_name']) + '\n')
+            pc.printout("[BIOGRAPHY] ", pc.CYAN)
+            pc.printout(str(data['biography']) + '\n')
+            pc.printout("[FOLLOWED] ", pc.GREEN)
+            pc.printout(str(data['edge_followed_by']['count']) + '\n')
+            pc.printout("[FOLLOW] ", pc.BLUE)
+            pc.printout(str(data['edge_follow']['count']) + '\n')
+            pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
+            pc.printout(str(data['is_business_account']) + '\n')
+            if data['is_business_account']:
+                pc.printout("[BUSINESS CATEGORY] ")
+                pc.printout(str(data['business_category_name']) + '\n')
+            pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
+            pc.printout(str(data['is_verified']) + '\n')
+
+            if self.jsonDump:
+                user = {
+                    'id': data['id'],
+                    'full_name': data['full_name'],
+                    'biography': data['biography'],
+                    'edge_followed_by': data['edge_followed_by']['count'],
+                    'edge_follow': data['edge_follow']['count'],
+                    'is_business_account': data['is_business_account'],
+                    'is_verified': data['is_verified']
+                }
+                json_file_name = "output/" + self.target + "_info.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(user, f)
+
+        except urllib.error.HTTPError as err:
+            if err.code == 404:
+                print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
+                sys.exit(2)
+
+    def get_total_likes(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for target total likes...\n")
+
+        like_counter = 0
+        posts = 0
+
+        data = self.__get_feed__()
+
+        for post in data:
+            like_counter += post['like_count']
+
+        if self.writeFile:
+            file_name = "output/" + self.target + "_likes.txt"
+            file = open(file_name, "w")
+            file.write(str(like_counter) + " likes in " + str(like_counter) + " posts\n")
+            file.close()
+
+        if self.jsonDump:
+            json_data = {
+                'like_counter': like_counter,
+                'posts': like_counter
+            }
+            json_file_name = "output/" + self.target + "_likes.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
+
+        pc.printout(str(like_counter), pc.MAGENTA)
+        pc.printout(" likes in " + str(posts) + " posts\n")
+
+    def get_media_type(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for target captions...\n")
+
+        counter = 0
+        photo_counter = 0
+        video_counter = 0
+
+        data = self.__get_feed__()
+
+        for post in data:
+            if "media_type" in post:
+                if post["media_type"] == 1:
+                    photo_counter = photo_counter + 1
+                elif post["media_type"] == 2:
+                    video_counter = video_counter + 1
+                counter = counter + 1
+                sys.stdout.write("\rChecked %i" % counter)
+                sys.stdout.flush()
+
+        sys.stdout.write(" posts")
+        sys.stdout.flush()
+
+        if counter > 0:
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_mediatype.txt"
+                file = open(file_name, "w")
+                file.write(str(photo_counter) + " photos and " + str(video_counter) \
+                           + " video posted by target\n")
+                file.close()
+
+            pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) \
+                        + " video posted by target\n", pc.GREEN)
+
+            if self.jsonDump:
+                json_data = {
+                    "photos": photo_counter,
+                    "videos": video_counter
+                }
+                json_file_name = "output/" + self.target + "_mediatype.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_photo_description(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+        data = json.load(content)
+        dd = data['graphql']['user']['edge_owner_to_timeline_media']['edges']
+
+        if len(dd) > 0:
+            pc.printout("\nWoohoo! We found " + str(len(dd)) + " descriptions\n", pc.GREEN)
+
+            count = 1
+
+            t = PrettyTable(['Photo', 'Description'])
+            t.align["Photo"] = "l"
+            t.align["Description"] = "l"
+
+            json_data = {}
+            descriptions_list = []
+
+            for i in dd:
+                node = i.get('node')
+                descr = node.get('accessibility_caption')
+                t.add_row([str(count), descr])
+
+                if self.jsonDump:
+                    description = {
+                        'description': descr
+                    }
+                    descriptions_list.append(description)
+
+                count += 1
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_photodes.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['descriptions'] = descriptions_list
+                json_file_name = "output/" + self.target + "_descriptions.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_user_photo(self):
         if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
@@ -600,7 +688,7 @@ class Osintgram:
 
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
 
-    def getUserPropic(self):
+    def get_user_propic(self):
         try:
             content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
 
@@ -626,7 +714,39 @@ class Osintgram:
                 print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
                 sys.exit(2)
 
-    def getPeopleTaggedByUser(self):
+    def get_user_stories(self):
+        if self.is_private:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return
+
+        pc.printout("Searching for target stories...\n")
+
+        endpoint = 'feed/user/{id!s}/story/'.format(**{'id': self.target_id})
+        content = urllib.request.urlopen("https://www.instagram.com/" + endpoint)
+        data = json.load(content)
+        counter = 0
+
+        if data['reel'] is not None:  # no stories avaibile
+            for i in data['reel']['items']:
+                story_id = i["id"]
+                if i["media_type"] == 1:  # it's a photo
+                    url = i['image_versions2']['candidates'][0]['url']
+                    end = "output/" + self.target + "_" + story_id + ".jpg"
+                    urllib.request.urlretrieve(url, end)
+                    counter += 1
+
+                elif i["media_type"] == 2:  # it's a gif or video
+                    url = i['video_versions'][0]['url']
+                    end = "output/" + self.target + "_" + story_id + ".mp4"
+                    urllib.request.urlretrieve(url, end)
+                    counter += 1
+
+        if counter > 0:
+            pc.printout(str(counter) + " target stories saved in output folder\n", pc.GREEN)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_people_tagged_by_user(self):
         pc.printout("Searching for users tagged by target...\n")
 
         ids = []
@@ -700,7 +820,7 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
-    def getUser(self, username):
+    def get_user(self, username):
         try:
             content = urllib.request.urlopen("https://www.instagram.com/" + username + "/?__a=1")
             data = json.load(content)
@@ -723,145 +843,31 @@ class Osintgram:
 
         return None
 
-    def getCaptions(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
-
-        pc.printout("Searching for target captions...\n")
-
-        captions = []
-
-        data = self.__get_feed__()
-        counter = 0
-
-        try:
-            for item in data:
-                if "caption" in item:
-                    if item["caption"] is not None:
-                        text = item["caption"]["text"]
-                        captions.append(text)
-                        counter = counter + 1
-                        sys.stdout.write("\rFound %i" % counter)
-                        sys.stdout.flush()
-
-        except AttributeError:
-            pass
-
-        except KeyError:
-            pass
-
-        json_data = {}
-
-        if counter > 0:
-            pc.printout("\nWoohoo! We found " + str(counter) + " captions\n", pc.GREEN)
-
-            file = None
-
-            if self.writeFile:
-                file_name = "output/" + self.target + "_captions.txt"
-                file = open(file_name, "w")
-
-            for s in captions:
-                print(s + "\n")
-
-                if self.writeFile:
-                    file.write(s + "\n")
-
-            if self.jsonDump:
-                json_data['captions'] = captions
-                json_file_name = "output/" + self.target + "_followings.json"
-                with open(json_file_name, 'w') as f:
-                    json.dump(json_data, f)
-
-            if file is not None:
-                file.close()
-
+    def set_write_file(self, flag):
+        if flag:
+            pc.printout("Write to file: ")
+            pc.printout("enabled", pc.GREEN)
+            pc.printout("\n")
         else:
-            pc.printout("Sorry! No results found :-(\n", pc.RED)
+            pc.printout("Write to file: ")
+            pc.printout("disabled", pc.RED)
+            pc.printout("\n")
 
-        return
+        self.writeFile = flag
 
-    def getPhotoDescription(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
-
-        content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
-        data = json.load(content)
-        dd = data['graphql']['user']['edge_owner_to_timeline_media']['edges']
-
-        if len(dd) > 0:
-            pc.printout("\nWoohoo! We found " + str(len(dd)) + " descriptions\n", pc.GREEN)
-
-            count = 1
-
-            t = PrettyTable(['Photo', 'Description'])
-            t.align["Photo"] = "l"
-            t.align["Description"] = "l"
-
-            json_data = {}
-            descriptions_list = []
-
-            for i in dd:
-                node = i.get('node')
-                descr = node.get('accessibility_caption')
-                t.add_row([str(count), descr])
-
-                if self.jsonDump:
-                    description = {
-                        'description': descr
-                    }
-                    descriptions_list.append(description)
-
-                count += 1
-
-            if self.writeFile:
-                file_name = "output/" + self.target + "_photodes.txt"
-                file = open(file_name, "w")
-                file.write(str(t))
-                file.close()
-
-            if self.jsonDump:
-                json_data['descriptions'] = descriptions_list
-                json_file_name = "output/" + self.target + "_descriptions.json"
-                with open(json_file_name, 'w') as f:
-                    json.dump(json_data, f)
-
-            print(t)
+    def set_json_dump(self, flag):
+        if flag:
+            pc.printout("Export to JSON: ")
+            pc.printout("enabled", pc.GREEN)
+            pc.printout("\n")
         else:
-            pc.printout("Sorry! No results found :-(\n", pc.RED)
+            pc.printout("Export to JSON: ")
+            pc.printout("disabled", pc.RED)
+            pc.printout("\n")
 
-    def getUserStories(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
-            return
+        self.jsonDump = flag
 
-        pc.printout("Searching for target stories...\n")
 
-        endpoint = 'feed/user/{id!s}/story/'.format(**{'id': self.target_id})
-        content = urllib.request.urlopen("https://www.instagram.com/" + endpoint)
-        data = json.load(content)
-        counter = 0
 
-        if data['reel'] is not None:  # no stories avaibile
-            for i in data['reel']['items']:
-                story_id = i["id"]
-                if i["media_type"] == 1:  # it's a photo
-                    url = i['image_versions2']['candidates'][0]['url']
-                    end = "output/" + self.target + "_" + story_id + ".jpg"
-                    urllib.request.urlretrieve(url, end)
-                    counter += 1
-
-                elif i["media_type"] == 2:  # it's a gif or video
-                    url = i['video_versions'][0]['url']
-                    end = "output/" + self.target + "_" + story_id + ".mp4"
-                    urllib.request.urlretrieve(url, end)
-                    counter += 1
-
-        if counter > 0:
-            pc.printout(str(counter) + " target stories saved in output folder\n", pc.GREEN)
-        else:
-            pc.printout("Sorry! No results found :-(\n", pc.RED)
 
 

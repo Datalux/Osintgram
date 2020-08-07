@@ -81,42 +81,42 @@ while True:
     elif cmd == "list" or cmd == "help":
         cmdlist()
     elif cmd == "addrs":
-        api.getAddrs()
+        api.get_addrs()
     elif cmd == "captions":
-        api.getCaptions()
+        api.get_captions()
     elif cmd == "comments":
-        api.getTotalComments()
+        api.get_total_comments()
     elif cmd == "followers":
-        api.getFollowers()
+        api.get_followers()
     elif cmd == "followings":
-        api.getFollowings()
+        api.get_followings()
     elif cmd == "hashtags":
-        api.getHashtags()
+        api.get_hashtags()
     elif cmd == "info":
-        api.getUserInfo()
+        api.get_user_info()
     elif cmd == "likes":
-        api.getTotalLikes()
+        api.get_total_likes()
     elif cmd == "mediatype":
-        api.getMediaType()
+        api.get_media_type()
     elif cmd == "photodes":
-        api.getPhotoDescription()
+        api.get_photo_description()
     elif cmd == "photos":
-        api.getUserPhoto()
+        api.get_user_photo()
     elif cmd == "propic":
-        api.getUserPropic()
+        api.get_user_propic()
     elif cmd == "stories":
-        api.getUserStories()
+        api.get_user_stories()
     elif cmd == "tagged":
-        api.getPeopleTaggedByUser()
+        api.get_people_tagged_by_user()
     elif cmd == "target":
-        api.changeTarget()
+        api.change_target()
     elif cmd == "FILE=y":
-        api.setWriteFile(True)
+        api.set_write_file(True)
     elif cmd == "FILE=n":
-        api.setWriteFile(False)
+        api.set_write_file(False)
     elif cmd == "JSON=y":
-        api.setJsonDump(True)
+        api.set_json_dump(True)
     elif cmd == "JSON=n":
-        api.setJsonDump(False)
+        api.set_json_dump(False)
     else:
         pc.printout("Unknown command\n", pc.RED)
