@@ -143,8 +143,6 @@ class Osintgram:
 
         return data
 
-
-
     def getFollowings(self):
         if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
@@ -784,14 +782,13 @@ class Osintgram:
 
         return
 
-    # TODO
     def getPhotoDescription(self):
         if self.is_private:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return
 
-        content = self.api.SendRequest2(self.target + '/?__a=1')
-        data = self.api.LastJson
+        content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+        data = json.load(content)
         dd = data['graphql']['user']['edge_owner_to_timeline_media']['edges']
 
         if len(dd) > 0:
@@ -843,8 +840,8 @@ class Osintgram:
         pc.printout("Searching for target stories...\n")
 
         endpoint = 'feed/user/{id!s}/story/'.format(**{'id': self.target_id})
-        content = self.api.SendRequest(endpoint)
-        data = self.api.LastJson
+        content = urllib.request.urlopen("https://www.instagram.com/" + endpoint)
+        data = json.load(content)
         counter = 0
 
         if data['reel'] is not None:  # no stories avaibile
