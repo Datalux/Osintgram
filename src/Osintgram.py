@@ -379,40 +379,44 @@ class Osintgram:
                         hashtags.append(s.encode('UTF-8'))
                         counter += 1
 
-        hashtag_counter = {}
+        if len(hashtags) > 0:
+            hashtag_counter = {}
 
-        for i in hashtags:
-            if i in hashtag_counter:
-                hashtag_counter[i] += 1
-            else:
-                hashtag_counter[i] = 1
+            for i in hashtags:
+                if i in hashtag_counter:
+                    hashtag_counter[i] += 1
+                else:
+                    hashtag_counter[i] = 1
 
-        ssort = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
+            ssort = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
 
-        file = None
-        json_data = {}
-        hashtags_list = []
+            file = None
+            json_data = {}
+            hashtags_list = []
 
-        if self.writeFile:
-            file_name = "output/" + self.target + "_hashtags.txt"
-            file = open(file_name, "w")
-
-        for k, v in ssort:
-            hashtag = str(k.decode('utf-8'))
-            print(str(v) + ". " + hashtag)
             if self.writeFile:
-                file.write(str(v) + ". " + hashtag + "\n")
+                file_name = "output/" + self.target + "_hashtags.txt"
+                file = open(file_name, "w")
+
+            for k, v in ssort:
+                hashtag = str(k.decode('utf-8'))
+                print(str(v) + ". " + hashtag)
+                if self.writeFile:
+                    file.write(str(v) + ". " + hashtag + "\n")
+                if self.jsonDump:
+                    hashtags_list.append(hashtag)
+
+            if file is not None:
+                file.close()
+
             if self.jsonDump:
-                hashtags_list.append(hashtag)
+                json_data['hashtags'] = hashtags_list
+                json_file_name = "output/" + self.target + "_hashtags.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
 
-        if file is not None:
-            file.close()
-
-        if self.jsonDump:
-            json_data['hashtags'] = hashtags_list
-            json_file_name = "output/" + self.target + "_hashtags.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
 
     def get_user_info(self):
         try:
