@@ -29,39 +29,42 @@ def cmdlist():
     print("Enable/disable output in a '<target username>_<command>.txt' file'")
     pc.printout("JSON=y/n\t")
     print("Enable/disable export in a '<target username>_<command>.json' file'")
-    pc.printout("info\t\t")
-    print("Get target info")
     pc.printout("addrs\t\t")
     print("Get all registered addressed by target photos")
+    pc.printout("captions\t")
+    print("Get target's photos captions")
+    pc.printout("comments\t")
+    print("Get total comments of target's posts")
     pc.printout("followers\t")
     print("Get target followers")
     pc.printout("followings\t")
     print("Get users followed by target")
     pc.printout("hashtags\t")
     print("Get hashtags used by target")
+    pc.printout("info\t\t")
+    print("Get target info")
     pc.printout("likes\t\t")
     print("Get total likes of target's posts")
-    pc.printout("comments\t")
-    print("Get total comments of target's posts")
-    pc.printout("tagged\t\t")
-    print("Get list of users tagged by target")
+    pc.printout("mediatype\t")
+    print("Get target's posts type (photo or video)")
     pc.printout("photodes\t")
     print("Get description of target's photos")
     pc.printout("photos\t\t")
     print("Download target's photos in output folder")
-    pc.printout("captions\t")
-    print("Get target's photos captions")
-    pc.printout("mediatype\t")
-    print("Get target's posts type (photo or video)")
     pc.printout("propic\t\t")
     print("Download target's profile picture")
     pc.printout("stories\t\t")
     print("Download target's sories")
+    pc.printout("tagged\t\t")
+    print("Get list of users tagged by target")
+    pc.printout("target\t\t")
+    print("Set new target")
 
 
 printlogo()
 
-parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell to perform analysis on Instagram account of any users by its nickname ')
+parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell '
+                                             'to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
                     help='username')
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
@@ -80,43 +83,42 @@ while True:
     elif cmd == "list" or cmd == "help":
         cmdlist()
     elif cmd == "addrs":
-        api.getAddrs()
-    elif cmd == "followers":
-        api.getFollowers()
-    elif cmd == "followings":
-        api.getFollowings()
-    elif cmd == "hashtags":
-        api.getHashtags()
-    elif cmd == "likes":
-        api.getTotalLikes()
-    elif cmd == "comments":
-        api.getTotalComments()
-    elif cmd == "info":
-        api.getUserInfo()
-    elif cmd == "tagged":
-        api.getPeopleTaggedByUser()
-    elif cmd == "photodes":
-        api.getPhotoDescription()
-    elif cmd == "FILE=y":
-        api.setWriteFile(True)
-    elif cmd == "FILE=n":
-        api.setWriteFile(False)
-    elif cmd == "JSON=y":
-        api.setJsonDump(True)
-    elif cmd == "JSON=n":
-        api.setJsonDump(False)
-    elif cmd == "photos":
-        api.getUserPhoto()
+        api.get_addrs()
     elif cmd == "captions":
-        api.getCaptions()
+        api.get_captions()
+    elif cmd == "comments":
+        api.get_total_comments()
+    elif cmd == "followers":
+        api.get_followers()
+    elif cmd == "followings":
+        api.get_followings()
+    elif cmd == "hashtags":
+        api.get_hashtags()
+    elif cmd == "info":
+        api.get_user_info()
+    elif cmd == "likes":
+        api.get_total_likes()
     elif cmd == "mediatype":
-        api.getMediaType()
+        api.get_media_type()
+    elif cmd == "photodes":
+        api.get_photo_description()
+    elif cmd == "photos":
+        api.get_user_photo()
     elif cmd == "propic":
-        api.getUserPropic()
+        api.get_user_propic()
     elif cmd == "stories":
-        api.getUserStories()
+        api.get_user_stories()
+    elif cmd == "tagged":
+        api.get_people_tagged_by_user()
     elif cmd == "target":
-        api.changeTarget()
-
+        api.change_target()
+    elif cmd == "FILE=y":
+        api.set_write_file(True)
+    elif cmd == "FILE=n":
+        api.set_write_file(False)
+    elif cmd == "JSON=y":
+        api.set_json_dump(True)
+    elif cmd == "JSON=n":
+        api.set_json_dump(False)
     else:
         pc.printout("Unknown command\n", pc.RED)
