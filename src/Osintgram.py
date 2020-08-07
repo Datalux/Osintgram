@@ -1,45 +1,13 @@
 import datetime
-import hashlib
-import string
-import random
 import json
 import sys
 import urllib
 
 from geopy.geocoders import Nominatim
+from instagram_private_api import Client as AppClient
 from prettytable import PrettyTable
 
 from src import printcolors as pc
-
-from instagram_web_api import Client, ClientCompatPatch, ClientError, ClientLoginError
-from instagram_private_api import Client as AppClient
-
-
-class MyClient(Client):
-    @staticmethod
-    def _extract_rhx_gis(html):
-        options = string.ascii_lowercase + string.digits
-        text = ''.join([random.choice(options) for _ in range(8)])
-        return hashlib.md5(text.encode()).hexdigest()
-
-    def login(self):
-        """Login to the web site."""
-        if not self.username or not self.password:
-            raise ClientError('username/password is blank')
-
-        time = str(int(datetime.datetime.now().timestamp()))
-        enc_password = f"#PWD_INSTAGRAM_BROWSER:0:{time}:{self.password}"
-
-        params = {'username': self.username, 'enc_password': enc_password, 'queryParams': '{}', 'optIntoOneTap': False}
-        self._init_rollout_hash()
-        login_res = self._make_request('https://www.instagram.com/accounts/login/ajax/', params=params)
-        if not login_res.get('status', '') == 'ok' or not login_res.get('authenticated'):
-            raise ClientLoginError('Unable to login')
-
-        if self.on_login:
-            on_login_callback = self.on_login
-            on_login_callback(self)
-        return login_res
 
 
 class Osintgram:
@@ -53,15 +21,14 @@ class Osintgram:
     writeFile = False
     jsonDump = False
 
-    def __init__(self, target, isFile, isJson):
+    def __init__(self, target, is_file, is_json):
         u = self.__getUsername__()
         p = self.__getPassword__()
         print("\nAttempt to login...")
-        # self.api = MyClient(auto_patch=True, authenticate=True, username=u, password=p)
         self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p)
         self.setTarget(target)
-        self.writeFile = isFile
-        self.jsonDump = isJson
+        self.writeFile = is_file
+        self.jsonDump = is_json
 
     def setTarget(self, target):
         self.target = target
@@ -118,9 +85,6 @@ class Osintgram:
         line = input()
         self.setTarget(line)
         return
-
-
-
 
     def get_addrs(self):
         if self.is_private:
@@ -398,7 +362,14 @@ class Osintgram:
         counter = 1
         texts = []
 
-        data = self.__get_feed__()
+        data = self.api.user_feed(str(self.target_id))
+        texts.extend(data.get('items', []))
+
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
+            texts.extend(results.get('items', []))
+            next_max_id = results.get('next_max_id')
 
         for post in texts:
             if post['caption'] is not None:
@@ -550,12 +521,11 @@ class Osintgram:
             if self.writeFile:
                 file_name = "output/" + self.target + "_mediatype.txt"
                 file = open(file_name, "w")
-                file.write(str(photo_counter) + " photos and " + str(video_counter) \
-                           + " video posted by target\n")
+                file.write(str(photo_counter) + " photos and " + str(video_counter) + " video posted by target\n")
                 file.close()
 
-            pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) \
-                        + " video posted by target\n", pc.GREEN)
+            pc.printout("\nWoohoo! We found " + str(photo_counter) + " photos and " + str(video_counter) +
+                        " video posted by target\n", pc.GREEN)
 
             if self.jsonDump:
                 json_data = {
@@ -650,7 +620,6 @@ class Osintgram:
             data.extend(results.get('items', []))
             next_max_id = results.get('next_max_id')
 
-
         try:
             for item in data:
                 if counter == limit:
@@ -682,7 +651,6 @@ class Osintgram:
         except KeyError:
             pass
 
-
         sys.stdout.write(" photos")
         sys.stdout.flush()
 
@@ -693,8 +661,6 @@ class Osintgram:
             content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
 
             data = json.load(content)
-
-            URL = ""
 
             uurl = data["graphql"]["user"]
             if "profile_pic_url_hd" in uurl:
@@ -776,7 +742,6 @@ class Osintgram:
             print(ae)
             print("")
             pass
-
 
         if len(ids) > 0:
             t = PrettyTable()
@@ -866,8 +831,3 @@ class Osintgram:
             pc.printout("\n")
 
         self.jsonDump = flag
-
-
-
-
-
