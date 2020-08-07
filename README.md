@@ -4,7 +4,6 @@
 
 # Osintgram
 Osintgram is a **OSINT** tool on Instagram.
-Osintgram is a fork of https://github.com/LevPasha/Instagram-API-python and https://github.com/woj-ciech/OSINT/tree/master/insta.
 
 **I don't assume any responsability for the use of this tool**
 
@@ -77,3 +76,6 @@ Run `git pull` in Osintgram directory
 
 # Contributing
 You can propose a feature request opening an issue or a pull request.
+
+## External library
+Instagram API: https://github.com/ping/instagram_private_api
