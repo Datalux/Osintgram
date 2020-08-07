@@ -59,7 +59,7 @@ def cmdlist():
     print("Get list of users tagged by target")
     pc.printout("target\t\t")
     print("Set new target")
-    pc.printout("wcommented\t\t")
+    pc.printout("wcommented\t")
     print("Get a list of user who commented target's photos")
 
 
