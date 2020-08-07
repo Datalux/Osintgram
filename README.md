@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/version-0.5-green)](https://github.com/Datalux/Osintgram/releases/tag/0.5)
+[![](https://img.shields.io/badge/version-0.6-green)](https://github.com/Datalux/Osintgram/releases/tag/0.6)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 
 
@@ -10,20 +10,22 @@ Osintgram is a fork of https://github.com/LevPasha/Instagram-API-python and http
 
 Osintgram offers an interactive shell to perform analysis on Instagram account of any users by its nickname. You can get:
 ```
-- info            Get target info
 - addrs           Get all registered addressed by target photos
+- captions        Get user's photos captions
+- comments        Get total comments of target's posts
 - followers       Get target followers
 - followings      Get users followed by target
 - hashtags        Get hashtags used by target
+- info            Get target info
 - likes           Get total likes of target's posts
-- comments        Get total comments of target's posts
-- tagged          Get list of users tagged by target
+- mediatype       Get user's posts type (photo or video)
 - photodes        Get description of target's photos
 - photos          Download user's photos in output folder
-- captions        Get user's photos captions
-- mediatype       Get user's posts type (photo or video)
 - propic          Download user's profile picture
 - stories         Download user's stories  
+- tagged          Get list of users tagged by target
+- target          Set new target
+- wcommented      Get a list of user who commented target's photos
 ```
 You can find detailed commands usage [here](commands.md).
 
@@ -36,6 +38,7 @@ The tools use Python3.
 - v0.3 added features: photos, captions, mediatype, propic
 - v0.4 [changelog](https://github.com/Datalux/Osintgram/releases/tag/0.4)
 - v0.5 [changelog](https://github.com/Datalux/Osintgram/releases/tag/0.5)
+- v0.6 [changelog](https://github.com/Datalux/Osintgram/releases/tag/0.6)
 
 ## Tools
 <p align="center">
