@@ -1,23 +1,31 @@
 # Commands list and usage
 ```
-- info            Get target info
 - addrs           Get all registered addressed by target photos
+- captions        Get user's photos captions
+- comments        Get total comments of target's posts
 - followers       Get target followers
 - followings      Get users followed by target
 - hashtags        Get hashtags used by target
+- info            Get target info
 - likes           Get total likes of target's posts
-- comments        Get total comments of target's posts
-- tagged          Get list of users tagged by target
+- mediatype       Get user's posts type (photo or video)
 - photodes        Get description of target's photos
 - photos          Download user's photos in output folder
-- captions        Get user's photos captions
-- mediatype       Get user's posts type (photo or video)
 - propic          Download user's profile picture
-
+- stories         Download user's stories  
+- tagged          Get list of users tagged by target
+- wcommented      Get a list of user who commented target's photos
 ```
 
-### list (or help)
-Show all commands avaible.
+### addrs
+Return a list with address (GPS) tagged by target in his photos.
+The list has post, address and date fields.
+
+### captions 
+Return a list of all captions used by target in his photos.
+
+### comments
+Return the total number of comments in target's posts
 
 ### exit
 Exit from Osintgram
@@ -29,12 +37,14 @@ With `FILE=y` you can enable saving in file.
 
 With `FILE=n` you can disable saving in file.
 
-### JSON
-Can set preference to export commands output as JSON in output folder. It save output in `<target username>_<command>.JSON` file.
+### followers
+Return a list with target followers with id, nickname and full name
 
-With `JSON=y` you can enable JSON exporting.
+### followings
+Return a list with users followed by target with id, nickname and full name
 
-With `JSON=n` you can disable JSON exporting.
+### hashtags
+Return a list with all hashtag used by target in his photos
 
 ### info
 Show target info like:
@@ -47,24 +57,21 @@ Show target info like:
 - business catagory (if target has business account)
 - is verified?
 
-### addrs
-Return a list with address (GPS) tagged by target in his photos.
-The list has post, address and date fields.
+### JSON
+Can set preference to export commands output as JSON in output folder. It save output in `<target username>_<command>.JSON` file.
 
-### followers
-Return a list with target followers with id, nickname and full name
+With `JSON=y` you can enable JSON exporting.
 
-### followings
-Return a list with users followed by target with id, nickname and full name
-
-### hashtags
-Return a list with all hashtag used by target in his photos
+With `JSON=n` you can disable JSON exporting.
 
 ### likes
 Return the total number of likes in target's posts
 
-### comments
-Return the total number of comments in target's posts
+### list (or help)
+Show all commands avaible.
+
+### mediatype
+Return the number of photos and video shared by target
 
 ### photodes
 Return a list with the description of the content of target's photos
@@ -78,16 +85,17 @@ Run a command: photos
 How many photos you want to download (default all):
 ```
 
-### captions 
-Return a list of all captions used by target in his photos.
-
-### mediatype
-Return the number of photos and video shared by target
-
 ### propic
-Download target profile picture (HD if is avaible)
+Download target profile picture (HD if is available)
 
+### stories
+Download all target's stories in output folder.
 
+## tagged
+Return a list of users tagged by target with ID, username and full name
+
+## wcommented
+Return a list of users who commented target's photos sorted by number of comments
 
 
 
