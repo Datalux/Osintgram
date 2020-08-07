@@ -29,35 +29,36 @@ def cmdlist():
     print("Enable/disable output in a '<target username>_<command>.txt' file'")
     pc.printout("JSON=y/n\t")
     print("Enable/disable export in a '<target username>_<command>.json' file'")
-    pc.printout("info\t\t")
-    print("Get target info")
     pc.printout("addrs\t\t")
     print("Get all registered addressed by target photos")
+    pc.printout("captions\t")
+    print("Get target's photos captions")
+    pc.printout("comments\t")
+    print("Get total comments of target's posts")
     pc.printout("followers\t")
     print("Get target followers")
     pc.printout("followings\t")
     print("Get users followed by target")
     pc.printout("hashtags\t")
     print("Get hashtags used by target")
+    pc.printout("info\t\t")
+    print("Get target info")
     pc.printout("likes\t\t")
     print("Get total likes of target's posts")
-    pc.printout("comments\t")
-    print("Get total comments of target's posts")
-    pc.printout("tagged\t\t")
-    print("Get list of users tagged by target")
+    pc.printout("mediatype\t")
+    print("Get target's posts type (photo or video)")
     pc.printout("photodes\t")
     print("Get description of target's photos")
     pc.printout("photos\t\t")
     print("Download target's photos in output folder")
-    pc.printout("captions\t")
-    print("Get target's photos captions")
-    pc.printout("mediatype\t")
-    print("Get target's posts type (photo or video)")
     pc.printout("propic\t\t")
     print("Download target's profile picture")
     pc.printout("stories\t\t")
     print("Download target's sories")
-
+    pc.printout("tagged\t\t")
+    print("Get list of users tagged by target")
+    pc.printout("target\t\t")
+    print("Set new target")
 
 printlogo()
 
@@ -81,22 +82,34 @@ while True:
         cmdlist()
     elif cmd == "addrs":
         api.getAddrs()
+    elif cmd == "captions":
+        api.getCaptions()
+    elif cmd == "comments":
+        api.getTotalComments()
     elif cmd == "followers":
         api.getFollowers()
     elif cmd == "followings":
         api.getFollowings()
     elif cmd == "hashtags":
         api.getHashtags()
-    elif cmd == "likes":
-        api.getTotalLikes()
-    elif cmd == "comments":
-        api.getTotalComments()
     elif cmd == "info":
         api.getUserInfo()
-    elif cmd == "tagged":
-        api.getPeopleTaggedByUser()
+    elif cmd == "likes":
+        api.getTotalLikes()
+    elif cmd == "mediatype":
+        api.getMediaType()
     elif cmd == "photodes":
         api.getPhotoDescription()
+    elif cmd == "photos":
+        api.getUserPhoto()
+    elif cmd == "propic":
+        api.getUserPropic()
+    elif cmd == "stories":
+        api.getUserStories()
+    elif cmd == "tagged":
+        api.getPeopleTaggedByUser()
+    elif cmd == "target":
+        api.changeTarget()
     elif cmd == "FILE=y":
         api.setWriteFile(True)
     elif cmd == "FILE=n":
@@ -105,18 +118,5 @@ while True:
         api.setJsonDump(True)
     elif cmd == "JSON=n":
         api.setJsonDump(False)
-    elif cmd == "photos":
-        api.getUserPhoto()
-    elif cmd == "captions":
-        api.getCaptions()
-    elif cmd == "mediatype":
-        api.getMediaType()
-    elif cmd == "propic":
-        api.getUserPropic()
-    elif cmd == "stories":
-        api.getUserStories()
-    elif cmd == "target":
-        api.changeTarget()
-
     else:
         pc.printout("Unknown command\n", pc.RED)
