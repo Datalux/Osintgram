@@ -1,5 +1,7 @@
 [![](https://img.shields.io/badge/version-0.6-green)](https://github.com/Datalux/Osintgram/releases/tag/0.6)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
+[![](https://img.shields.io/badge/language-Python3-red)](https://img.shields.io/badge/language-Python3-red)
+
 
 
 # Osintgram
@@ -28,16 +30,8 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 ```
 You can find detailed commands usage [here](commands.md).
 
-
-The tools use Python3.
-
-## Changelog
-- v0.1 initial release
-- v0.2 added feature to write in file the output of commands
-- v0.3 added features: photos, captions, mediatype, propic
-- v0.4 [changelog](https://github.com/Datalux/Osintgram/releases/tag/0.4)
-- v0.5 [changelog](https://github.com/Datalux/Osintgram/releases/tag/0.5)
-- v0.6 [changelog](https://github.com/Datalux/Osintgram/releases/tag/0.6)
+[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/0.6) | 
+[CHANGELOG](changelog.md)
 
 ## Tools
 <p align="center">
