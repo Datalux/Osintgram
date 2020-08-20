@@ -88,10 +88,11 @@ class Osintgram:
     def __printTargetBanner__(self):
         pc.printout("\nLogged as ", pc.GREEN)
         pc.printout(self.api.username, pc.CYAN)
-        pc.printout(" (" + str(self.api.authenticated_user_id) + ") ")
-        pc.printout("target: ", pc.GREEN)
+        pc.printout(". Target: ", pc.GREEN)
         pc.printout(str(self.target), pc.CYAN)
-        pc.printout(" (private: " + str(self.is_private) + ")")
+        pc.printout(" [" + str(self.target_id) + "] ")
+        if self.is_private:
+            pc.printout("[PRIVATE PROFILE]", pc.RED)
         print('\n')
 
     def change_target(self):
