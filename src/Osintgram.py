@@ -2,9 +2,13 @@ import datetime
 import json
 import sys
 import urllib
+import os
+import codecs
 
 from geopy.geocoders import Nominatim
 from instagram_private_api import Client as AppClient
+from instagram_private_api import ClientCookieExpiredError, ClientLoginRequiredError
+
 from prettytable import PrettyTable
 
 from src import printcolors as pc
@@ -25,7 +29,7 @@ class Osintgram:
         u = self.__getUsername__()
         p = self.__getPassword__()
         print("\nAttempt to login...")
-        self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p)
+        self.login(u, p)
         self.setTarget(target)
         self.writeFile = is_file
         self.jsonDump = is_json
@@ -907,3 +911,50 @@ class Osintgram:
             pc.printout("\n")
 
         self.jsonDump = flag
+
+    def login(self, u, p):
+        try:
+            settings_file = "config/settings.json"
+            if not os.path.isfile(settings_file):
+                # settings file does not exist
+                print('Unable to find file: {0!s}'.format(settings_file))
+
+                # login new
+                self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
+                                     on_login=lambda x: self.onlogin_callback(x, settings_file))
+
+            else:
+                with open(settings_file) as file_data:
+                    cached_settings = json.load(file_data, object_hook=self.from_json)
+                #print('Reusing settings: {0!s}'.format(settings_file))
+
+                # reuse auth settings
+                self.api = AppClient(
+                    username=u, password=p,
+                    settings=cached_settings,
+                    on_login=lambda x: self.onlogin_callback(x, settings_file))
+
+        except (ClientCookieExpiredError, ClientLoginRequiredError) as e:
+            print('ClientCookieExpiredError/ClientLoginRequiredError: {0!s}'.format(e))
+
+            # Login expired
+            # Do relogin but use default ua, keys and such
+            self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
+                                 on_login=lambda x: self.onlogin_callback(x, settings_file))
+
+    def to_json(self, python_object):
+        if isinstance(python_object, bytes):
+            return {'__class__': 'bytes',
+                    '__value__': codecs.encode(python_object, 'base64').decode()}
+        raise TypeError(repr(python_object) + ' is not JSON serializable')
+
+    def from_json(self, json_object):
+        if '__class__' in json_object and json_object['__class__'] == 'bytes':
+            return codecs.decode(json_object['__value__'].encode(), 'base64')
+        return json_object
+
+    def onlogin_callback(self, api, new_settings_file):
+        cache_settings = api.settings
+        with open(new_settings_file, 'w') as outfile:
+            json.dump(cache_settings, outfile, default=self.to_json)
+            #print('SAVED: {0!s}'.format(new_settings_file))
