@@ -7,7 +7,7 @@ import codecs
 
 from geopy.geocoders import Nominatim
 from instagram_private_api import Client as AppClient
-from instagram_private_api import ClientCookieExpiredError, ClientLoginRequiredError
+from instagram_private_api import ClientCookieExpiredError, ClientLoginRequiredError, ClientError
 
 from prettytable import PrettyTable
 
@@ -941,6 +941,10 @@ class Osintgram:
             # Do relogin but use default ua, keys and such
             self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
                                  on_login=lambda x: self.onlogin_callback(x, settings_file))
+
+        except ClientError as e:
+            print('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response))
+            exit(9)
 
     def to_json(self, python_object):
         if isinstance(python_object, bytes):
