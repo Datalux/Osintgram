@@ -943,7 +943,10 @@ class Osintgram:
                                  on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except ClientError as e:
-            print('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response))
+            #pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
+            error = json.loads(e.error_response)
+            pc.printout(error['message'], pc.RED)
+            pc.printout("\n")
             exit(9)
 
     def to_json(self, python_object):
