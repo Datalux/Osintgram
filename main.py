@@ -5,6 +5,7 @@ from src.Osintgram import Osintgram
 import argparse
 from src import printcolors as pc
 import sys
+import signal
 
 
 def printlogo():
@@ -62,6 +63,13 @@ def cmdlist():
     pc.printout("wcommented\t")
     print("Get a list of user who commented target's photos")
 
+
+def signal_handler(sig, frame):
+    pc.printout("\nGoodbye!\n", pc.RED)
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 printlogo()
 
