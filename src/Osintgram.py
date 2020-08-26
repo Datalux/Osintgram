@@ -245,6 +245,7 @@ class Osintgram:
 
         for post in data:
             comments_counter += post['comment_count']
+            posts += 1
 
         if self.writeFile:
             file_name = "output/" + self.target + "_comments.txt"
@@ -493,6 +494,7 @@ class Osintgram:
 
         for post in data:
             like_counter += post['like_count']
+            posts += 1
 
         if self.writeFile:
             file_name = "output/" + self.target + "_likes.txt"
