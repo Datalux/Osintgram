@@ -5,6 +5,7 @@ from src.Osintgram import Osintgram
 import argparse
 from src import printcolors as pc
 import sys
+import signal
 
 
 def printlogo():
@@ -15,7 +16,7 @@ def printlogo():
     pc.printout("\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
     pc.printout("        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
     print('\n')
-    pc.printout("Version 0.6 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
+    pc.printout("Version 0.7 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
@@ -62,6 +63,13 @@ def cmdlist():
     pc.printout("wcommented\t")
     print("Get a list of user who commented target's photos")
 
+
+def signal_handler(sig, frame):
+    pc.printout("\nGoodbye!\n", pc.RED)
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 printlogo()
 

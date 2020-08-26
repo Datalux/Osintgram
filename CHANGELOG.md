@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.7](https://github.com/Datalux/Osintgram/releases/tag/0.7)
+
+**Enhancements**
+- banner now show target ID (#30) 
+- persistent login (#33)
+- error handler (85e390b)
+- added CTRL+C handler (c2c3c3e)
+
+**Bug fixes**
+- fix likes and comments posts counter bug (44b7534)
+
+
+
 ## [0.6](https://github.com/Datalux/Osintgram/releases/tag/0.6)
 
 **Enhancements**
