@@ -28,7 +28,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - target          Set new target
 - wcommented      Get a list of user who commented target's photos
 ```
-You can find detailed commands usage [here](commands.md).
+You can find detailed commands usage [here](COMMANDS.md).
 
 [**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/0.7) | 
 [CHANGELOG](CHANGELOG.md)

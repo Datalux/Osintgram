@@ -56,6 +56,9 @@ Show target info like:
 - is business account?
 - business catagory (if target has business account)
 - is verified?
+- business email (if available)
+- HD profile picture url
+- connected Facebook page (if available)
 
 ### JSON
 Can set preference to export commands output as JSON in output folder. It save output in `<target username>_<command>.JSON` file.
