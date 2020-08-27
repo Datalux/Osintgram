@@ -449,9 +449,9 @@ class Osintgram:
             pc.printout(str(data['full_name']) + '\n')
             pc.printout("[BIOGRAPHY] ", pc.CYAN)
             pc.printout(str(data['biography']) + '\n')
-            pc.printout("[FOLLOWED] ", pc.GREEN)
+            pc.printout("[FOLLOWED] ", pc.BLUE)
             pc.printout(str(data['edge_followed_by']['count']) + '\n')
-            pc.printout("[FOLLOW] ", pc.BLUE)
+            pc.printout("[FOLLOW] ", pc.GREEN)
             pc.printout(str(data['edge_follow']['count']) + '\n')
             pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
             pc.printout(str(data['is_business_account']) + '\n')
@@ -460,6 +460,14 @@ class Osintgram:
                 pc.printout(str(data['business_category_name']) + '\n')
             pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
             pc.printout(str(data['is_verified']) + '\n')
+            if data['business_email']:
+                pc.printout("[BUSINESS EMAIL] ", pc.BLUE)
+                pc.printout(str(data['business_email']) + '\n')
+            pc.printout("[HD PROFILE PIC] ", pc.GREEN)
+            pc.printout(str(data['profile_pic_url_hd']) + '\n')
+            if data['connected_fb_page']:
+                pc.printout("[FB PAGE] ", pc.RED)
+                pc.printout(str(data['business_email']) + '\n')
 
             if self.jsonDump:
                 user = {
@@ -469,8 +477,16 @@ class Osintgram:
                     'edge_followed_by': data['edge_followed_by']['count'],
                     'edge_follow': data['edge_follow']['count'],
                     'is_business_account': data['is_business_account'],
-                    'is_verified': data['is_verified']
+                    'is_verified': data['is_verified'],
+                    'profile_pic_url_hd': data['profile_pic_url_hd']
                 }
+                if data['business_email']:
+                    user['business_email'] = data['business_email']
+                if data['connected_fb_page']:
+                    user['connected_fb_page'] = data['connected_fb_page']
+
+
+
                 json_file_name = "output/" + self.target + "_info.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(user, f)
