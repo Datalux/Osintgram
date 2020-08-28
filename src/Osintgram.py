@@ -665,14 +665,14 @@ class Osintgram:
             print(t)
 
             if self.writeFile:
-                file_name = "output/" + self.target + "_users_who_commented.txt"
+                file_name = "output/" + self.target + "_users_who_tagged.txt"
                 file = open(file_name, "w")
                 file.write(str(t))
                 file.close()
 
             if self.jsonDump:
-                json_data['users_who_commented'] = ssort
-                json_file_name = "output/" + self.target + "_users_who_commented.json"
+                json_data['users_who_tagged'] = ssort
+                json_file_name = "output/" + self.target + "_users_who_tagged.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
         else:
