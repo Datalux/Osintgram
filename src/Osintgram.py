@@ -32,7 +32,6 @@ class Osintgram:
         print("\nAttempt to login...")
         self.login(u, p)
         self.setTarget(target)
-        self.following = self.check_following()
         self.writeFile = is_file
         self.jsonDump = is_json
 
@@ -41,6 +40,7 @@ class Osintgram:
         user = self.get_user(target)
         self.target_id = user['id']
         self.is_private = user['is_private']
+        self.following = self.check_following()
         self.__printTargetBanner__()
 
     def __getUsername__(self):
@@ -99,6 +99,8 @@ class Osintgram:
         pc.printout(" [" + str(self.target_id) + "] ")
         if self.is_private:
             pc.printout("[PRIVATE PROFILE]", pc.RED)
+        if self.following:
+            pc.printout(" [YOU FOLLOW]", pc.GREEN)
         print('\n')
 
     def change_target(self):
