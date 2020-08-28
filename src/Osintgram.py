@@ -21,6 +21,7 @@ class Osintgram:
     user_id = None
     target_id = None
     is_private = True
+    following = False
     target = ""
     writeFile = False
     jsonDump = False
@@ -39,6 +40,7 @@ class Osintgram:
         user = self.get_user(target)
         self.target_id = user['id']
         self.is_private = user['is_private']
+        self.following = self.check_following()
         self.__printTargetBanner__()
 
     def __getUsername__(self):
@@ -96,7 +98,13 @@ class Osintgram:
         pc.printout(str(self.target), pc.CYAN)
         pc.printout(" [" + str(self.target_id) + "] ")
         if self.is_private:
-            pc.printout("[PRIVATE PROFILE]", pc.RED)
+            pc.printout("[PRIVATE PROFILE]", pc.BLUE)
+        if self.following:
+            pc.printout(" [FOLLOWING]", pc.GREEN)
+        else:
+            pc.printout(" [NOT FOLLOWING]", pc.RED)
+
+
         print('\n')
 
     def change_target(self):
@@ -106,8 +114,7 @@ class Osintgram:
         return
 
     def get_addrs(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target localizations...\n")
@@ -117,7 +124,7 @@ class Osintgram:
         locations = {}
 
         for post in data:
-            if post['location'] is not None:
+            if 'location' in post and post['location'] is not None:
                 lat = post['location']['lat']
                 lng = post['location']['lng']
                 locations[str(lat) + ', ' + str(lng)] = post.get('taken_at')
@@ -173,8 +180,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_captions(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target captions...\n")
@@ -232,8 +238,7 @@ class Osintgram:
         return
 
     def get_total_comments(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target total comments...\n")
@@ -266,8 +271,7 @@ class Osintgram:
         pc.printout(" comments in " + str(posts) + " posts\n")
 
     def get_followers(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target followers...\n")
@@ -319,8 +323,7 @@ class Osintgram:
         print(t)
 
     def get_followings(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target followings...\n")
@@ -372,8 +375,7 @@ class Osintgram:
         print(t)
 
     def get_hashtags(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target hashtags...\n")
@@ -481,8 +483,7 @@ class Osintgram:
                 sys.exit(2)
 
     def get_total_likes(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target total likes...\n")
@@ -515,8 +516,7 @@ class Osintgram:
         pc.printout(" likes in " + str(posts) + " posts\n")
 
     def get_media_type(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target captions...\n")
@@ -564,8 +564,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_people_who_commented(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for users who commented...\n")
@@ -623,8 +622,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_photo_description(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
@@ -673,8 +671,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user_photo(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         limit = -1
@@ -764,8 +761,7 @@ class Osintgram:
                 sys.exit(2)
 
     def get_user_stories(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target stories...\n")
@@ -968,3 +964,14 @@ class Osintgram:
         with open(new_settings_file, 'w') as outfile:
             json.dump(cache_settings, outfile, default=self.to_json)
             #print('SAVED: {0!s}'.format(new_settings_file))
+
+    def check_following(self):
+        endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
+        return self.api._call_api(endpoint)['user_detail']['user']['friendship_status']['following']
+
+    def check_private_profile(self):
+        if self.is_private and not self.following:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return True
+        return False
+
