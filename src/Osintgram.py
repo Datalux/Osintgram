@@ -98,9 +98,13 @@ class Osintgram:
         pc.printout(str(self.target), pc.CYAN)
         pc.printout(" [" + str(self.target_id) + "] ")
         if self.is_private:
-            pc.printout("[PRIVATE PROFILE]", pc.RED)
+            pc.printout("[PRIVATE PROFILE]", pc.BLUE)
         if self.following:
-            pc.printout(" [YOU FOLLOW]", pc.GREEN)
+            pc.printout(" [FOLLOWING]", pc.GREEN)
+        else:
+            pc.printout(" [NOT FOLLOWING]", pc.RED)
+
+
         print('\n')
 
     def change_target(self):
