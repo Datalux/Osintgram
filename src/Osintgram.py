@@ -638,25 +638,26 @@ class Osintgram:
             posts.extend(results.get('items', []))
             next_max_id = results.get('next_max_id')
 
-        users = []
-        print(str(len(posts)))
+        if len(posts) > 0:
+            pc.printout("\nWoohoo! We found " + str(len(posts)) + " photos\n", pc.GREEN)
 
-        for post in posts:
-                if not any(u['id'] == post['user']['pk'] for u in users):
-                    user = {
-                        'id': post['user']['pk'],
-                        'username': post['user']['username'],
-                        'full_name': post['user']['full_name'],
-                        'counter': 1
-                    }
-                    users.append(user)
-                else:
-                    for user in users:
-                        if user['id'] == post['user']['pk']:
-                            user['counter'] += 1
-                            break
+            users = []
 
-        if len(users) > 0:
+            for post in posts:
+                    if not any(u['id'] == post['user']['pk'] for u in users):
+                        user = {
+                            'id': post['user']['pk'],
+                            'username': post['user']['username'],
+                            'full_name': post['user']['full_name'],
+                            'counter': 1
+                        }
+                        users.append(user)
+                    else:
+                        for user in users:
+                            if user['id'] == post['user']['pk']:
+                                user['counter'] += 1
+                                break
+
             ssort = sorted(users, key=lambda value: value['counter'], reverse=True)
 
             json_data = {}
