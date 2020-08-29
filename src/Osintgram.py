@@ -637,6 +637,74 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
+    def get_people_who_tagged(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for users who tagged target...\n")
+
+        posts = []
+
+        result = self.api.usertag_feed(self.target_id)
+        posts.extend(result.get('items', []))
+
+        next_max_id = result.get('next_max_id')
+        while next_max_id:
+            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
+            posts.extend(results.get('items', []))
+            next_max_id = results.get('next_max_id')
+
+        if len(posts) > 0:
+            pc.printout("\nWoohoo! We found " + str(len(posts)) + " photos\n", pc.GREEN)
+
+            users = []
+
+            for post in posts:
+                    if not any(u['id'] == post['user']['pk'] for u in users):
+                        user = {
+                            'id': post['user']['pk'],
+                            'username': post['user']['username'],
+                            'full_name': post['user']['full_name'],
+                            'counter': 1
+                        }
+                        users.append(user)
+                    else:
+                        for user in users:
+                            if user['id'] == post['user']['pk']:
+                                user['counter'] += 1
+                                break
+
+            ssort = sorted(users, key=lambda value: value['counter'], reverse=True)
+
+            json_data = {}
+
+            t = PrettyTable()
+
+            t.field_names = ['Photos', 'ID', 'Username', 'Full Name']
+            t.align["Photos"] = "l"
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+
+            for u in ssort:
+                t.add_row([str(u['counter']), u['id'], u['username'], u['full_name']])
+
+            print(t)
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_users_who_tagged.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['users_who_tagged'] = ssort
+                json_file_name = "output/" + self.target + "_users_who_tagged.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
     def get_photo_description(self):
         if self.check_private_profile():
             return
@@ -990,4 +1058,6 @@ class Osintgram:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return True
         return False
+
+
 

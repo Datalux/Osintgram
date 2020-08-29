@@ -62,6 +62,8 @@ def cmdlist():
     print("Set new target")
     pc.printout("wcommented\t")
     print("Get a list of user who commented target's photos")
+    pc.printout("wtagged\t")
+    print("Get a list of user who tagged target")
 
 
 def signal_handler(sig, frame):
@@ -124,6 +126,8 @@ while True:
         api.change_target()
     elif cmd == "wcommented":
         api.get_people_who_commented()
+    elif cmd == "wtagged":
+        api.get_people_who_tagged()
     elif cmd == "FILE=y":
         api.set_write_file(True)
     elif cmd == "FILE=n":
