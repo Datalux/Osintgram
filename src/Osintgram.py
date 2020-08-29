@@ -627,9 +627,19 @@ class Osintgram:
 
         pc.printout("Searching for users who tagged target...\n")
 
-        posts = self.api.usertag_feed(self.target_id)['items']
+        posts = []
+
+        result = self.api.usertag_feed(self.target_id)
+        posts.extend(result.get('items', []))
+
+        next_max_id = result.get('next_max_id')
+        while next_max_id:
+            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
+            posts.extend(results.get('items', []))
+            next_max_id = results.get('next_max_id')
 
         users = []
+        print(str(len(posts)))
 
         for post in posts:
                 if not any(u['id'] == post['user']['pk'] for u in users):
