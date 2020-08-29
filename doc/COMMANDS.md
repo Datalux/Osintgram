@@ -15,6 +15,7 @@
 - stories         Download user's stories  
 - tagged          Get list of users tagged by target
 - wcommented      Get a list of user who commented target's photos
+- wtagged         Get a list of user who tagged target
 ```
 
 ### addrs
@@ -100,5 +101,7 @@ Return a list of users tagged by target with ID, username and full name
 ## wcommented
 Return a list of users who commented target's photos sorted by number of comments
 
+## wtagged
+Return a list of users who tagged target sorted by number of photos
 
 

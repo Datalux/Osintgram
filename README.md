@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/version-0.7-green)](https://github.com/Datalux/Osintgram/releases/tag/0.7)
+[![](https://img.shields.io/badge/version-0.8-green)](https://github.com/Datalux/Osintgram/releases/tag/0.8)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 [![](https://img.shields.io/badge/language-Python3-red)](https://img.shields.io/badge/language-Python3-red)
 
@@ -27,10 +27,11 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - tagged          Get list of users tagged by target
 - target          Set new target
 - wcommented      Get a list of user who commented target's photos
+- wtagged         Get a list of user who tagged target
 ```
 You can find detailed commands usage [here](doc/COMMANDS.md).
 
-[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/0.7) | 
+[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/0.8) | 
 [CHANGELOG](doc/CHANGELOG.md)
 
 ## Tools
