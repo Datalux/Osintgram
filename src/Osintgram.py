@@ -1079,7 +1079,7 @@ class Osintgram:
         results = []
 
         for follow in followers:
-            req = urllib.request.urlopen("https://www.instagram.com/" + str(follow['id']) + "/?__a=1")
+            req = urllib.request.urlopen("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
             data = json.load(req)['graphql']['user']
             if data['business_email']:
                 follow['email'] = data['business_email']
