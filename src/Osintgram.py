@@ -96,9 +96,9 @@ class Osintgram:
         pc.printout(self.api.username, pc.CYAN)
         pc.printout(". Target: ", pc.GREEN)
         pc.printout(str(self.target), pc.CYAN)
-        pc.printout(" [" + str(self.target_id) + "] ")
+        pc.printout(" [" + str(self.target_id) + "]")
         if self.is_private:
-            pc.printout("[PRIVATE PROFILE]", pc.BLUE)
+            pc.printout(" [PRIVATE PROFILE]", pc.BLUE)
         if self.following:
             pc.printout(" [FOLLOWING]", pc.GREEN)
         else:
