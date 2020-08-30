@@ -21,6 +21,7 @@ class Osintgram:
     user_id = None
     target_id = None
     is_private = True
+    following = False
     target = ""
     writeFile = False
     jsonDump = False
@@ -39,6 +40,7 @@ class Osintgram:
         user = self.get_user(target)
         self.target_id = user['id']
         self.is_private = user['is_private']
+        self.following = self.check_following()
         self.__printTargetBanner__()
 
     def __getUsername__(self):
@@ -94,9 +96,15 @@ class Osintgram:
         pc.printout(self.api.username, pc.CYAN)
         pc.printout(". Target: ", pc.GREEN)
         pc.printout(str(self.target), pc.CYAN)
-        pc.printout(" [" + str(self.target_id) + "] ")
+        pc.printout(" [" + str(self.target_id) + "]")
         if self.is_private:
-            pc.printout("[PRIVATE PROFILE]", pc.RED)
+            pc.printout(" [PRIVATE PROFILE]", pc.BLUE)
+        if self.following:
+            pc.printout(" [FOLLOWING]", pc.GREEN)
+        else:
+            pc.printout(" [NOT FOLLOWING]", pc.RED)
+
+
         print('\n')
 
     def change_target(self):
@@ -106,8 +114,7 @@ class Osintgram:
         return
 
     def get_addrs(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target localizations...\n")
@@ -117,7 +124,7 @@ class Osintgram:
         locations = {}
 
         for post in data:
-            if post['location'] is not None:
+            if 'location' in post and post['location'] is not None:
                 lat = post['location']['lat']
                 lng = post['location']['lng']
                 locations[str(lat) + ', ' + str(lng)] = post.get('taken_at')
@@ -173,8 +180,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_captions(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target captions...\n")
@@ -232,8 +238,7 @@ class Osintgram:
         return
 
     def get_total_comments(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target total comments...\n")
@@ -266,8 +271,7 @@ class Osintgram:
         pc.printout(" comments in " + str(posts) + " posts\n")
 
     def get_followers(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target followers...\n")
@@ -319,8 +323,7 @@ class Osintgram:
         print(t)
 
     def get_followings(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target followings...\n")
@@ -372,8 +375,7 @@ class Osintgram:
         print(t)
 
     def get_hashtags(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target hashtags...\n")
@@ -449,9 +451,9 @@ class Osintgram:
             pc.printout(str(data['full_name']) + '\n')
             pc.printout("[BIOGRAPHY] ", pc.CYAN)
             pc.printout(str(data['biography']) + '\n')
-            pc.printout("[FOLLOWED] ", pc.GREEN)
+            pc.printout("[FOLLOWED] ", pc.BLUE)
             pc.printout(str(data['edge_followed_by']['count']) + '\n')
-            pc.printout("[FOLLOW] ", pc.BLUE)
+            pc.printout("[FOLLOW] ", pc.GREEN)
             pc.printout(str(data['edge_follow']['count']) + '\n')
             pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
             pc.printout(str(data['is_business_account']) + '\n')
@@ -460,6 +462,14 @@ class Osintgram:
                 pc.printout(str(data['business_category_name']) + '\n')
             pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
             pc.printout(str(data['is_verified']) + '\n')
+            if data['business_email']:
+                pc.printout("[BUSINESS EMAIL] ", pc.BLUE)
+                pc.printout(str(data['business_email']) + '\n')
+            pc.printout("[HD PROFILE PIC] ", pc.GREEN)
+            pc.printout(str(data['profile_pic_url_hd']) + '\n')
+            if data['connected_fb_page']:
+                pc.printout("[FB PAGE] ", pc.RED)
+                pc.printout(str(data['business_email']) + '\n')
 
             if self.jsonDump:
                 user = {
@@ -469,8 +479,14 @@ class Osintgram:
                     'edge_followed_by': data['edge_followed_by']['count'],
                     'edge_follow': data['edge_follow']['count'],
                     'is_business_account': data['is_business_account'],
-                    'is_verified': data['is_verified']
+                    'is_verified': data['is_verified'],
+                    'profile_pic_url_hd': data['profile_pic_url_hd']
                 }
+                if data['business_email']:
+                    user['business_email'] = data['business_email']
+                if data['connected_fb_page']:
+                    user['connected_fb_page'] = data['connected_fb_page']
+
                 json_file_name = "output/" + self.target + "_info.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(user, f)
@@ -481,8 +497,7 @@ class Osintgram:
                 sys.exit(2)
 
     def get_total_likes(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target total likes...\n")
@@ -515,8 +530,7 @@ class Osintgram:
         pc.printout(" likes in " + str(posts) + " posts\n")
 
     def get_media_type(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target captions...\n")
@@ -564,8 +578,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_people_who_commented(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for users who commented...\n")
@@ -622,9 +635,76 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
+    def get_people_who_tagged(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for users who tagged target...\n")
+
+        posts = []
+
+        result = self.api.usertag_feed(self.target_id)
+        posts.extend(result.get('items', []))
+
+        next_max_id = result.get('next_max_id')
+        while next_max_id:
+            results = self.api.user_feed(str(self.target_id), max_id=next_max_id)
+            posts.extend(results.get('items', []))
+            next_max_id = results.get('next_max_id')
+
+        if len(posts) > 0:
+            pc.printout("\nWoohoo! We found " + str(len(posts)) + " photos\n", pc.GREEN)
+
+            users = []
+
+            for post in posts:
+                    if not any(u['id'] == post['user']['pk'] for u in users):
+                        user = {
+                            'id': post['user']['pk'],
+                            'username': post['user']['username'],
+                            'full_name': post['user']['full_name'],
+                            'counter': 1
+                        }
+                        users.append(user)
+                    else:
+                        for user in users:
+                            if user['id'] == post['user']['pk']:
+                                user['counter'] += 1
+                                break
+
+            ssort = sorted(users, key=lambda value: value['counter'], reverse=True)
+
+            json_data = {}
+
+            t = PrettyTable()
+
+            t.field_names = ['Photos', 'ID', 'Username', 'Full Name']
+            t.align["Photos"] = "l"
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+
+            for u in ssort:
+                t.add_row([str(u['counter']), u['id'], u['username'], u['full_name']])
+
+            print(t)
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_users_who_tagged.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['users_who_tagged'] = ssort
+                json_file_name = "output/" + self.target + "_users_who_tagged.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
     def get_photo_description(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
@@ -673,8 +753,7 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user_photo(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         limit = -1
@@ -764,8 +843,7 @@ class Osintgram:
                 sys.exit(2)
 
     def get_user_stories(self):
-        if self.is_private:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+        if self.check_private_profile():
             return
 
         pc.printout("Searching for target stories...\n")
@@ -968,3 +1046,79 @@ class Osintgram:
         with open(new_settings_file, 'w') as outfile:
             json.dump(cache_settings, outfile, default=self.to_json)
             #print('SAVED: {0!s}'.format(new_settings_file))
+
+    def check_following(self):
+        endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
+        return self.api._call_api(endpoint)['user_detail']['user']['friendship_status']['following']
+
+    def check_private_profile(self):
+        if self.is_private and not self.following:
+            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            return True
+        return False
+
+    def get_fwersemail(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for emails of target followers... this can take a few minutes\n")
+
+        followers = []
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
+
+        for user in data['users']:
+            u = {
+                'id': user['pk'],
+                'username': user['username'],
+                'full_name': user['full_name']
+            }
+            followers.append(u)
+
+        results = []
+
+        for follow in followers:
+            req = urllib.request.urlopen("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
+            data = json.load(req)['graphql']['user']
+            if data['business_email']:
+                follow['email'] = data['business_email']
+                results.append(follow)
+
+        if len(results) > 0:
+
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Email'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Email"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['email']])
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_followers.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followers'] = results
+                json_file_name = "output/" + self.target + "_followers.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+
+
+
+
+
+
+
+

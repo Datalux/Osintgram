@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.8](https://github.com/Datalux/Osintgram/releases/tag/0.8)
+
+**Enhancements**
+- Added `wtagged` command (#38)
+- Access private profiles if you following targets (#37)
+- Added more info in `info` command (#36)
+
+**Bug fixes**
+- Minor bug fix in `addrs` commands (9b9086a)
+
+
 ## [0.7](https://github.com/Datalux/Osintgram/releases/tag/0.7)
 
 **Enhancements**

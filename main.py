@@ -16,7 +16,7 @@ def printlogo():
     pc.printout("\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
     pc.printout("        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
     print('\n')
-    pc.printout("Version 0.7 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
+    pc.printout("Version 0.8 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
@@ -40,6 +40,8 @@ def cmdlist():
     print("Get target followers")
     pc.printout("followings\t")
     print("Get users followed by target")
+    pc.printout("fwersemail\t")
+    print("Get email of users followed by target")
     pc.printout("hashtags\t")
     print("Get hashtags used by target")
     pc.printout("info\t\t")
@@ -62,6 +64,8 @@ def cmdlist():
     print("Set new target")
     pc.printout("wcommented\t")
     print("Get a list of user who commented target's photos")
+    pc.printout("wtagged\t\t")
+    print("Get a list of user who tagged target")
 
 
 def signal_handler(sig, frame):
@@ -102,6 +106,8 @@ while True:
         api.get_followers()
     elif cmd == "followings":
         api.get_followings()
+    elif cmd == 'fwersemail':
+        api.get_fwersemail()
     elif cmd == "hashtags":
         api.get_hashtags()
     elif cmd == "info":
@@ -124,6 +130,8 @@ while True:
         api.change_target()
     elif cmd == "wcommented":
         api.get_people_who_commented()
+    elif cmd == "wtagged":
+        api.get_people_who_tagged()
     elif cmd == "FILE=y":
         api.set_write_file(True)
     elif cmd == "FILE=n":
