@@ -36,7 +36,7 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 
 ## Tools
 <p align="center">
-<img align="center" src=".img/banner.png" width="600">
+<img align="center" src=".img/banner.png" width="700">
 </p>
 
 
