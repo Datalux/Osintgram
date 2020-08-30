@@ -487,8 +487,6 @@ class Osintgram:
                 if data['connected_fb_page']:
                     user['connected_fb_page'] = data['connected_fb_page']
 
-
-
                 json_file_name = "output/" + self.target + "_info.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(user, f)
@@ -1058,6 +1056,69 @@ class Osintgram:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
             return True
         return False
+
+    def get_fwersemail(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for emails of target followers... this can take a few minutes\n")
+
+        followers = []
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
+
+        for user in data['users']:
+            u = {
+                'id': user['pk'],
+                'username': user['username'],
+                'full_name': user['full_name']
+            }
+            followers.append(u)
+
+        results = []
+
+        for follow in followers:
+            req = urllib.request.urlopen("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
+            data = json.load(req)['graphql']['user']
+            if data['business_email']:
+                follow['email'] = data['business_email']
+                results.append(follow)
+
+        if len(results) > 0:
+
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Email'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Email"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['email']])
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_followers.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followers'] = results
+                json_file_name = "output/" + self.target + "_followers.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+
+
+
+
+
 
 
 
