@@ -61,7 +61,9 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 
 6. Create in `config` folder the file: `pw.conf` and write your Instagram account password
 
-7. Run the main.py script 
+7. Create in `config` folder the file: `settings.json` and write the following string: "{}"
+
+8. Run the main.py script 
 
     `python3 main.py <target username>`
 
