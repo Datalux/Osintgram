@@ -75,4 +75,4 @@ Run `git pull` in Osintgram directory
 You can propose a feature request opening an issue or a pull request.
 
 ## External library
-Instagram API: https://gDOCithub.com/ping/instagram_private_api
+Instagram API: https://github.com/ping/instagram_private_api
