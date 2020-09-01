@@ -1054,6 +1054,11 @@ class Osintgram:
     def check_private_profile(self):
         if self.is_private and not self.following:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            send = input("Do you want send a follow request? [Y/N]: ")
+            if send.lower() == "y":
+                self.api.friendships_create(self.target_id)
+                print("Sent a follow request to target. Use this command after target accepting the request.")
+
             return True
         return False
 
