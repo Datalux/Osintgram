@@ -949,7 +949,7 @@ class Osintgram:
     def get_user(self, username):
         try:
             content = urllib.request.urlopen("https://www.instagram.com/" + username + "/?__a=1")
-            data = json.load(content)
+            data = json.load(content.decode('utf-8'))
             if self.writeFile:
                 file_name = "output/" + self.target + "_user_id.txt"
                 file = open(file_name, "w")
