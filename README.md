@@ -16,6 +16,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - comments        Get total comments of target's posts
 - followers       Get target followers
 - followings      Get users followed by target
+- fwersemail      Get email of users followed by target
 - hashtags        Get hashtags used by target
 - info            Get target info
 - likes           Get total likes of target's posts
@@ -25,7 +26,6 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - propic          Download user's profile picture
 - stories         Download user's stories  
 - tagged          Get list of users tagged by target
-- target          Set new target
 - wcommented      Get a list of user who commented target's photos
 - wtagged         Get a list of user who tagged target
 ```
@@ -61,7 +61,9 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 
 6. Create in `config` folder the file: `pw.conf` and write your Instagram account password
 
-7. Run the main.py script 
+7. Create in `config` folder the file: `settings.json` and write the following string: "{}" without quotation marks
+
+8. Run the main.py script 
 
     `python3 main.py <target username>`
 
@@ -73,4 +75,4 @@ Run `git pull` in Osintgram directory
 You can propose a feature request opening an issue or a pull request.
 
 ## External library
-Instagram API: https://gDOCithub.com/ping/instagram_private_api
+Instagram API: https://github.com/ping/instagram_private_api
