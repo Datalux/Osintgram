@@ -41,6 +41,8 @@ def cmdlist():
     pc.printout("followings\t")
     print("Get users followed by target")
     pc.printout("fwersemail\t")
+    print("Get email of target followers")
+    pc.printout("fwingsemail\t")
     print("Get email of users followed by target")
     pc.printout("hashtags\t")
     print("Get hashtags used by target")
@@ -108,6 +110,8 @@ while True:
         api.get_followings()
     elif cmd == 'fwersemail':
         api.get_fwersemail()
+    elif cmd == 'fwingsemail':
+        api.get_fwingsemail()
     elif cmd == "hashtags":
         api.get_hashtags()
     elif cmd == "info":

@@ -1101,14 +1101,72 @@ class Osintgram:
                 t.add_row([str(node['id']), node['username'], node['full_name'], node['email']])
 
             if self.writeFile:
-                file_name = "output/" + self.target + "_followers.txt"
+                file_name = "output/" + self.target + "_fwersemail.txt"
                 file = open(file_name, "w")
                 file.write(str(t))
                 file.close()
 
             if self.jsonDump:
-                json_data['followers'] = results
-                json_file_name = "output/" + self.target + "_followers.json"
+                json_data['followers_email'] = results
+                json_file_name = "output/" + self.target + "_fwersemail.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_fwingsemail(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for emails of users followed by target... this can take a few minutes\n")
+
+        followings = []
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_following(str(self.target_id), rank_token=rank_token)
+
+        for user in data['users']:
+            u = {
+                'id': user['pk'],
+                'username': user['username'],
+                'full_name': user['full_name']
+            }
+            followings.append(u)
+
+        results = []
+
+        for follow in followings:
+            content = requests.get("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
+            data = content.json()
+            data = data['graphql']['user']
+            if data['business_email']:
+                follow['email'] = data['business_email']
+                results.append(follow)
+
+        if len(results) > 0:
+
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Email'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Email"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['email']])
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_fwingsemail.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followings_email'] = results
+                json_file_name = "output/" + self.target + "_fwingsemail.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
 
