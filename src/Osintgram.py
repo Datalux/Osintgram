@@ -106,7 +106,6 @@ class Osintgram:
         else:
             pc.printout(" [NOT FOLLOWING]", pc.RED)
 
-
         print('\n')
 
     def change_target(self):
@@ -497,7 +496,6 @@ class Osintgram:
             with open(json_file_name, 'w') as f:
                 json.dump(user, f)
 
-
     def get_total_likes(self):
         if self.check_private_profile():
             return
@@ -660,19 +658,19 @@ class Osintgram:
             users = []
 
             for post in posts:
-                    if not any(u['id'] == post['user']['pk'] for u in users):
-                        user = {
-                            'id': post['user']['pk'],
-                            'username': post['user']['username'],
-                            'full_name': post['user']['full_name'],
-                            'counter': 1
-                        }
-                        users.append(user)
-                    else:
-                        for user in users:
-                            if user['id'] == post['user']['pk']:
-                                user['counter'] += 1
-                                break
+                if not any(u['id'] == post['user']['pk'] for u in users):
+                    user = {
+                        'id': post['user']['pk'],
+                        'username': post['user']['username'],
+                        'full_name': post['user']['full_name'],
+                        'counter': 1
+                    }
+                    users.append(user)
+                else:
+                    for user in users:
+                        if user['id'] == post['user']['pk']:
+                            user['counter'] += 1
+                            break
 
             ssort = sorted(users, key=lambda value: value['counter'], reverse=True)
 
@@ -844,7 +842,6 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
-
     def get_user_stories(self):
         if self.check_private_profile():
             return
@@ -854,6 +851,7 @@ class Osintgram:
         endpoint = 'feed/user/{id!s}/story/'.format(**{'id': self.target_id})
 
         content = requests.get("https://www.instagram.com/" + endpoint)
+        print(content)
         data = content.json()
 
         counter = 0
@@ -972,7 +970,6 @@ class Osintgram:
 
         return user
 
-
     def set_write_file(self, flag):
         if flag:
             pc.printout("Write to file: ")
@@ -1011,7 +1008,7 @@ class Osintgram:
             else:
                 with open(settings_file) as file_data:
                     cached_settings = json.load(file_data, object_hook=self.from_json)
-                #print('Reusing settings: {0!s}'.format(settings_file))
+                # print('Reusing settings: {0!s}'.format(settings_file))
 
                 # reuse auth settings
                 self.api = AppClient(
@@ -1028,7 +1025,7 @@ class Osintgram:
                                  on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except ClientError as e:
-            #pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
+            # pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
             error = json.loads(e.error_response)
             pc.printout(error['message'], pc.RED)
             pc.printout("\n")
@@ -1049,7 +1046,7 @@ class Osintgram:
         cache_settings = api.settings
         with open(new_settings_file, 'w') as outfile:
             json.dump(cache_settings, outfile, default=self.to_json)
-            #print('SAVED: {0!s}'.format(new_settings_file))
+            # print('SAVED: {0!s}'.format(new_settings_file))
 
     def check_following(self):
         endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
@@ -1123,12 +1120,3 @@ class Osintgram:
             print(t)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
-
-
-
-
-
-
-
-
-
