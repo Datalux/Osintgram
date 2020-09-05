@@ -16,7 +16,8 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - comments        Get total comments of target's posts
 - followers       Get target followers
 - followings      Get users followed by target
-- fwersemail      Get email of users followed by target
+- fwersemail      Get email of target followers
+- fwingsemail     Get email of users followed by target
 - hashtags        Get hashtags used by target
 - info            Get target info
 - likes           Get total likes of target's posts

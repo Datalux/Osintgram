@@ -5,7 +5,8 @@
 - comments        Get total comments of target's posts
 - followers       Get target followers
 - followings      Get users followed by target
-- fwersemail      Get email of users followed by target
+- fwersemail      Get email of target followers
+- fwingsemail     Get email of users followed by target
 - hashtags        Get hashtags used by target
 - info            Get target info
 - likes           Get total likes of target's posts
@@ -47,6 +48,9 @@ Return a list with users followed by target with id, nickname and full name
 
 ### fwersemail
 Return a list of emails of target followers
+
+### fwingsemail
+Return a list of emails of user followed by target
 
 ### hashtags
 Return a list with all hashtag used by target in his photos
