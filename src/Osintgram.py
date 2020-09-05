@@ -848,28 +848,23 @@ class Osintgram:
 
         pc.printout("Searching for target stories...\n")
 
-        endpoint = 'feed/user/{id!s}/story/'.format(**{'id': self.target_id})
-
-        content = requests.get("https://www.instagram.com/" + endpoint)
-        print(content)
-        data = content.json()
+        data = self.api.user_reel_media(str(self.target_id))
 
         counter = 0
 
-        if data['reel'] is not None:  # no stories avaibile
-            for i in data['reel']['items']:
+        if data['items'] is not None:  # no stories avaibile
+            counter = data['media_count']
+            for i in data['items']:
                 story_id = i["id"]
                 if i["media_type"] == 1:  # it's a photo
                     url = i['image_versions2']['candidates'][0]['url']
                     end = "output/" + self.target + "_" + story_id + ".jpg"
                     urllib.request.urlretrieve(url, end)
-                    counter += 1
 
                 elif i["media_type"] == 2:  # it's a gif or video
                     url = i['video_versions'][0]['url']
                     end = "output/" + self.target + "_" + story_id + ".mp4"
                     urllib.request.urlretrieve(url, end)
-                    counter += 1
 
         if counter > 0:
             pc.printout(str(counter) + " target stories saved in output folder\n", pc.GREEN)
