@@ -1107,7 +1107,7 @@ class Osintgram:
                 file.close()
 
             if self.jsonDump:
-                json_data['followers'] = results
+                json_data['followers_email'] = results
                 json_file_name = "output/" + self.target + "_fwersemail.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
@@ -1165,7 +1165,7 @@ class Osintgram:
                 file.close()
 
             if self.jsonDump:
-                json_data['followers'] = results
+                json_data['followings_email'] = results
                 json_file_name = "output/" + self.target + "_fwingsemail.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
