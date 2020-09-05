@@ -6,6 +6,12 @@ import argparse
 from src import printcolors as pc
 import sys
 import signal
+import readline
+
+commands = ["quit", "exit", "list", "help", "addrs", "captions", "comments", "followers",
+            "followings", "fwersemail", "fwingsemail", "hashtags", "info", "likes",
+            "mediatype", "photodes", "photos", "propic", "stories", "tagged", "target",
+            "wcommented", "wtagged"]
 
 
 def printlogo():
@@ -75,7 +81,17 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
+def completer(text, state):
+    options = [i for i in commands if i.startswith(text)]
+    if state < len(options):
+        return options[state]
+    else:
+        return None
+
+
 signal.signal(signal.SIGINT, signal_handler)
+readline.parse_and_bind("tab: complete")
+readline.set_completer(completer)
 
 printlogo()
 
