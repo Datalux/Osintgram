@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/version-0.8-green)](https://github.com/Datalux/Osintgram/releases/tag/0.8)
+[![](https://img.shields.io/badge/version-0.9-green)](https://github.com/Datalux/Osintgram/releases/tag/0.9)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 [![](https://img.shields.io/badge/language-Python3-red)](https://img.shields.io/badge/language-Python3-red)
 
@@ -16,7 +16,8 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - comments        Get total comments of target's posts
 - followers       Get target followers
 - followings      Get users followed by target
-- fwersemail      Get email of users followed by target
+- fwersemail      Get email of target followers
+- fwingsemail     Get email of users followed by target
 - hashtags        Get hashtags used by target
 - info            Get target info
 - likes           Get total likes of target's posts
@@ -31,7 +32,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 ```
 You can find detailed commands usage [here](doc/COMMANDS.md).
 
-[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/0.8) | 
+[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/0.9) | 
 [CHANGELOG](doc/CHANGELOG.md)
 
 ## Tools

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9](https://github.com/Datalux/Osintgram/releases/tag/0.9)
+
+**Enhancements**
+- Send a follow request if user not following target (#44)
+- Added new `fwingsemail` command (#50)
+- Added autocomplete with TAB (07e0fe8)
+
+**Bug fixes**
+- Decoding error of response [bug #46]  (f9c5f73)
+- `stories` command not working (#49)
+
 ## [0.8](https://github.com/Datalux/Osintgram/releases/tag/0.8)
 
 **Enhancements**

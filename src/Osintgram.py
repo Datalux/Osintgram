@@ -5,6 +5,8 @@ import urllib
 import os
 import codecs
 
+import requests
+
 from geopy.geocoders import Nominatim
 from instagram_private_api import Client as AppClient
 from instagram_private_api import ClientCookieExpiredError, ClientLoginRequiredError, ClientError
@@ -103,7 +105,6 @@ class Osintgram:
             pc.printout(" [FOLLOWING]", pc.GREEN)
         else:
             pc.printout(" [NOT FOLLOWING]", pc.RED)
-
 
         print('\n')
 
@@ -440,61 +441,60 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user_info(self):
-        try:
-            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
-            data = json.load(content)
-            data = data['graphql']['user']
+        content = requests.get("https://www.instagram.com/" + str(self.target) + "/?__a=1")
 
-            pc.printout("[ID] ", pc.GREEN)
-            pc.printout(str(data['id']) + '\n')
-            pc.printout("[FULL NAME] ", pc.RED)
-            pc.printout(str(data['full_name']) + '\n')
-            pc.printout("[BIOGRAPHY] ", pc.CYAN)
-            pc.printout(str(data['biography']) + '\n')
-            pc.printout("[FOLLOWED] ", pc.BLUE)
-            pc.printout(str(data['edge_followed_by']['count']) + '\n')
-            pc.printout("[FOLLOW] ", pc.GREEN)
-            pc.printout(str(data['edge_follow']['count']) + '\n')
-            pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
-            pc.printout(str(data['is_business_account']) + '\n')
-            if data['is_business_account']:
-                pc.printout("[BUSINESS CATEGORY] ")
-                pc.printout(str(data['business_category_name']) + '\n')
-            pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
-            pc.printout(str(data['is_verified']) + '\n')
+        if content.status_code == 404:
+            print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
+            sys.exit(2)
+
+        data = content.json()
+        data = data['graphql']['user']
+
+        pc.printout("[ID] ", pc.GREEN)
+        pc.printout(str(data['id']) + '\n')
+        pc.printout("[FULL NAME] ", pc.RED)
+        pc.printout(str(data['full_name']) + '\n')
+        pc.printout("[BIOGRAPHY] ", pc.CYAN)
+        pc.printout(str(data['biography']) + '\n')
+        pc.printout("[FOLLOWED] ", pc.BLUE)
+        pc.printout(str(data['edge_followed_by']['count']) + '\n')
+        pc.printout("[FOLLOW] ", pc.GREEN)
+        pc.printout(str(data['edge_follow']['count']) + '\n')
+        pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
+        pc.printout(str(data['is_business_account']) + '\n')
+        if data['is_business_account']:
+            pc.printout("[BUSINESS CATEGORY] ")
+            pc.printout(str(data['business_category_name']) + '\n')
+        pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
+        pc.printout(str(data['is_verified']) + '\n')
+        if data['business_email']:
+            pc.printout("[BUSINESS EMAIL] ", pc.BLUE)
+            pc.printout(str(data['business_email']) + '\n')
+        pc.printout("[HD PROFILE PIC] ", pc.GREEN)
+        pc.printout(str(data['profile_pic_url_hd']) + '\n')
+        if data['connected_fb_page']:
+            pc.printout("[FB PAGE] ", pc.RED)
+            pc.printout(str(data['business_email']) + '\n')
+
+        if self.jsonDump:
+            user = {
+                'id': data['id'],
+                'full_name': data['full_name'],
+                'biography': data['biography'],
+                'edge_followed_by': data['edge_followed_by']['count'],
+                'edge_follow': data['edge_follow']['count'],
+                'is_business_account': data['is_business_account'],
+                'is_verified': data['is_verified'],
+                'profile_pic_url_hd': data['profile_pic_url_hd']
+            }
             if data['business_email']:
-                pc.printout("[BUSINESS EMAIL] ", pc.BLUE)
-                pc.printout(str(data['business_email']) + '\n')
-            pc.printout("[HD PROFILE PIC] ", pc.GREEN)
-            pc.printout(str(data['profile_pic_url_hd']) + '\n')
+                user['business_email'] = data['business_email']
             if data['connected_fb_page']:
-                pc.printout("[FB PAGE] ", pc.RED)
-                pc.printout(str(data['business_email']) + '\n')
+                user['connected_fb_page'] = data['connected_fb_page']
 
-            if self.jsonDump:
-                user = {
-                    'id': data['id'],
-                    'full_name': data['full_name'],
-                    'biography': data['biography'],
-                    'edge_followed_by': data['edge_followed_by']['count'],
-                    'edge_follow': data['edge_follow']['count'],
-                    'is_business_account': data['is_business_account'],
-                    'is_verified': data['is_verified'],
-                    'profile_pic_url_hd': data['profile_pic_url_hd']
-                }
-                if data['business_email']:
-                    user['business_email'] = data['business_email']
-                if data['connected_fb_page']:
-                    user['connected_fb_page'] = data['connected_fb_page']
-
-                json_file_name = "output/" + self.target + "_info.json"
-                with open(json_file_name, 'w') as f:
-                    json.dump(user, f)
-
-        except urllib.error.HTTPError as err:
-            if err.code == 404:
-                print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
-                sys.exit(2)
+            json_file_name = "output/" + self.target + "_info.json"
+            with open(json_file_name, 'w') as f:
+                json.dump(user, f)
 
     def get_total_likes(self):
         if self.check_private_profile():
@@ -658,19 +658,19 @@ class Osintgram:
             users = []
 
             for post in posts:
-                    if not any(u['id'] == post['user']['pk'] for u in users):
-                        user = {
-                            'id': post['user']['pk'],
-                            'username': post['user']['username'],
-                            'full_name': post['user']['full_name'],
-                            'counter': 1
-                        }
-                        users.append(user)
-                    else:
-                        for user in users:
-                            if user['id'] == post['user']['pk']:
-                                user['counter'] += 1
-                                break
+                if not any(u['id'] == post['user']['pk'] for u in users):
+                    user = {
+                        'id': post['user']['pk'],
+                        'username': post['user']['username'],
+                        'full_name': post['user']['full_name'],
+                        'counter': 1
+                    }
+                    users.append(user)
+                else:
+                    for user in users:
+                        if user['id'] == post['user']['pk']:
+                            user['counter'] += 1
+                            break
 
             ssort = sorted(users, key=lambda value: value['counter'], reverse=True)
 
@@ -707,8 +707,9 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
-        data = json.load(content)
+        content = requests.get("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+        data = content.json()
+
         dd = data['graphql']['user']['edge_owner_to_timeline_media']['edges']
 
         if len(dd) > 0:
@@ -819,28 +820,27 @@ class Osintgram:
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
 
     def get_user_propic(self):
-        try:
-            content = urllib.request.urlopen("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+        content = requests.get("https://www.instagram.com/" + str(self.target) + "/?__a=1")
 
-            data = json.load(content)
+        if content.status_code == 404:
+            print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
+            sys.exit(2)
 
-            uurl = data["graphql"]["user"]
-            if "profile_pic_url_hd" in uurl:
-                URL = data["graphql"]["user"]["profile_pic_url_hd"]
-            else:
-                URL = data["graphql"]["user"]["profile_pic_url"]
+        data = content.json()
 
-            if URL != "":
-                end = "output/" + self.target + "_propic.jpg"
-                urllib.request.urlretrieve(URL, end)
-                pc.printout("Target propic saved in output folder\n", pc.GREEN)
+        uurl = data["graphql"]["user"]
+        if "profile_pic_url_hd" in uurl:
+            URL = data["graphql"]["user"]["profile_pic_url_hd"]
+        else:
+            URL = data["graphql"]["user"]["profile_pic_url"]
 
-            else:
-                pc.printout("Sorry! No results found :-(\n", pc.RED)
-        except urllib.error.HTTPError as err:
-            if err.code == 404:
-                print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
-                sys.exit(2)
+        if URL != "":
+            end = "output/" + self.target + "_propic.jpg"
+            urllib.request.urlretrieve(URL, end)
+            pc.printout("Target propic saved in output folder\n", pc.GREEN)
+
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user_stories(self):
         if self.check_private_profile():
@@ -848,25 +848,23 @@ class Osintgram:
 
         pc.printout("Searching for target stories...\n")
 
-        endpoint = 'feed/user/{id!s}/story/'.format(**{'id': self.target_id})
-        content = urllib.request.urlopen("https://www.instagram.com/" + endpoint)
-        data = json.load(content)
+        data = self.api.user_reel_media(str(self.target_id))
+
         counter = 0
 
-        if data['reel'] is not None:  # no stories avaibile
-            for i in data['reel']['items']:
+        if data['items'] is not None:  # no stories avaibile
+            counter = data['media_count']
+            for i in data['items']:
                 story_id = i["id"]
                 if i["media_type"] == 1:  # it's a photo
                     url = i['image_versions2']['candidates'][0]['url']
                     end = "output/" + self.target + "_" + story_id + ".jpg"
                     urllib.request.urlretrieve(url, end)
-                    counter += 1
 
                 elif i["media_type"] == 2:  # it's a gif or video
                     url = i['video_versions'][0]['url']
                     end = "output/" + self.target + "_" + story_id + ".mp4"
                     urllib.request.urlretrieve(url, end)
-                    counter += 1
 
         if counter > 0:
             pc.printout(str(counter) + " target stories saved in output folder\n", pc.GREEN)
@@ -947,27 +945,25 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user(self, username):
-        try:
-            content = urllib.request.urlopen("https://www.instagram.com/" + username + "/?__a=1")
-            data = json.load(content)
-            if self.writeFile:
-                file_name = "output/" + self.target + "_user_id.txt"
-                file = open(file_name, "w")
-                file.write(str(data['graphql']['user']['id']))
-                file.close()
+        content = requests.get("https://www.instagram.com/" + username + "/?__a=1")
 
-            user = dict()
-            user['id'] = data['graphql']['user']['id']
-            user['is_private'] = data['graphql']['user']['is_private']
+        if content.status_code == 404:
+            print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
+            sys.exit(2)
 
-            return user
+        data = content.json()
 
-        except urllib.error.HTTPError as err:
-            if err.code == 404:
-                print("Oops... " + username + " non exist, please enter a valid username.")
-                sys.exit(2)
+        if self.writeFile:
+            file_name = "output/" + self.target + "_user_id.txt"
+            file = open(file_name, "w")
+            file.write(str(data['graphql']['user']['id']))
+            file.close()
 
-        return None
+        user = dict()
+        user['id'] = data['graphql']['user']['id']
+        user['is_private'] = data['graphql']['user']['is_private']
+
+        return user
 
     def set_write_file(self, flag):
         if flag:
@@ -1007,7 +1003,7 @@ class Osintgram:
             else:
                 with open(settings_file) as file_data:
                     cached_settings = json.load(file_data, object_hook=self.from_json)
-                #print('Reusing settings: {0!s}'.format(settings_file))
+                # print('Reusing settings: {0!s}'.format(settings_file))
 
                 # reuse auth settings
                 self.api = AppClient(
@@ -1024,7 +1020,7 @@ class Osintgram:
                                  on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except ClientError as e:
-            #pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
+            # pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
             error = json.loads(e.error_response)
             pc.printout(error['message'], pc.RED)
             pc.printout("\n")
@@ -1045,7 +1041,7 @@ class Osintgram:
         cache_settings = api.settings
         with open(new_settings_file, 'w') as outfile:
             json.dump(cache_settings, outfile, default=self.to_json)
-            #print('SAVED: {0!s}'.format(new_settings_file))
+            # print('SAVED: {0!s}'.format(new_settings_file))
 
     def check_following(self):
         endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
@@ -1054,6 +1050,11 @@ class Osintgram:
     def check_private_profile(self):
         if self.is_private and not self.following:
             pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            send = input("Do you want send a follow request? [Y/N]: ")
+            if send.lower() == "y":
+                self.api.friendships_create(self.target_id)
+                print("Sent a follow request to target. Use this command after target accepting the request.")
+
             return True
         return False
 
@@ -1079,8 +1080,9 @@ class Osintgram:
         results = []
 
         for follow in followers:
-            req = urllib.request.urlopen("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
-            data = json.load(req)['graphql']['user']
+            content = requests.get("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
+            data = content.json()
+            data = data['graphql']['user']
             if data['business_email']:
                 follow['email'] = data['business_email']
                 results.append(follow)
@@ -1099,14 +1101,14 @@ class Osintgram:
                 t.add_row([str(node['id']), node['username'], node['full_name'], node['email']])
 
             if self.writeFile:
-                file_name = "output/" + self.target + "_followers.txt"
+                file_name = "output/" + self.target + "_fwersemail.txt"
                 file = open(file_name, "w")
                 file.write(str(t))
                 file.close()
 
             if self.jsonDump:
-                json_data['followers'] = results
-                json_file_name = "output/" + self.target + "_followers.json"
+                json_data['followers_email'] = results
+                json_file_name = "output/" + self.target + "_fwersemail.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
 
@@ -1114,11 +1116,60 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
+    def get_fwingsemail(self):
+        if self.check_private_profile():
+            return
 
+        pc.printout("Searching for emails of users followed by target... this can take a few minutes\n")
 
+        followings = []
 
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_following(str(self.target_id), rank_token=rank_token)
 
+        for user in data['users']:
+            u = {
+                'id': user['pk'],
+                'username': user['username'],
+                'full_name': user['full_name']
+            }
+            followings.append(u)
 
+        results = []
 
+        for follow in followings:
+            content = requests.get("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
+            data = content.json()
+            data = data['graphql']['user']
+            if data['business_email']:
+                follow['email'] = data['business_email']
+                results.append(follow)
 
+        if len(results) > 0:
 
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Email'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Email"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['email']])
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_fwingsemail.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followings_email'] = results
+                json_file_name = "output/" + self.target + "_fwingsemail.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)

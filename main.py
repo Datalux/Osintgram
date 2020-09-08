@@ -6,6 +6,12 @@ import argparse
 from src import printcolors as pc
 import sys
 import signal
+import readline
+
+commands = ["quit", "exit", "list", "help", "addrs", "captions", "comments", "followers",
+            "followings", "fwersemail", "fwingsemail", "hashtags", "info", "likes",
+            "mediatype", "photodes", "photos", "propic", "stories", "tagged", "target",
+            "wcommented", "wtagged"]
 
 
 def printlogo():
@@ -16,7 +22,7 @@ def printlogo():
     pc.printout("\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
     pc.printout("        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
     print('\n')
-    pc.printout("Version 0.8 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
+    pc.printout("Version 0.9 - Developed by Giuseppe Criscione - 2019\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
@@ -41,6 +47,8 @@ def cmdlist():
     pc.printout("followings\t")
     print("Get users followed by target")
     pc.printout("fwersemail\t")
+    print("Get email of target followers")
+    pc.printout("fwingsemail\t")
     print("Get email of users followed by target")
     pc.printout("hashtags\t")
     print("Get hashtags used by target")
@@ -73,7 +81,17 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 
+def completer(text, state):
+    options = [i for i in commands if i.startswith(text)]
+    if state < len(options):
+        return options[state]
+    else:
+        return None
+
+
 signal.signal(signal.SIGINT, signal_handler)
+readline.parse_and_bind("tab: complete")
+readline.set_completer(completer)
 
 printlogo()
 
@@ -108,6 +126,8 @@ while True:
         api.get_followings()
     elif cmd == 'fwersemail':
         api.get_fwersemail()
+    elif cmd == 'fwingsemail':
+        api.get_fwingsemail()
     elif cmd == "hashtags":
         api.get_hashtags()
     elif cmd == "info":
