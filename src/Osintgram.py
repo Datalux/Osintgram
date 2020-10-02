@@ -311,9 +311,9 @@ class Osintgram:
 
         if self.writeFile:
             file_name = "output/" + self.target + "_followers.txt"
-            with open(file_name, 'w', encoding='utf-8') as f:
-                f.write(str(t))
-                f.close()
+            file = open(file_name, "w")
+            file.write(str(t))
+            file.close()
 
         if self.jsonDump:
             json_data['followers'] = followers
