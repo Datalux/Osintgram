@@ -19,7 +19,7 @@ from src import printcolors as pc
 class Osintgram:
     api = None
     api2 = None
-    geolocator = Nominatim()
+    geolocator = Nominatim(user_agent="user-agent")
     user_id = None
     target_id = None
     is_private = True
