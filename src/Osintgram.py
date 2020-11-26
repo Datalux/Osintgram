@@ -1020,10 +1020,12 @@ class Osintgram:
                                  on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except ClientError as e:
-            # pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
+            #pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
             error = json.loads(e.error_response)
             pc.printout(error['message'], pc.RED)
             pc.printout("\n")
+            if 'challenge' in error:
+                print("Please follow this link to complete the challenge: " + error['challenge']['url'])
             exit(9)
 
     def to_json(self, python_object):
