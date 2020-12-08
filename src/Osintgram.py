@@ -468,14 +468,14 @@ class Osintgram:
             pc.printout(str(data['business_category_name']) + '\n')
         pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
         pc.printout(str(data['is_verified']) + '\n')
-        if data['business_email']:
+        if 'business_email' in data:
             pc.printout("[BUSINESS EMAIL] ", pc.BLUE)
             pc.printout(str(data['business_email']) + '\n')
         pc.printout("[HD PROFILE PIC] ", pc.GREEN)
         pc.printout(str(data['profile_pic_url_hd']) + '\n')
         if data['connected_fb_page']:
             pc.printout("[FB PAGE] ", pc.RED)
-            pc.printout(str(data['business_email']) + '\n')
+            pc.printout(str(data['connected_fb_page']) + '\n')
 
         if self.jsonDump:
             user = {
@@ -488,7 +488,7 @@ class Osintgram:
                 'is_verified': data['is_verified'],
                 'profile_pic_url_hd': data['profile_pic_url_hd']
             }
-            if data['business_email']:
+            if 'business_email' in data:
                 user['business_email'] = data['business_email']
             if data['connected_fb_page']:
                 user['connected_fb_page'] = data['connected_fb_page']
@@ -1083,11 +1083,9 @@ class Osintgram:
         results = []
 
         for follow in followers:
-            content = requests.get("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
-            data = content.json()
-            data = data['graphql']['user']
-            if data['business_email']:
-                follow['email'] = data['business_email']
+            user = self.api.user_info(str(follow['id']))
+            if 'public_email' in user['user']:
+                follow['email'] = user['user']['public_email']
                 results.append(follow)
 
         if len(results) > 0:
@@ -1141,11 +1139,9 @@ class Osintgram:
         results = []
 
         for follow in followings:
-            content = requests.get("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
-            data = content.json()
-            data = data['graphql']['user']
-            if data['business_email']:
-                follow['email'] = data['business_email']
+            user = self.api.user_info(str(follow['id']))
+            if 'public_email' in user['user']:
+                follow['email'] = user['user']['public_email']
                 results.append(follow)
 
         if len(results) > 0:
