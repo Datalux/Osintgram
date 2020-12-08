@@ -126,9 +126,10 @@ class Osintgram:
 
         for post in data:
             if 'location' in post and post['location'] is not None:
-                lat = post['location']['lat']
-                lng = post['location']['lng']
-                locations[str(lat) + ', ' + str(lng)] = post.get('taken_at')
+                if 'lat' in post['location'] and 'lng' in post['location']:
+                    lat = post['location']['lat']
+                    lng = post['location']['lng']
+                    locations[str(lat) + ', ' + str(lng)] = post.get('taken_at')
 
         address = {}
         for k, v in locations.items():
