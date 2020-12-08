@@ -75,5 +75,11 @@ Run `git pull` in Osintgram directory
 # Contributing
 You can propose a feature request opening an issue or a pull request.
 
+Here is a list of Osintgram's contributors.
+
+<a href="https://github.com/Datalux/Osintgram/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=Datalux/Osintgram" />
+</a>
+
 ## External library
 Instagram API: https://github.com/ping/instagram_private_api
