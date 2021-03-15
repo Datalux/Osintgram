@@ -68,6 +68,10 @@ Show target info like:
 - business email (if available)
 - HD profile picture url
 - connected Facebook page (if available)
+- Whats'App number (if avaible)
+- City Name (if avaible)
+- Address Street (if avaible)
+- Contact phone number (if avaible)
 
 ### JSON
 Can set preference to export commands output as JSON in output folder. It save output in `<target username>_<command>.JSON` file.

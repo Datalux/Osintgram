@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0](https://github.com/Datalux/Osintgram/releases/tag/1.0)
+**Enhancements**
+- Set itself as target (#53)
+-  Get others info from user (`info` command):
+  - Whats'App number (if avaible)
+  - City Name (if avaible)
+  - Address Street (if avaible)
+  - Contact phone number (if avaible)
+
+**Bug fixes**
+- Fix login issue (#79, #80, #81)
+
 ## [0.9](https://github.com/Datalux/Osintgram/releases/tag/0.9)
 
 **Enhancements**
