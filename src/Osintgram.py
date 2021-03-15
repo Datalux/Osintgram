@@ -442,60 +442,83 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user_info(self):
-        content = requests.get("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+        try:
+            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
+            content = self.api._call_api(endpoint)
+           
+            data = content['user_detail']['user']
 
-        if content.status_code == 404:
-            print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
-            sys.exit(2)
+            pc.printout("[ID] ", pc.GREEN)
+            pc.printout(str(data['pk']) + '\n')
+            pc.printout("[FULL NAME] ", pc.RED)
+            pc.printout(str(data['full_name']) + '\n')
+            pc.printout("[BIOGRAPHY] ", pc.CYAN)
+            pc.printout(str(data['biography']) + '\n')
+            pc.printout("[FOLLOWED] ", pc.BLUE)
+            pc.printout(str(data['follower_count']) + '\n')
+            pc.printout("[FOLLOW] ", pc.GREEN)
+            pc.printout(str(data['following_count']) + '\n')
+            pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
+            pc.printout(str(data['is_business']) + '\n')
+            if data['is_business']:
+                if not data['can_hide_category']:
+                    pc.printout("[BUSINESS CATEGORY] ")
+                    pc.printout(str(data['category']) + '\n')
+            pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
+            pc.printout(str(data['is_verified']) + '\n')
+            if 'public_email' in data and data['public_email']:
+                pc.printout("[EMAIL] ", pc.BLUE)
+                pc.printout(str(data['public_email']) + '\n')
+            pc.printout("[HD PROFILE PIC] ", pc.GREEN)
+            pc.printout(str(data['hd_profile_pic_url_info']['url']) + '\n')
+            if 'fb_page_call_to_action_id' in data and data['fb_page_call_to_action_id']: 
+                pc.printout("[FB PAGE] ", pc.RED)
+                pc.printout(str(data['connected_fb_page']) + '\n')
+            if 'whatsapp_number' in data and data['whatsapp_number']:
+                pc.printout("[WHATSAPP NUMBER] ", pc.GREEN)
+                pc.printout(str(data['whatsapp_number']) + '\n')
+            if 'city_name' in data and data['city_name']:
+                pc.printout("[CITY] ", pc.YELLOW)
+                pc.printout(str(data['city_name']) + '\n')
+            if 'address_street' in data and data['address_street']:
+                pc.printout("[ADDRESS STREET] ", pc.RED)
+                pc.printout(str(data['address_street']) + '\n')
+            if 'contact_phone_number' in data and data['contact_phone_number']:
+                pc.printout("[CONTACT PHONE NUMBER] ", pc.CYAN)
+                pc.printout(str(data['contact_phone_number']) + '\n')
 
-        data = content.json()
-        data = data['graphql']['user']
+            if self.jsonDump:
+                user = {
+                    'id': data['pk'],
+                    'full_name': data['full_name'],
+                    'biography': data['biography'],
+                    'edge_followed_by': data['follower_count'],
+                    'edge_follow': data['following_count'],
+                    'is_business_account': data['is_business_account'],
+                    'is_verified': data['is_business'],
+                    'profile_pic_url_hd': data['hd_profile_pic_url_info']['url']
+                }
+                if 'public_email' in data and data['public_email']:
+                    user['email'] = data['public_email']
+                if 'fb_page_call_to_action_id' in data and data['fb_page_call_to_action_id']: 
+                    user['connected_fb_page'] = data['fb_page_call_to_action_id']
+                if 'whatsapp_number' in data and data['whatsapp_number']:
+                    user['whatsapp_number'] = data['whatsapp_number']
+                if 'city_name' in data and data['city_name']:
+                    user['city_name'] = data['city_name']
+                if 'address_street' in data and data['address_street']:
+                    user['address_street'] = data['address_street']
+                if 'contact_phone_number' in data and data['contact_phone_number']:
+                    user['contact_phone_number'] = data['contact_phone_number']
 
-        pc.printout("[ID] ", pc.GREEN)
-        pc.printout(str(data['id']) + '\n')
-        pc.printout("[FULL NAME] ", pc.RED)
-        pc.printout(str(data['full_name']) + '\n')
-        pc.printout("[BIOGRAPHY] ", pc.CYAN)
-        pc.printout(str(data['biography']) + '\n')
-        pc.printout("[FOLLOWED] ", pc.BLUE)
-        pc.printout(str(data['edge_followed_by']['count']) + '\n')
-        pc.printout("[FOLLOW] ", pc.GREEN)
-        pc.printout(str(data['edge_follow']['count']) + '\n')
-        pc.printout("[BUSINESS ACCOUNT] ", pc.RED)
-        pc.printout(str(data['is_business_account']) + '\n')
-        if data['is_business_account']:
-            pc.printout("[BUSINESS CATEGORY] ")
-            pc.printout(str(data['business_category_name']) + '\n')
-        pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
-        pc.printout(str(data['is_verified']) + '\n')
-        if 'business_email' in data:
-            pc.printout("[BUSINESS EMAIL] ", pc.BLUE)
-            pc.printout(str(data['business_email']) + '\n')
-        pc.printout("[HD PROFILE PIC] ", pc.GREEN)
-        pc.printout(str(data['profile_pic_url_hd']) + '\n')
-        if data['connected_fb_page']:
-            pc.printout("[FB PAGE] ", pc.RED)
-            pc.printout(str(data['connected_fb_page']) + '\n')
+                json_file_name = "output/" + self.target + "_info.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(user, f)
 
-        if self.jsonDump:
-            user = {
-                'id': data['id'],
-                'full_name': data['full_name'],
-                'biography': data['biography'],
-                'edge_followed_by': data['edge_followed_by']['count'],
-                'edge_follow': data['edge_follow']['count'],
-                'is_business_account': data['is_business_account'],
-                'is_verified': data['is_verified'],
-                'profile_pic_url_hd': data['profile_pic_url_hd']
-            }
-            if 'business_email' in data:
-                user['business_email'] = data['business_email']
-            if data['connected_fb_page']:
-                user['connected_fb_page'] = data['connected_fb_page']
-
-            json_file_name = "output/" + self.target + "_info.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(user, f)
+        except ClientError as e:
+            pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
+            pc.printout("\n")
+            exit(2)
 
     def get_total_likes(self):
         if self.check_private_profile():
@@ -821,27 +844,32 @@ class Osintgram:
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output/ folder) \n", pc.GREEN)
 
     def get_user_propic(self):
-        content = requests.get("https://www.instagram.com/" + str(self.target) + "/?__a=1")
 
-        if content.status_code == 404:
-            print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
-            sys.exit(2)
+        try:
+            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
+            content = self.api._call_api(endpoint)
 
-        data = content.json()
+            data = content['user_detail']['user']
 
-        uurl = data["graphql"]["user"]
-        if "profile_pic_url_hd" in uurl:
-            URL = data["graphql"]["user"]["profile_pic_url_hd"]
-        else:
-            URL = data["graphql"]["user"]["profile_pic_url"]
+            if "hd_profile_pic_url_info" in data:
+                URL = data["hd_profile_pic_url_info"]['url']
+            else:
+                #get better quality photo
+                items = len(data['hd_profile_pic_versions'])
+                URL = data["hd_profile_pic_versions"][items-1]['url']
 
-        if URL != "":
-            end = "output/" + self.target + "_propic.jpg"
-            urllib.request.urlretrieve(URL, end)
-            pc.printout("Target propic saved in output folder\n", pc.GREEN)
+            if URL != "":
+                end = "output/" + self.target + "_propic.jpg"
+                urllib.request.urlretrieve(URL, end)
+                pc.printout("Target propic saved in output folder\n", pc.GREEN)
 
-        else:
-            pc.printout("Sorry! No results found :-(\n", pc.RED)
+            else:
+                pc.printout("Sorry! No results found :-(\n", pc.RED)
+        
+        except ClientError as e:
+            print(e)
+            print("An error occured... exit")
+            exit(2)
 
     def get_user_stories(self):
         if self.check_private_profile():
@@ -946,25 +974,27 @@ class Osintgram:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
     def get_user(self, username):
-        content = requests.get("https://www.instagram.com/" + username + "/?__a=1")
+        try:
+            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
+            content = self.api._call_api(endpoint)
 
-        if content.status_code == 404:
-            print("Oops... " + str(self.target) + " non exist, please enter a valid username.")
-            sys.exit(2)
+            if self.writeFile:
+                file_name = "output/" + self.target + "_user_id.txt"
+                file = open(file_name, "w")
+                file.write(str(content['user_detail']['user']['pk']))
+                file.close()
 
-        data = content.json()
+            user = dict()
+            user['id'] = content['user_detail']['user']['pk']
+            user['is_private'] = content['user_detail']['user']['is_private']
 
-        if self.writeFile:
-            file_name = "output/" + self.target + "_user_id.txt"
-            file = open(file_name, "w")
-            file.write(str(data['graphql']['user']['id']))
-            file.close()
+            return user
+        except ClientError as e:
+            pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
+            pc.printout("\n")
+            exit(2)
 
-        user = dict()
-        user['id'] = data['graphql']['user']['id']
-        user['is_private'] = data['graphql']['user']['is_private']
-
-        return user
+        
 
     def set_write_file(self, flag):
         if flag:
