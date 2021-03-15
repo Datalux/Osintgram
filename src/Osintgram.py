@@ -19,7 +19,7 @@ from src import printcolors as pc
 class Osintgram:
     api = None
     api2 = None
-    geolocator = Nominatim(user_agent="user-agent")
+    geolocator = Nominatim(user_agent="http")
     user_id = None
     target_id = None
     is_private = True
@@ -126,9 +126,10 @@ class Osintgram:
 
         for post in data:
             if 'location' in post and post['location'] is not None:
-                lat = post['location']['lat']
-                lng = post['location']['lng']
-                locations[str(lat) + ', ' + str(lng)] = post.get('taken_at')
+                if 'lat' in post['location'] and 'lng' in post['location']:
+                    lat = post['location']['lat']
+                    lng = post['location']['lng']
+                    locations[str(lat) + ', ' + str(lng)] = post.get('taken_at')
 
         address = {}
         for k, v in locations.items():
@@ -467,14 +468,14 @@ class Osintgram:
             pc.printout(str(data['business_category_name']) + '\n')
         pc.printout("[VERIFIED ACCOUNT] ", pc.CYAN)
         pc.printout(str(data['is_verified']) + '\n')
-        if data['business_email']:
+        if 'business_email' in data:
             pc.printout("[BUSINESS EMAIL] ", pc.BLUE)
             pc.printout(str(data['business_email']) + '\n')
         pc.printout("[HD PROFILE PIC] ", pc.GREEN)
         pc.printout(str(data['profile_pic_url_hd']) + '\n')
         if data['connected_fb_page']:
             pc.printout("[FB PAGE] ", pc.RED)
-            pc.printout(str(data['business_email']) + '\n')
+            pc.printout(str(data['connected_fb_page']) + '\n')
 
         if self.jsonDump:
             user = {
@@ -487,7 +488,7 @@ class Osintgram:
                 'is_verified': data['is_verified'],
                 'profile_pic_url_hd': data['profile_pic_url_hd']
             }
-            if data['business_email']:
+            if 'business_email' in data:
                 user['business_email'] = data['business_email']
             if data['connected_fb_page']:
                 user['connected_fb_page'] = data['connected_fb_page']
@@ -1020,12 +1021,14 @@ class Osintgram:
                                  on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except ClientError as e:
-            # pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
+            #pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
             error = json.loads(e.error_response)
             pc.printout(error['message'], pc.RED)
             pc.printout(": ", pc.RED)
             pc.printout(e.msg, pc.RED)
             pc.printout("\n")
+            if 'challenge' in error:
+                print("Please follow this link to complete the challenge: " + error['challenge']['url'])
             exit(9)
 
     def to_json(self, python_object):
@@ -1084,11 +1087,9 @@ class Osintgram:
         results = []
 
         for follow in followers:
-            content = requests.get("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
-            data = content.json()
-            data = data['graphql']['user']
-            if data['business_email']:
-                follow['email'] = data['business_email']
+            user = self.api.user_info(str(follow['id']))
+            if 'public_email' in user['user']:
+                follow['email'] = user['user']['public_email']
                 results.append(follow)
 
         if len(results) > 0:
@@ -1142,11 +1143,9 @@ class Osintgram:
         results = []
 
         for follow in followings:
-            content = requests.get("https://www.instagram.com/" + str(follow['username']) + "/?__a=1")
-            data = content.json()
-            data = data['graphql']['user']
-            if data['business_email']:
-                follow['email'] = data['business_email']
+            user = self.api.user_info(str(follow['id']))
+            if 'public_email' in user['user']:
+                follow['email'] = user['user']['public_email']
                 results.append(follow)
 
         if len(results) > 0:

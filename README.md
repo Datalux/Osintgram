@@ -1,8 +1,7 @@
 [![](https://img.shields.io/badge/version-1.0-green)](https://github.com/Datalux/Osintgram/releases/tag/1.0)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 [![](https://img.shields.io/badge/language-Python3-red)](https://img.shields.io/badge/language-Python3-red)
-
-
+[![](https://img.shields.io/badge/Telegram-Channel-blue.svg)](https://t.me/osintgram)
 
 # Osintgram
 Osintgram is a **OSINT** tool on Instagram.
@@ -74,6 +73,12 @@ Run `git pull` in Osintgram directory
 
 # Contributing
 You can propose a feature request opening an issue or a pull request.
+
+Here is a list of Osintgram's contributors.
+
+<a href="https://github.com/Datalux/Osintgram/graphs/contributors">
+  <img src="https://contributors-img.web.app/image?repo=Datalux/Osintgram" />
+</a>
 
 ## External library
 Instagram API: https://github.com/ping/instagram_private_api
