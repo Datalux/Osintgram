@@ -88,6 +88,10 @@ def completer(text, state):
     else:
         return None
 
+def _quit():
+    pc.printout("Goodbye!\n", pc.RED)
+    sys.exit(0)
+
 
 signal.signal(signal.SIGINT, signal_handler)
 readline.parse_and_bind("tab: complete")
@@ -106,52 +110,41 @@ args = parser.parse_args()
 
 api = Osintgram(args.id, args.file, args.json)
 
+
+commands = {
+    'list':         cmdlist,
+    'help':         cmdlist,
+    'quit':         _quit,
+    'exit':         _quit,
+    'addrs':        api.get_addrs,
+    'captions':     api.get_captions,
+    'comments':     api.get_total_comments,
+    'followers':    api.get_followers,
+    'followings':   api.get_followings,
+    'fwersemail':   api.get_fwersemail,
+    'fwingsemail':  api.get_fwingsemail,
+    'hashtags':     api.get_hashtags,
+    'info':         api.get_user_info,
+    'likes':        api.get_total_likes,
+    'mediatype':    api.get_media_type,
+    'photodes':     api.get_photo_description,
+    'photos':       api.get_user_photo,
+    'propic':       api.get_user_propic,
+    'stories':      api.get_user_stories,
+    'tagged':       api.get_people_tagged_by_user,
+    'target':       api.change_target,
+    'wcommented':   api.get_people_who_commented,
+    'wtagged':      api.get_people_who_tagged
+}
+
 while True:
     pc.printout("Run a command: ", pc.YELLOW)
     cmd = input()
-    if cmd == "quit" or cmd == "exit":
-        pc.printout("Goodbye!\n", pc.RED)
-        sys.exit(0)
-    elif cmd == "list" or cmd == "help":
-        cmdlist()
-    elif cmd == "addrs":
-        api.get_addrs()
-    elif cmd == "captions":
-        api.get_captions()
-    elif cmd == "comments":
-        api.get_total_comments()
-    elif cmd == "followers":
-        api.get_followers()
-    elif cmd == "followings":
-        api.get_followings()
-    elif cmd == 'fwersemail':
-        api.get_fwersemail()
-    elif cmd == 'fwingsemail':
-        api.get_fwingsemail()
-    elif cmd == "hashtags":
-        api.get_hashtags()
-    elif cmd == "info":
-        api.get_user_info()
-    elif cmd == "likes":
-        api.get_total_likes()
-    elif cmd == "mediatype":
-        api.get_media_type()
-    elif cmd == "photodes":
-        api.get_photo_description()
-    elif cmd == "photos":
-        api.get_user_photo()
-    elif cmd == "propic":
-        api.get_user_propic()
-    elif cmd == "stories":
-        api.get_user_stories()
-    elif cmd == "tagged":
-        api.get_people_tagged_by_user()
-    elif cmd == "target":
-        api.change_target()
-    elif cmd == "wcommented":
-        api.get_people_who_commented()
-    elif cmd == "wtagged":
-        api.get_people_who_tagged()
+
+    _cmd = commands.get(cmd)
+    
+    if _cmd:
+        _cmd()    
     elif cmd == "FILE=y":
         api.set_write_file(True)
     elif cmd == "FILE=n":
