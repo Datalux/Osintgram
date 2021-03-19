@@ -278,12 +278,26 @@ class Osintgram:
 
         pc.printout("Searching for target followers...\n")
 
+        _followers = []
         followers = []
+
 
         rank_token = AppClient.generate_uuid()
         data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
 
-        for user in data['users']:
+        _followers.extend(data.get('users', []))
+
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            sys.stdout.write("\rCatched %i followers" % len(_followers))
+            sys.stdout.flush()
+            results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+            _followers.extend(results.get('users', []))
+            next_max_id = results.get('next_max_id')
+
+        print("\n")
+            
+        for user in _followers:
             u = {
                 'id': user['pk'],
                 'username': user['username'],
@@ -330,12 +344,25 @@ class Osintgram:
 
         pc.printout("Searching for target followings...\n")
 
+        _followings = []
         followings = []
 
         rank_token = AppClient.generate_uuid()
         data = self.api.user_following(str(self.target_id), rank_token=rank_token)
 
-        for user in data['users']:
+        _followings.extend(data.get('users', []))
+
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            sys.stdout.write("\rCatched %i followings" % len(_followings))
+            sys.stdout.flush()
+            results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+            _followings.extend(results.get('users', []))
+            next_max_id = results.get('next_max_id')
+
+        print("\n")
+
+        for user in _followings:
             u = {
                 'id': user['pk'],
                 'username': user['username'],
@@ -1079,7 +1106,7 @@ class Osintgram:
             # print('SAVED: {0!s}'.format(new_settings_file))
 
     def check_following(self):
-        if self.target_id == self.api.authenticated_user_id:
+        if str(self.target_id) == self.api.authenticated_user_id:
             return True
         endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
         return self.api._call_api(endpoint)['user_detail']['user']['friendship_status']['following']
@@ -1106,7 +1133,7 @@ class Osintgram:
         rank_token = AppClient.generate_uuid()
         data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
 
-        for user in data['users']:
+        for user in data.get('users', []):
             u = {
                 'id': user['pk'],
                 'username': user['username'],
@@ -1114,11 +1141,29 @@ class Osintgram:
             }
             followers.append(u)
 
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            sys.stdout.write("\rCatched %i followers email" % len(followers))
+            sys.stdout.flush()
+            results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+            
+            for user in results.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followers.append(u)
+
+            next_max_id = results.get('next_max_id')
+        
+        print("\n")
+
         results = []
 
         for follow in followers:
             user = self.api.user_info(str(follow['id']))
-            if 'public_email' in user['user']:
+            if 'public_email' in user['user'] and user['user']['public_email']:
                 follow['email'] = user['user']['public_email']
                 results.append(follow)
 
@@ -1162,7 +1207,7 @@ class Osintgram:
         rank_token = AppClient.generate_uuid()
         data = self.api.user_following(str(self.target_id), rank_token=rank_token)
 
-        for user in data['users']:
+        for user in data.get('users', []):
             u = {
                 'id': user['pk'],
                 'username': user['username'],
@@ -1170,16 +1215,34 @@ class Osintgram:
             }
             followings.append(u)
 
+        next_max_id = data.get('next_max_id')
+        
+        while next_max_id:
+            results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+
+            for user in results.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followings.append(u)
+
+            next_max_id = results.get('next_max_id')
+       
         results = []
 
         for follow in followings:
+            sys.stdout.write("\rCatched %i followings email" % len(results))
+            sys.stdout.flush()
             user = self.api.user_info(str(follow['id']))
-            if 'public_email' in user['user']:
+            if 'public_email' in user['user'] and user['user']['public_email']:
                 follow['email'] = user['user']['public_email']
                 results.append(follow)
+        
+        print("\n")
 
         if len(results) > 0:
-
             t = PrettyTable(['ID', 'Username', 'Full Name', 'Email'])
             t.align["ID"] = "l"
             t.align["Username"] = "l"
