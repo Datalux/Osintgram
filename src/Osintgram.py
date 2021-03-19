@@ -330,12 +330,21 @@ class Osintgram:
 
         pc.printout("Searching for target followings...\n")
 
+        _followings = []
         followings = []
 
         rank_token = AppClient.generate_uuid()
         data = self.api.user_following(str(self.target_id), rank_token=rank_token)
 
-        for user in data['users']:
+        _followings.extend(data.get('users', []))
+
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+            _followings.extend(results.get('users', []))
+            next_max_id = results.get('next_max_id')
+
+        for user in _followings:
             u = {
                 'id': user['pk'],
                 'username': user['username'],
