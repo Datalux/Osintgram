@@ -543,6 +543,7 @@ class Osintgram:
                     json.dump(user, f)
 
         except ClientError as e:
+            print(e)
             pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
             pc.printout("\n")
             exit(2)
@@ -894,8 +895,9 @@ class Osintgram:
                 pc.printout("Sorry! No results found :-(\n", pc.RED)
         
         except ClientError as e:
-            print(e)
-            print("An error occured... exit")
+            error = json.loads(e.error_response)
+            print(error['message'])
+            print(error['error_title'])
             exit(2)
 
     def get_user_stories(self):
@@ -1017,10 +1019,10 @@ class Osintgram:
 
             return user
         except ClientError as e:
-            pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
-            pc.printout("\n")
-            exit(2)
-
+            error = json.loads(e.error_response)
+            print(error['message'])
+            print(error['error_title'])
+            sys.exit(2)
         
 
     def set_write_file(self, flag):
@@ -1267,5 +1269,65 @@ class Osintgram:
                     json.dump(json_data, f)
 
             print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_comments(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for users who commented...\n")
+
+        data = self.__get_feed__()
+        users = []
+
+        for post in data:
+            comments = self.__get_comments__(post['id'])
+            for comment in comments:
+                print(comment['text'])
+                
+                # if not any(u['id'] == comment['user']['pk'] for u in users):
+                #     user = {
+                #         'id': comment['user']['pk'],
+                #         'username': comment['user']['username'],
+                #         'full_name': comment['user']['full_name'],
+                #         'counter': 1
+                #     }
+                #     users.append(user)
+                # else:
+                #     for user in users:
+                #         if user['id'] == comment['user']['pk']:
+                #             user['counter'] += 1
+                #             break
+
+        if len(users) > 0:
+            ssort = sorted(users, key=lambda value: value['counter'], reverse=True)
+
+            json_data = {}
+
+            t = PrettyTable()
+
+            t.field_names = ['Comments', 'ID', 'Username', 'Full Name']
+            t.align["Comments"] = "l"
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+
+            for u in ssort:
+                t.add_row([str(u['counter']), u['id'], u['username'], u['full_name']])
+
+            print(t)
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_users_who_commented.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['users_who_commented'] = ssort
+                json_file_name = "output/" + self.target + "_users_who_commented.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
