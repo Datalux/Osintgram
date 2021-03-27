@@ -470,7 +470,7 @@ class Osintgram:
 
     def get_user_info(self):
         try:
-            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
+            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
             content = self.api._call_api(endpoint)
            
             data = content['user_detail']['user']
@@ -874,7 +874,7 @@ class Osintgram:
     def get_user_propic(self):
 
         try:
-            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
+            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
             content = self.api._call_api(endpoint)
 
             data = content['user_detail']['user']
@@ -1004,18 +1004,16 @@ class Osintgram:
 
     def get_user(self, username):
         try:
-            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
-            content = self.api._call_api(endpoint)
-
+            content = self.api.username_info(username)
             if self.writeFile:
                 file_name = "output/" + self.target + "_user_id.txt"
                 file = open(file_name, "w")
-                file.write(str(content['user_detail']['user']['pk']))
+                file.write(str(content['user']['pk']))
                 file.close()
 
             user = dict()
-            user['id'] = content['user_detail']['user']['pk']
-            user['is_private'] = content['user_detail']['user']['is_private']
+            user['id'] = content['user']['pk']
+            user['is_private'] = content['user']['is_private']
 
             return user
         except ClientError as e:
