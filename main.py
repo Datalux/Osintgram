@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from src.Osintgram import Osintgram
@@ -6,7 +6,7 @@ import argparse
 from src import printcolors as pc
 import sys
 import signal
-import readline
+import gnureadline
 
 commands = ["quit", "exit", "list", "help", "addrs", "captions", "comments", "followers",
             "followings", "fwersemail", "fwingsemail", "hashtags", "info", "likes",
@@ -90,8 +90,8 @@ def completer(text, state):
 
 
 signal.signal(signal.SIGINT, signal_handler)
-readline.parse_and_bind("tab: complete")
-readline.set_completer(completer)
+gnureadline.parse_and_bind("tab: complete")
+gnureadline.set_completer(completer)
 
 printlogo()
 
