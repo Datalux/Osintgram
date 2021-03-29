@@ -6,7 +6,14 @@ import argparse
 from src import printcolors as pc
 import sys
 import signal
-import gnureadline
+
+is_windows = False
+
+try:
+    import gnureadline  
+except: 
+    is_windows = True
+    import pyreadline
 
 commands = ["quit", "exit", "list", "help", "addrs", "captions", "comments", "followers",
             "followings", "fwersemail", "fwingsemail", "hashtags", "info", "likes",
@@ -94,8 +101,12 @@ def _quit():
 
 
 signal.signal(signal.SIGINT, signal_handler)
-gnureadline.parse_and_bind("tab: complete")
-gnureadline.set_completer(completer)
+if is_windows:
+    pyreadline.Readline().parse_and_bind("tab: complete")
+    pyreadline.Readline().set_completer(completer)
+else:
+    pyreadline.parse_and_bind("tab: complete")
+    pyreadline.set_completer(completer)
 
 printlogo()
 
