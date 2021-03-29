@@ -3,4 +3,4 @@ requests-toolbelt==0.9.1
 geopy>=2.0.0
 prettytable==0.7.2
 instagram-private-api==1.6.0
-readline>=6.2.4
+gnureadline>=8.0.0

@@ -31,7 +31,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 ```
 You can find detailed commands usage [here](doc/COMMANDS.md).
 
-[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/1.0) | 
+[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/1.0.1) | 
 [CHANGELOG](doc/CHANGELOG.md)
 
 ## Tools

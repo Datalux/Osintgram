@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.1](https://github.com/Datalux/Osintgram/releases/tag/1.0.1)
+**Bug fixes**
+- Set itself as target by param
+
 ## [1.0](https://github.com/Datalux/Osintgram/releases/tag/1.0)
 **Enhancements**
 - Set itself as target (#53)
