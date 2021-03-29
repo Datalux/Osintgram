@@ -8,11 +8,6 @@ import sys
 import signal
 import gnureadline
 
-commands = ["quit", "exit", "list", "help", "addrs", "captions", "comments", "followers",
-            "followings", "fwersemail", "fwingsemail", "hashtags", "info", "likes",
-            "mediatype", "photodes", "photos", "propic", "stories", "tagged", "target",
-            "wcommented", "wtagged"]
-
 
 def printlogo():
     pc.printout("________         .__        __                               \n", pc.YELLOW)
@@ -50,6 +45,10 @@ def cmdlist():
     print("Get email of target followers")
     pc.printout("fwingsemail\t")
     print("Get email of users followed by target")
+    pc.printout("fwersnumber\t")
+    print("Get phone number of target followers")
+    pc.printout("fwingsnumber\t")
+    print("Get phone number of users followed by target")    
     pc.printout("hashtags\t")
     print("Get hashtags used by target")
     pc.printout("info\t\t")
@@ -93,10 +92,6 @@ def _quit():
     sys.exit(0)
 
 
-signal.signal(signal.SIGINT, signal_handler)
-gnureadline.parse_and_bind("tab: complete")
-gnureadline.set_completer(completer)
-
 printlogo()
 
 parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell '
@@ -112,30 +107,36 @@ api = Osintgram(args.id, args.file, args.json)
 
 
 commands = {
-    'list':         cmdlist,
-    'help':         cmdlist,
-    'quit':         _quit,
-    'exit':         _quit,
-    'addrs':        api.get_addrs,
-    'captions':     api.get_captions,
-    'comments':     api.get_total_comments,
-    'followers':    api.get_followers,
-    'followings':   api.get_followings,
-    'fwersemail':   api.get_fwersemail,
-    'fwingsemail':  api.get_fwingsemail,
-    'hashtags':     api.get_hashtags,
-    'info':         api.get_user_info,
-    'likes':        api.get_total_likes,
-    'mediatype':    api.get_media_type,
-    'photodes':     api.get_photo_description,
-    'photos':       api.get_user_photo,
-    'propic':       api.get_user_propic,
-    'stories':      api.get_user_stories,
-    'tagged':       api.get_people_tagged_by_user,
-    'target':       api.change_target,
-    'wcommented':   api.get_people_who_commented,
-    'wtagged':      api.get_people_who_tagged
+    'list':             cmdlist,
+    'help':             cmdlist,
+    'quit':             _quit,
+    'exit':             _quit,
+    'addrs':            api.get_addrs,
+    'captions':         api.get_captions,
+    'comments':         api.get_total_comments,
+    'followers':        api.get_followers,
+    'followings':       api.get_followings,
+    'fwersemail':       api.get_fwersemail,
+    'fwingsemail':      api.get_fwingsemail,
+    'fwersnumber':      api.get_fwersnumber,
+    'fwingsnumber':     api.get_fwingsnumber,
+    'hashtags':         api.get_hashtags,
+    'info':             api.get_user_info,
+    'likes':            api.get_total_likes,
+    'mediatype':        api.get_media_type,
+    'photodes':         api.get_photo_description,
+    'photos':           api.get_user_photo,
+    'propic':           api.get_user_propic,
+    'stories':          api.get_user_stories,
+    'tagged':           api.get_people_tagged_by_user,
+    'target':           api.change_target,
+    'wcommented':       api.get_people_who_commented,
+    'wtagged':          api.get_people_who_tagged
 }
+
+signal.signal(signal.SIGINT, signal_handler)
+gnureadline.parse_and_bind("tab: complete")
+gnureadline.set_completer(completer)
 
 while True:
     pc.printout("Run a command: ", pc.YELLOW)
