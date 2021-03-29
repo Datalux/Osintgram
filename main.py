@@ -105,8 +105,8 @@ if is_windows:
     pyreadline.Readline().parse_and_bind("tab: complete")
     pyreadline.Readline().set_completer(completer)
 else:
-    pyreadline.parse_and_bind("tab: complete")
-    pyreadline.set_completer(completer)
+    gnureadline.parse_and_bind("tab: complete")
+    gnureadline.set_completer(completer)
 
 printlogo()
 
