@@ -52,6 +52,12 @@ Return a list of emails of target followers
 ### fwingsemail
 Return a list of emails of user followed by target
 
+### fwersnumber
+Return a list of phone number of target followers
+
+### fwingsnumber
+Return a list of phone number of user followed by target
+
 ### hashtags
 Return a list with all hashtag used by target in his photos
 
