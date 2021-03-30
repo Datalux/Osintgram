@@ -170,6 +170,6 @@ while True:
     elif cmd == "JSON=n":
         api.set_json_dump(False)
     elif cmd == "":
-        continue
+        print("")
     else:
         pc.printout("Unknown command\n", pc.RED)
