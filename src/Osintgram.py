@@ -1270,6 +1270,154 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
+    def get_fwingsnumber(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for phone numbers of users followed by target... this can take a few minutes\n")
+
+        followings = []
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_following(str(self.target_id), rank_token=rank_token)
+
+        for user in data.get('users', []):
+            u = {
+                'id': user['pk'],
+                'username': user['username'],
+                'full_name': user['full_name']
+            }
+            followings.append(u)
+
+        next_max_id = data.get('next_max_id')
+        
+        while next_max_id:
+            results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+
+            for user in results.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followings.append(u)
+
+            next_max_id = results.get('next_max_id')
+       
+        results = []
+
+        for follow in followings:
+            sys.stdout.write("\rCatched %i followings phone numbers" % len(results))
+            sys.stdout.flush()
+            user = self.api.user_info(str(follow['id']))
+            if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
+                follow['contact_phone_number'] = user['user']['contact_phone_number']
+                results.append(follow)
+        
+        print("\n")
+
+        if len(results) > 0:
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Phone'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Phone number"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['contact_phone_number']])
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_fwingsnumber.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followings_phone_numbers'] = results
+                json_file_name = "output/" + self.target + "_fwingsnumber.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_fwersnumber(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for phone numbers of users followers... this can take a few minutes\n")
+
+        followings = []
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_following(str(self.target_id), rank_token=rank_token)
+
+        for user in data.get('users', []):
+            u = {
+                'id': user['pk'],
+                'username': user['username'],
+                'full_name': user['full_name']
+            }
+            followings.append(u)
+
+        next_max_id = data.get('next_max_id')
+        
+        while next_max_id:
+            results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+
+            for user in results.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followings.append(u)
+
+            next_max_id = results.get('next_max_id')
+       
+        results = []
+
+        for follow in followings:
+            sys.stdout.write("\rCatched %i followers phone numbers" % len(results))
+            sys.stdout.flush()
+            user = self.api.user_info(str(follow['id']))
+            if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
+                follow['contact_phone_number'] = user['user']['contact_phone_number']
+                results.append(follow)
+        
+        print("\n")
+
+        if len(results) > 0:
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Phone'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Phone number"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['contact_phone_number']])
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_fwersnumber.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followings_phone_numbers'] = results
+                json_file_name = "output/" + self.target + "_fwerssnumber.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
     def get_comments(self):
         if self.check_private_profile():
             return
