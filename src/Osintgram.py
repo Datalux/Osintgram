@@ -1018,8 +1018,12 @@ class Osintgram:
             return user
         except ClientError as e:
             error = json.loads(e.error_response)
-            print(error['message'])
-            print(error['error_title'])
+            if 'message' in error:
+                print(error['message'])
+            if 'error_title' in error:
+                print(error['error_title'])
+            if 'challenge' in error:
+                print("Please follow this link to complete the challenge: " + error['challenge']['url'])    
             sys.exit(2)
         
 
