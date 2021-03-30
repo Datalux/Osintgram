@@ -68,6 +68,11 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 8. Run the main.py script 
 
     `python3 main.py <target username>`
+    
+## Development version
+To use the development version with the latest feature and fixes just switch to `development` branch using Git:
+
+`git checkout development`
 
 ## Updating
 
