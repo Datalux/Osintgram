@@ -6,7 +6,14 @@ import argparse
 from src import printcolors as pc
 import sys
 import signal
-import gnureadline
+
+is_windows = False
+
+try:
+    import gnureadline  
+except: 
+    is_windows = True
+    import pyreadline
 
 
 def printlogo():
@@ -91,6 +98,14 @@ def _quit():
     pc.printout("Goodbye!\n", pc.RED)
     sys.exit(0)
 
+
+signal.signal(signal.SIGINT, signal_handler)
+if is_windows:
+    pyreadline.Readline().parse_and_bind("tab: complete")
+    pyreadline.Readline().set_completer(completer)
+else:
+    gnureadline.parse_and_bind("tab: complete")
+    gnureadline.set_completer(completer)
 
 printlogo()
 
