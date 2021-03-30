@@ -86,7 +86,7 @@
 
 **Bug fixes**
 
-- added a check if target has a private profile to avoid tool crash (#10)
+- added a check if the target has a private profile to avoid tool crash (#10)
 - fixed `tagged` bug (#5)
 
 ## [0.3](https://github.com/Datalux/Osintgram/releases/tag/0.3)
