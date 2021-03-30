@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/version-1.0-green)](https://github.com/Datalux/Osintgram/releases/tag/1.0)
+[![](https://img.shields.io/badge/version-1.1-green)](https://github.com/Datalux/Osintgram/releases/tag/1.1)
 [![](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 [![](https://img.shields.io/badge/language-Python3-red)](https://img.shields.io/badge/language-Python3-red)
 [![](https://img.shields.io/badge/Telegram-Channel-blue.svg)](https://t.me/osintgram)
@@ -33,7 +33,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 ```
 You can find detailed commands usage [here](doc/COMMANDS.md).
 
-[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/1.0.1) | 
+[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/1.1) | 
 [CHANGELOG](doc/CHANGELOG.md)
 
 ## Tools
