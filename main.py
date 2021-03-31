@@ -46,7 +46,7 @@ def cmdlist():
     print("Get total comments of target's posts")
     pc.printout("followers\t")
     print("Get target followers")
-    pc.printout("following\t")
+    pc.printout("followings\t")
     print("Get users followed by target")
     pc.printout("fwersemail\t")
     print("Get email of target followers")
@@ -130,7 +130,7 @@ commands = {
     'captions':         api.get_captions,
     'comments':         api.get_total_comments,
     'followers':        api.get_followers,
-    'following':       api.get_following,
+    'followings':       api.get_followings,
     'fwersemail':       api.get_fwersemail,
     'fwingsemail':      api.get_fwingsemail,
     'fwersnumber':      api.get_fwersnumber,

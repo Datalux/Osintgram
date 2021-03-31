@@ -23,10 +23,10 @@
 **Enhancements**
 - Set itself as target (#53)
 -  Get others info from user (`info` command):
-  - Whats'App number (if available)
-  - City Name (if available)
-  - Address Street (if available)
-  - Contact phone number (if available)
+  - Whats'App number (if avaible)
+  - City Name (if avaible)
+  - Address Street (if avaible)
+  - Contact phone number (if avaible)
 
 **Bug fixes**
 - Fix login issue (#79, #80, #81)

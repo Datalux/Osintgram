@@ -227,7 +227,7 @@ class Osintgram:
 
             if self.jsonDump:
                 json_data['captions'] = captions
-                json_file_name = "output/" + self.target + "_following.json"
+                json_file_name = "output/" + self.target + "_followings.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
 
@@ -311,7 +311,7 @@ class Osintgram:
         t.align["Full Name"] = "l"
 
         json_data = {}
-        following_list = []
+        followings_list = []
 
         for node in followers:
             t.add_row([str(node['id']), node['username'], node['full_name']])
@@ -322,7 +322,7 @@ class Osintgram:
                     'username': node['username'],
                     'full_name': node['full_name']
                 }
-                following_list.append(follow)
+                followings_list.append(follow)
 
         if self.writeFile:
             file_name = "output/" + self.target + "_followers.txt"
@@ -338,37 +338,37 @@ class Osintgram:
 
         print(t)
 
-    def get_following(self):
+    def get_followings(self):
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target following...\n")
+        pc.printout("Searching for target followings...\n")
 
-        _following = []
-        following = []
+        _followings = []
+        followings = []
 
         rank_token = AppClient.generate_uuid()
         data = self.api.user_following(str(self.target_id), rank_token=rank_token)
 
-        _following.extend(data.get('users', []))
+        _followings.extend(data.get('users', []))
 
         next_max_id = data.get('next_max_id')
         while next_max_id:
-            sys.stdout.write("\rCatched %i following" % len(_following))
+            sys.stdout.write("\rCatched %i followings" % len(_followings))
             sys.stdout.flush()
             results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
-            _following.extend(results.get('users', []))
+            _followings.extend(results.get('users', []))
             next_max_id = results.get('next_max_id')
 
         print("\n")
 
-        for user in _following:
+        for user in _followings:
             u = {
                 'id': user['pk'],
                 'username': user['username'],
                 'full_name': user['full_name']
             }
-            following.append(u)
+            followings.append(u)
 
         t = PrettyTable(['ID', 'Username', 'Full Name'])
         t.align["ID"] = "l"
@@ -376,9 +376,9 @@ class Osintgram:
         t.align["Full Name"] = "l"
 
         json_data = {}
-        following_list = []
+        followings_list = []
 
-        for node in following:
+        for node in followings:
             t.add_row([str(node['id']), node['username'], node['full_name']])
 
             if self.jsonDump:
@@ -387,17 +387,17 @@ class Osintgram:
                     'username': node['username'],
                     'full_name': node['full_name']
                 }
-                following_list.append(follow)
+                followings_list.append(follow)
 
         if self.writeFile:
-            file_name = "output/" + self.target + "_following.txt"
+            file_name = "output/" + self.target + "_followings.txt"
             file = open(file_name, "w")
             file.write(str(t))
             file.close()
 
         if self.jsonDump:
-            json_data['following'] = following_list
-            json_file_name = "output/" + self.target + "_following.json"
+            json_data['followings'] = followings_list
+            json_file_name = "output/" + self.target + "_followings.json"
             with open(json_file_name, 'w') as f:
                 json.dump(json_data, f)
 
@@ -814,7 +814,7 @@ class Osintgram:
         user_input = input()
         try:
             if user_input == "":
-                pc.printout("Downloading all photos available...\n")
+                pc.printout("Downloading all photos avaible...\n")
             else:
                 limit = int(user_input)
                 pc.printout("Downloading " + user_input + " photos...\n")
@@ -1211,7 +1211,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        following = []
+        followings = []
 
         try:
 
@@ -1226,7 +1226,7 @@ class Osintgram:
                     'username': user['username'],
                     'full_name': user['full_name']
                 }
-                following.append(u)
+                followings.append(u)
 
             next_max_id = data.get('next_max_id')
             
@@ -1239,14 +1239,14 @@ class Osintgram:
                         'username': user['username'],
                         'full_name': user['full_name']
                     }
-                    following.append(u)
+                    followings.append(u)
 
                 next_max_id = results.get('next_max_id')
         
             results = []
 
-            for follow in following:
-                sys.stdout.write("\rCatched %i following email" % len(results))
+            for follow in followings:
+                sys.stdout.write("\rCatched %i followings email" % len(results))
                 sys.stdout.flush()
                 user = self.api.user_info(str(follow['id']))
                 if 'public_email' in user['user'] and user['user']['public_email']:
@@ -1279,7 +1279,7 @@ class Osintgram:
                 file.close()
 
             if self.jsonDump:
-                json_data['following_email'] = results
+                json_data['followings_email'] = results
                 json_file_name = "output/" + self.target + "_fwingsemail.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
@@ -1298,7 +1298,7 @@ class Osintgram:
 
             pc.printout("Searching for phone numbers of users followed by target... this can take a few minutes\n")
 
-            following = []
+            followings = []
 
             rank_token = AppClient.generate_uuid()
             data = self.api.user_following(str(self.target_id), rank_token=rank_token)
@@ -1309,7 +1309,7 @@ class Osintgram:
                     'username': user['username'],
                     'full_name': user['full_name']
                 }
-                following.append(u)
+                followings.append(u)
 
             next_max_id = data.get('next_max_id')
             
@@ -1322,13 +1322,13 @@ class Osintgram:
                         'username': user['username'],
                         'full_name': user['full_name']
                     }
-                    following.append(u)
+                    followings.append(u)
 
                 next_max_id = results.get('next_max_id')
        
 
-            for follow in following:
-                sys.stdout.write("\rCatched %i following phone numbers" % len(results))
+            for follow in followings:
+                sys.stdout.write("\rCatched %i followings phone numbers" % len(results))
                 sys.stdout.flush()
                 user = self.api.user_info(str(follow['id']))
                 if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
@@ -1361,7 +1361,7 @@ class Osintgram:
                 file.close()
 
             if self.jsonDump:
-                json_data['following_phone_numbers'] = results
+                json_data['followings_phone_numbers'] = results
                 json_file_name = "output/" + self.target + "_fwingsnumber.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
@@ -1374,7 +1374,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        following = []
+        followings = []
 
         try:
 
@@ -1390,7 +1390,7 @@ class Osintgram:
                     'username': user['username'],
                     'full_name': user['full_name']
                 }
-                following.append(u)
+                followings.append(u)
 
             next_max_id = data.get('next_max_id')
             
@@ -1403,13 +1403,13 @@ class Osintgram:
                         'username': user['username'],
                         'full_name': user['full_name']
                     }
-                    following.append(u)
+                    followings.append(u)
 
                 next_max_id = results.get('next_max_id')
         
             results = []
 
-            for follow in following:
+            for follow in followings:
                 sys.stdout.write("\rCatched %i followers phone numbers" % len(results))
                 sys.stdout.flush()
                 user = self.api.user_info(str(follow['id']))
@@ -1443,7 +1443,7 @@ class Osintgram:
                 file.close()
 
             if self.jsonDump:
-                json_data['following_phone_numbers'] = results
+                json_data['followings_phone_numbers'] = results
                 json_file_name = "output/" + self.target + "_fwerssnumber.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
