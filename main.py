@@ -26,9 +26,9 @@ def printlogo():
     print('\n')
     pc.printout("Version 1.1 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
-    pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
+    pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (default is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
-    pc.printout("Type 'JSON=y' to export results to a JSON files like '<target username>_<command>.json (deafult is "
+    pc.printout("Type 'JSON=y' to export results to a JSON files like '<target username>_<command>.json (default is "
                 "disabled)'\n")
     pc.printout("Type 'JSON=n' to disable exporting to files'\n")
 

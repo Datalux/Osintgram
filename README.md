@@ -6,7 +6,7 @@
 # Osintgram
 Osintgram is a **OSINT** tool on Instagram.
 
-**I don't assume any responsability for the use of this tool**
+**I don't assume any responsibility for the use of this tool**
 
 Osintgram offers an interactive shell to perform analysis on Instagram account of any users by its nickname. You can get:
 ```
