@@ -62,17 +62,9 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
   
 5.  Run `pip install -r requirements.txt`
 
-6. Create a subdirectory `config`
+6. Open the `credentials.ini` file in the `config` folder and write your Instagram account username and password in the corresponding fields
 
-    `mkdir config`
-
-7. Create in `config` folder the file: `username.conf` and write your Instagram account username
-
-8. Create in `config` folder the file: `pw.conf` and write your Instagram account password
-
-9.  Create in `config` folder the file: `settings.json` and write the following string: "{}" without quotation marks
-
-10. Run the main.py script 
+7. Run the main.py script 
 
     `python3 main.py <target username>`
     
