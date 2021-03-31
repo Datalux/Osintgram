@@ -52,9 +52,8 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 
     `cd Osintgram`
 
-3. Create a virtual environment for this project
+3. Run `pip3 install -r requirements.txt`
 
-    `python3 -m venv venv`
 
 4. Load the virtual environment
    - On Windows Powershell: `.\venv\Scripts\activate.ps1`
@@ -72,6 +71,10 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 To use the development version with the latest feature and fixes just switch to `development` branch using Git:
 
 `git checkout development`
+
+and update to last version using: 
+
+`git pull origin development` 
 
 ## Updating
 
