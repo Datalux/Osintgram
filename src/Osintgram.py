@@ -9,7 +9,7 @@ import requests
 
 from geopy.geocoders import Nominatim
 from instagram_private_api import Client as AppClient
-from instagram_private_api import ClientCookieExpiredError, ClientLoginRequiredError, ClientError
+from instagram_private_api import ClientCookieExpiredError, ClientLoginRequiredError, ClientError, ClientThrottledError
 
 from prettytable import PrettyTable
 
@@ -278,12 +278,26 @@ class Osintgram:
 
         pc.printout("Searching for target followers...\n")
 
+        _followers = []
         followers = []
+
 
         rank_token = AppClient.generate_uuid()
         data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
 
-        for user in data['users']:
+        _followers.extend(data.get('users', []))
+
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            sys.stdout.write("\rCatched %i followers" % len(_followers))
+            sys.stdout.flush()
+            results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+            _followers.extend(results.get('users', []))
+            next_max_id = results.get('next_max_id')
+
+        print("\n")
+            
+        for user in _followers:
             u = {
                 'id': user['pk'],
                 'username': user['username'],
@@ -330,12 +344,25 @@ class Osintgram:
 
         pc.printout("Searching for target followings...\n")
 
+        _followings = []
         followings = []
 
         rank_token = AppClient.generate_uuid()
         data = self.api.user_following(str(self.target_id), rank_token=rank_token)
 
-        for user in data['users']:
+        _followings.extend(data.get('users', []))
+
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            sys.stdout.write("\rCatched %i followings" % len(_followings))
+            sys.stdout.flush()
+            results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+            _followings.extend(results.get('users', []))
+            next_max_id = results.get('next_max_id')
+
+        print("\n")
+
+        for user in _followings:
             u = {
                 'id': user['pk'],
                 'username': user['username'],
@@ -443,7 +470,7 @@ class Osintgram:
 
     def get_user_info(self):
         try:
-            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
+            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
             content = self.api._call_api(endpoint)
            
             data = content['user_detail']['user']
@@ -516,6 +543,7 @@ class Osintgram:
                     json.dump(user, f)
 
         except ClientError as e:
+            print(e)
             pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
             pc.printout("\n")
             exit(2)
@@ -846,7 +874,7 @@ class Osintgram:
     def get_user_propic(self):
 
         try:
-            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
+            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
             content = self.api._call_api(endpoint)
 
             data = content['user_detail']['user']
@@ -867,8 +895,9 @@ class Osintgram:
                 pc.printout("Sorry! No results found :-(\n", pc.RED)
         
         except ClientError as e:
-            print(e)
-            print("An error occured... exit")
+            error = json.loads(e.error_response)
+            print(error['message'])
+            print(error['error_title'])
             exit(2)
 
     def get_user_stories(self):
@@ -975,25 +1004,27 @@ class Osintgram:
 
     def get_user(self, username):
         try:
-            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target})
-            content = self.api._call_api(endpoint)
-
+            content = self.api.username_info(username)
             if self.writeFile:
                 file_name = "output/" + self.target + "_user_id.txt"
                 file = open(file_name, "w")
-                file.write(str(content['user_detail']['user']['pk']))
+                file.write(str(content['user']['pk']))
                 file.close()
 
             user = dict()
-            user['id'] = content['user_detail']['user']['pk']
-            user['is_private'] = content['user_detail']['user']['is_private']
+            user['id'] = content['user']['pk']
+            user['is_private'] = content['user']['is_private']
 
             return user
         except ClientError as e:
-            pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
-            pc.printout("\n")
-            exit(2)
-
+            error = json.loads(e.error_response)
+            if 'message' in error:
+                print(error['message'])
+            if 'error_title' in error:
+                print(error['error_title'])
+            if 'challenge' in error:
+                print("Please follow this link to complete the challenge: " + error['challenge']['url'])    
+            sys.exit(2)
         
 
     def set_write_file(self, flag):
@@ -1099,28 +1130,53 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for emails of target followers... this can take a few minutes\n")
-
         followers = []
+        
+        try:
 
-        rank_token = AppClient.generate_uuid()
-        data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
+            pc.printout("Searching for emails of target followers... this can take a few minutes\n")
 
-        for user in data['users']:
-            u = {
-                'id': user['pk'],
-                'username': user['username'],
-                'full_name': user['full_name']
-            }
-            followers.append(u)
+            rank_token = AppClient.generate_uuid()
+            data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
 
-        results = []
+            for user in data.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followers.append(u)
 
-        for follow in followers:
-            user = self.api.user_info(str(follow['id']))
-            if 'public_email' in user['user']:
-                follow['email'] = user['user']['public_email']
-                results.append(follow)
+            next_max_id = data.get('next_max_id')
+            while next_max_id:
+                sys.stdout.write("\rCatched %i followers email" % len(followers))
+                sys.stdout.flush()
+                results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+                
+                for user in results.get('users', []):
+                    u = {
+                        'id': user['pk'],
+                        'username': user['username'],
+                        'full_name': user['full_name']
+                    }
+                    followers.append(u)
+
+                next_max_id = results.get('next_max_id')
+            
+            print("\n")
+
+            results = []
+
+            for follow in followers:
+                user = self.api.user_info(str(follow['id']))
+                if 'public_email' in user['user'] and user['user']['public_email']:
+                    follow['email'] = user['user']['public_email']
+                    results.append(follow)
+
+        except ClientThrottledError  as e:
+            pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
+            pc.printout("\n")
+            return
 
         if len(results) > 0:
 
@@ -1155,31 +1211,56 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for emails of users followed by target... this can take a few minutes\n")
-
         followings = []
 
-        rank_token = AppClient.generate_uuid()
-        data = self.api.user_following(str(self.target_id), rank_token=rank_token)
+        try:
 
-        for user in data['users']:
-            u = {
-                'id': user['pk'],
-                'username': user['username'],
-                'full_name': user['full_name']
-            }
-            followings.append(u)
+            pc.printout("Searching for emails of users followed by target... this can take a few minutes\n")
 
-        results = []
+            rank_token = AppClient.generate_uuid()
+            data = self.api.user_following(str(self.target_id), rank_token=rank_token)
 
-        for follow in followings:
-            user = self.api.user_info(str(follow['id']))
-            if 'public_email' in user['user']:
-                follow['email'] = user['user']['public_email']
-                results.append(follow)
+            for user in data.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followings.append(u)
+
+            next_max_id = data.get('next_max_id')
+            
+            while next_max_id:
+                results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+
+                for user in results.get('users', []):
+                    u = {
+                        'id': user['pk'],
+                        'username': user['username'],
+                        'full_name': user['full_name']
+                    }
+                    followings.append(u)
+
+                next_max_id = results.get('next_max_id')
+        
+            results = []
+
+            for follow in followings:
+                sys.stdout.write("\rCatched %i followings email" % len(results))
+                sys.stdout.flush()
+                user = self.api.user_info(str(follow['id']))
+                if 'public_email' in user['user'] and user['user']['public_email']:
+                    follow['email'] = user['user']['public_email']
+                    results.append(follow)
+        
+        except ClientThrottledError as e:
+            pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
+            pc.printout("\n")
+            return
+        
+        print("\n")
 
         if len(results) > 0:
-
             t = PrettyTable(['ID', 'Username', 'Full Name', 'Email'])
             t.align["ID"] = "l"
             t.align["Username"] = "l"
@@ -1204,5 +1285,229 @@ class Osintgram:
                     json.dump(json_data, f)
 
             print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_fwingsnumber(self):
+        if self.check_private_profile():
+            return
+
+        results = []
+        
+        try:
+
+            pc.printout("Searching for phone numbers of users followed by target... this can take a few minutes\n")
+
+            followings = []
+
+            rank_token = AppClient.generate_uuid()
+            data = self.api.user_following(str(self.target_id), rank_token=rank_token)
+
+            for user in data.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followings.append(u)
+
+            next_max_id = data.get('next_max_id')
+            
+            while next_max_id:
+                results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+
+                for user in results.get('users', []):
+                    u = {
+                        'id': user['pk'],
+                        'username': user['username'],
+                        'full_name': user['full_name']
+                    }
+                    followings.append(u)
+
+                next_max_id = results.get('next_max_id')
+       
+
+            for follow in followings:
+                sys.stdout.write("\rCatched %i followings phone numbers" % len(results))
+                sys.stdout.flush()
+                user = self.api.user_info(str(follow['id']))
+                if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
+                    follow['contact_phone_number'] = user['user']['contact_phone_number']
+                    results.append(follow)
+
+        except ClientThrottledError as e:
+            pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
+            pc.printout("\n")
+            return
+        
+        print("\n")
+
+        if len(results) > 0:
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Phone'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Phone number"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['contact_phone_number']])
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_fwingsnumber.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followings_phone_numbers'] = results
+                json_file_name = "output/" + self.target + "_fwingsnumber.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_fwersnumber(self):
+        if self.check_private_profile():
+            return
+
+        followings = []
+
+        try:
+
+            pc.printout("Searching for phone numbers of users followers... this can take a few minutes\n")
+
+
+            rank_token = AppClient.generate_uuid()
+            data = self.api.user_following(str(self.target_id), rank_token=rank_token)
+
+            for user in data.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followings.append(u)
+
+            next_max_id = data.get('next_max_id')
+            
+            while next_max_id:
+                results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+
+                for user in results.get('users', []):
+                    u = {
+                        'id': user['pk'],
+                        'username': user['username'],
+                        'full_name': user['full_name']
+                    }
+                    followings.append(u)
+
+                next_max_id = results.get('next_max_id')
+        
+            results = []
+
+            for follow in followings:
+                sys.stdout.write("\rCatched %i followers phone numbers" % len(results))
+                sys.stdout.flush()
+                user = self.api.user_info(str(follow['id']))
+                if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
+                    follow['contact_phone_number'] = user['user']['contact_phone_number']
+                    results.append(follow)
+
+        except ClientThrottledError as e:
+            pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
+            pc.printout("\n")
+            return
+
+        print("\n")
+
+        if len(results) > 0:
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Phone'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Phone number"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['contact_phone_number']])
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_fwersnumber.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followings_phone_numbers'] = results
+                json_file_name = "output/" + self.target + "_fwerssnumber.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_comments(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for users who commented...\n")
+
+        data = self.__get_feed__()
+        users = []
+
+        for post in data:
+            comments = self.__get_comments__(post['id'])
+            for comment in comments:
+                print(comment['text'])
+                
+                # if not any(u['id'] == comment['user']['pk'] for u in users):
+                #     user = {
+                #         'id': comment['user']['pk'],
+                #         'username': comment['user']['username'],
+                #         'full_name': comment['user']['full_name'],
+                #         'counter': 1
+                #     }
+                #     users.append(user)
+                # else:
+                #     for user in users:
+                #         if user['id'] == comment['user']['pk']:
+                #             user['counter'] += 1
+                #             break
+
+        if len(users) > 0:
+            ssort = sorted(users, key=lambda value: value['counter'], reverse=True)
+
+            json_data = {}
+
+            t = PrettyTable()
+
+            t.field_names = ['Comments', 'ID', 'Username', 'Full Name']
+            t.align["Comments"] = "l"
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+
+            for u in ssort:
+                t.add_row([str(u['counter']), u['id'], u['username'], u['full_name']])
+
+            print(t)
+
+            if self.writeFile:
+                file_name = "output/" + self.target + "_users_who_commented.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['users_who_commented'] = ssort
+                json_file_name = "output/" + self.target + "_users_who_commented.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)

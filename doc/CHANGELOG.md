@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1](https://github.com/Datalux/Osintgram/releases/tag/1.1)
+**Enhancements**
+- Improved command parser (#86)
+- Improved errors handling (8bd1abc)
+- Add new line when input command is empty (f5211eb)
+- Added new commands to catch phone number of users (#111)
+- Added support for Windows (#100)
+
+
+**Bug fixes**
+- Fix commands output limit bug (#87)
+- Fix setting target with "." in username (9082990)
+- Readline installing error (#94 )
+
+
 ## [1.0.1](https://github.com/Datalux/Osintgram/releases/tag/1.0.1)
 **Bug fixes**
 - Set itself as target by param
@@ -86,7 +101,7 @@
 
 **Bug fixes**
 
-- added a check if target has a private profile to avoid tool crash (#10)
+- added a check if the target has a private profile to avoid tool crash (#10)
 - fixed `tagged` bug (#5)
 
 ## [0.3](https://github.com/Datalux/Osintgram/releases/tag/0.3)
