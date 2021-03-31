@@ -4,7 +4,7 @@
 - captions        Get user's photos captions
 - comments        Get total comments of target's posts
 - followers       Get target followers
-- followings      Get users followed by target
+- following      Get users followed by target
 - fwersemail      Get email of target followers
 - fwingsemail     Get email of users followed by target
 - hashtags        Get hashtags used by target
@@ -43,7 +43,7 @@ With `FILE=n` you can disable saving in file.
 ### followers
 Return a list with target followers with id, nickname and full name
 
-### followings
+### following
 Return a list with users followed by target with id, nickname and full name
 
 ### fwersemail
@@ -69,15 +69,15 @@ Show target info like:
 - followed
 - follow
 - is business account?
-- business catagory (if target has business account)
+- business category (if target has business account)
 - is verified?
 - business email (if available)
 - HD profile picture url
 - connected Facebook page (if available)
-- Whats'App number (if avaible)
-- City Name (if avaible)
-- Address Street (if avaible)
-- Contact phone number (if avaible)
+- Whats'App number (if available)
+- City Name (if available)
+- Address Street (if available)
+- Contact phone number (if available)
 
 ### JSON
 Can set preference to export commands output as JSON in output folder. It save output in `<target username>_<command>.JSON` file.
@@ -90,7 +90,7 @@ With `JSON=n` you can disable JSON exporting.
 Return the total number of likes in target's posts
 
 ### list (or help)
-Show all commands avaible.
+Show all commands available.
 
 ### mediatype
 Return the number of photos and video shared by target
@@ -101,7 +101,7 @@ Return a list with the description of the content of target's photos
 ### photos
 Download all target's photos in output folder.
 When you run the command, script ask you how many photos you want to download. 
-Type ENTER to download all photos avaible or type a number to choose how many photos you want download.
+Type ENTER to download all photos available or type a number to choose how many photos you want download.
 ```
 Run a command: photos
 How many photos you want to download (default all):
