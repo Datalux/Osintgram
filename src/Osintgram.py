@@ -14,6 +14,7 @@ from instagram_private_api import ClientCookieExpiredError, ClientLoginRequiredE
 from prettytable import PrettyTable
 
 from src import printcolors as pc
+from src import config
 
 
 class Osintgram:
@@ -29,8 +30,8 @@ class Osintgram:
     jsonDump = False
 
     def __init__(self, target, is_file, is_json):
-        u = self.__getUsername__()
-        p = self.__getPassword__()
+        u = config.getUsername()
+        p = config.getPassword()
         print("\nAttempt to login...")
         self.login(u, p)
         self.setTarget(target)
@@ -44,26 +45,6 @@ class Osintgram:
         self.is_private = user['is_private']
         self.following = self.check_following()
         self.__printTargetBanner__()
-
-    def __getUsername__(self):
-        try:
-            u = open("config/username.conf", "r").read()
-            u = u.replace("\n", "")
-            return u
-        except FileNotFoundError:
-            pc.printout("Error: file \"config/username.conf\" not found!", pc.RED)
-            pc.printout("\n")
-            sys.exit(0)
-
-    def __getPassword__(self):
-        try:
-            p = open("config/pw.conf", "r").read()
-            p = p.replace("\n", "")
-            return p
-        except FileNotFoundError:
-            pc.printout("Error: file \"config/pw.conf\" not found!", pc.RED)
-            pc.printout("\n")
-            sys.exit(0)
 
     def __get_feed__(self):
         data = []
