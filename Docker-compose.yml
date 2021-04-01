@@ -4,3 +4,5 @@ services:
   osintgram:
     container_name: osintgram
     build: .
+    volumes:
+      - ./output:/home/osintgram/output

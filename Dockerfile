@@ -21,7 +21,6 @@ RUN pip3 install -r requirements.txt -f /wheels \
 COPY --chown=osintgram:osintgram src/ /home/osintgram/src
 COPY --chown=osintgram:osintgram main.py /home/osintgram/
 COPY --chown=osintgram:osintgram config/ /home/osintgram/config
-
 USER osintgram
 
-ENTRYPOINT ["sleep", "infinity"]
+ENTRYPOINT ["python", "main.py"]
