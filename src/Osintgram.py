@@ -47,7 +47,7 @@ class Osintgram:
 
     def __getUsername__(self):
         try:
-            u = open("config/username.conf").read()
+            u = open("config/username.conf", "r").read()
             u = u.replace("\n", "")
             return u
         except FileNotFoundError:
@@ -57,7 +57,7 @@ class Osintgram:
 
     def __getPassword__(self):
         try:
-            p = open("config/pw.conf").read()
+            p = open("config/pw.conf", "r").read()
             p = p.replace("\n", "")
             return p
         except FileNotFoundError:
