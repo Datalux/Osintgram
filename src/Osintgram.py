@@ -6,6 +6,8 @@ import os
 import codecs
 
 import requests
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 from geopy.geocoders import Nominatim
 from instagram_private_api import Client as AppClient
