@@ -2,6 +2,7 @@
 ```
 - addrs           Get all registered addressed by target photos
 - captions        Get user's photos captions
+- commentdata     Get a list of all the comments on the target's posts
 - comments        Get total comments of target's posts
 - followers       Get target followers
 - followings      Get users followed by target

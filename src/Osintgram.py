@@ -47,7 +47,7 @@ class Osintgram:
 
     def __getUsername__(self):
         try:
-            u = open("config/username.conf", "r").read()
+            u = open("config/username.conf").read()
             u = u.replace("\n", "")
             return u
         except FileNotFoundError:
@@ -57,7 +57,7 @@ class Osintgram:
 
     def __getPassword__(self):
         try:
-            p = open("config/pw.conf", "r").read()
+            p = open("config/pw.conf").read()
             p = p.replace("\n", "")
             return p
         except FileNotFoundError:
@@ -1108,7 +1108,7 @@ class Osintgram:
             settings_file = "config/settings.json"
             if not os.path.isfile(settings_file):
                 # settings file does not exist
-                print('Unable to find file: {0!s}'.format(settings_file))
+                print(f'Unable to find file: {settings_file!s}')
 
                 # login new
                 self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
@@ -1126,7 +1126,7 @@ class Osintgram:
                     on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except (ClientCookieExpiredError, ClientLoginRequiredError) as e:
-            print('ClientCookieExpiredError/ClientLoginRequiredError: {0!s}'.format(e))
+            print(f'ClientCookieExpiredError/ClientLoginRequiredError: {e!s}')
 
             # Login expired
             # Do relogin but use default ua, keys and such
