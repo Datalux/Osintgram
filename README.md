@@ -55,17 +55,15 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 3. Run `pip3 install -r requirements.txt`
 
 
-4. Create a subdirectory `config`
+4. Load the virtual environment
+   - On Windows Powershell: `.\venv\Scripts\activate.ps1`
+   - On Linux and Git Bash: `source venv/bin/activate`
+  
+5.  Run `pip install -r requirements.txt`
 
-    `mkdir config`
+6. Open the `credentials.ini` file in the `config` folder and write your Instagram account username and password in the corresponding fields
 
-5. Create in `config` folder the file: `username.conf` and write your Instagram account username
-
-6. Create in `config` folder the file: `pw.conf` and write your Instagram account password
-
-7. Create in `config` folder the file: `settings.json` and write the following string: "{}" without quotation marks
-
-8. Run the main.py script 
+7. Run the main.py script 
 
     `python3 main.py <target username>`
     
