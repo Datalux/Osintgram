@@ -271,7 +271,7 @@ class Osintgram:
 
         pc.printout(str(comments_counter), pc.MAGENTA)
         pc.printout(" comments in " + str(posts) + " posts\n")
-        
+
     def get_comment_data(self):
         if self.check_private_profile():
             return
@@ -304,6 +304,7 @@ class Osintgram:
             file_name = "output/" + self.target + "_comment_data.txt"
             with open(file_name, 'w') as f:
                 f.write(str(t))
+                f.close()
         
         if self.jsonDump:
             file_name_json = "output/" + self.target + "_comment_data.json"
