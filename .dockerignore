@@ -1,0 +1,11 @@
+.github
+.img
+doc
+output
+.dockerignore
+.gitignore
+Docker-compose.yml
+Dockerfile
+LICENSE
+Makefile
+README.md
