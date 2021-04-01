@@ -271,6 +271,57 @@ class Osintgram:
 
         pc.printout(str(comments_counter), pc.MAGENTA)
         pc.printout(" comments in " + str(posts) + " posts\n")
+        
+    def get_comment_data(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Retrieving all comments, this may take a moment...\n")
+        data = self.__get_feed__()
+        
+        _comments = []
+        t = PrettyTable(['POST ID', 'ID', 'Username', 'Comment'])
+        t.align["POST ID"] = "l"
+        t.align["ID"] = "l"
+        t.align["Username"] = "l"
+        t.align["Comment"] = "l"
+
+        for post in data:
+            post_id = post.get('id')
+            comments = self.api.media_n_comments(post_id)
+            for comment in comments:
+                t.add_row([post_id, comment.get('user_id'), comment.get('user').get('username'), comment.get('text')])
+                comment = {
+                        "post_id": post_id,
+                        "user_id":comment.get('user_id'), 
+                        "username": comment.get('user').get('username'),
+                        "comment": comment.get('text')
+                    }
+                _comments.append(comment)
+        
+        print(t)
+        if self.writeFile:
+            file_name = "output/" + self.target + "_comment_data.txt"
+            with open(file_name, 'w') as f:
+                f.write(str(t))
+        
+        if self.jsonDump:
+            file_name_json = "output/" + self.target + "_comment_data.json"
+            with open(file_name_json, 'w') as f:
+                f.write("{ \"Comments\":[ \n")
+                i = 0
+                for comment in _comments:
+                    json.dump(comment, f)
+                    
+                    i+= 1
+                    if i == len(_comments):
+                        f.write('\n')
+                    else:
+                        f.write(',\n')
+
+                f.write("]} ")
+                f.close()
+
 
     def get_followers(self):
         if self.check_private_profile():

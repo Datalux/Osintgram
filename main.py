@@ -146,7 +146,8 @@ commands = {
     'tagged':           api.get_people_tagged_by_user,
     'target':           api.change_target,
     'wcommented':       api.get_people_who_commented,
-    'wtagged':          api.get_people_who_tagged
+    'wtagged':          api.get_people_who_tagged, 
+    "commentdata":      api.get_comment_data
 }
 
 signal.signal(signal.SIGINT, signal_handler)
