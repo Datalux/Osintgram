@@ -1272,9 +1272,7 @@ class Osintgram:
     def get_fwingsnumber(self):
         if self.check_private_profile():
             return
-
-        results = []
-        
+       
         try:
 
             pc.printout("Searching for phone numbers of users followed by target... this can take a few minutes\n")
@@ -1307,6 +1305,7 @@ class Osintgram:
 
                 next_max_id = results.get('next_max_id')
        
+            results = []
 
             for follow in followings:
                 sys.stdout.write("\rCatched %i followings phone numbers" % len(results))
