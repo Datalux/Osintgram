@@ -3,7 +3,7 @@ WORKDIR /wheels
 RUN apk add --no-cache \
     ncurses-dev \
     build-base
-COPY requirements.txt /opt/osintgram/
+COPY docker_reqs.txt /opt/osintgram/requirements.txt
 RUN pip3 wheel -r /opt/osintgram/requirements.txt
 
 
