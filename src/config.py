@@ -15,14 +15,28 @@ except Exception as e:
 
 def getUsername():
     try:
-        return config["Credentials"]["username"]
+
+        username = config["Credentials"]["username"]
+
+        if username == '':
+            pc.printout('Error: "username" field cannot be blank in "config/credentials.ini"\n', pc.RED)
+            sys.exit(0)
+
+        return username
     except KeyError:
         pc.printout('Error: missing "username" field in "config/credentials.ini"\n', pc.RED)
         sys.exit(0)
 
 def getPassword():
     try:
-        return config["Credentials"]["password"]
+
+        password = config["Credentials"]["password"]
+
+        if password == '':
+            pc.printout('Error: "password" field cannot be blank in "config/credentials.ini"\n', pc.RED)
+            sys.exit(0)
+
+        return password
     except KeyError:
         pc.printout('Error: missing "password" field in "config/credentials.ini"\n', pc.RED)
         sys.exit(0)
