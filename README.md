@@ -68,6 +68,7 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 5. Run `pip install -r requirements.txt`
 
 6. Open the `credentials.ini` file in the `config` folder and write your Instagram account username and password in the corresponding fields
+    
     Alternatively, you can run the `make setup` command to populate this file for you.
 
 7. Run the main.py script
