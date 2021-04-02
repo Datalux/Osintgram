@@ -814,7 +814,7 @@ class Osintgram:
         user_input = input()
         try:
             if user_input == "":
-                pc.printout("Downloading all photos avaible...\n")
+                pc.printout("Downloading all photos available...\n")
             else:
                 limit = int(user_input)
                 pc.printout("Downloading " + user_input + " photos...\n")
