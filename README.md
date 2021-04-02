@@ -61,17 +61,16 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
     `cd Osintgram`
 
 3. Run `pip3 install -r requirements.txt`
-4. Create a subdirectory `config`
 
-    `mkdir config`
+4. Load the virtual environment
+   - On Windows Powershell: `.\venv\Scripts\activate.ps1`
+   - On Linux and Git Bash: `source venv/bin/activate`
+  
+5.  Run `pip install -r requirements.txt`
 
-5. Create in `config` folder the file: `username.conf` and write your Instagram account username
+6. Open the `credentials.ini` file in the `config` folder and write your Instagram account username and password in the corresponding fields
 
-6. Create in `config` folder the file: `pw.conf` and write your Instagram account password
-
-7. Create in `config` folder the file: `settings.json` and write the following string: "{}" without quotation marks
-
-8. Run the main.py script
+7. Run the main.py script 
 
     `python3 main.py <target username>`
 
@@ -147,8 +146,9 @@ To use the development version with the latest feature and fixes just switch to 
 `git checkout development`
 
 ## Updating ⬇️
+and update to last version using: 
 
-Run `git pull` in Osintgram directory
+`git pull origin development` 
 
 ## Contributing 💡
 

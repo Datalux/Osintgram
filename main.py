@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from src.Osintgram import Osintgram
 import argparse
@@ -18,11 +17,11 @@ except:
 
 def printlogo():
     pc.printout("________         .__        __                               \n", pc.YELLOW)
-    pc.printout("\_____  \   _____|__| _____/  |_  ________________    _____  \n", pc.YELLOW)
-    pc.printout(" /   |   \ /  ___/  |/    \   __\/ ___\_  __ \__  \  /     \ \n", pc.YELLOW)
-    pc.printout("/    |    \\\___ \|  |   |  \  | / /_/  >  | \// __ \|  Y Y  \\\n", pc.YELLOW)
-    pc.printout("\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
-    pc.printout("        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
+    pc.printout(r"\_____  \   _____|__| _____/  |_  ________________    _____  \n", pc.YELLOW)
+    pc.printout(" /   |   \\ /  ___/  |/    \\   __\\/ ___\\_  __ \\__  \\  /     \\ \n", pc.YELLOW)
+    pc.printout("/    |    \\\\___ \\|  |   |  \\  | / /_/  >  | \\// __ \\|  Y Y  \\\n", pc.YELLOW)
+    pc.printout("\\_______  /____  >__|___|  /__| \\___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
+    pc.printout("        \\/     \\/        \\/    /_____/            \\/      \\/ \n", pc.YELLOW)
     print('\n')
     pc.printout("Version 1.1 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
@@ -42,6 +41,8 @@ def cmdlist():
     print("Get all registered addressed by target photos")
     pc.printout("captions\t")
     print("Get target's photos captions")
+    pc.printout("commentdata\t")
+    print("Get a list of all the comments on the target's posts")
     pc.printout("comments\t")
     print("Get total comments of target's posts")
     pc.printout("followers\t")
@@ -128,6 +129,7 @@ commands = {
     'exit':             _quit,
     'addrs':            api.get_addrs,
     'captions':         api.get_captions,
+    "commentdata":      api.get_comment_data,
     'comments':         api.get_total_comments,
     'followers':        api.get_followers,
     'followings':       api.get_followings,
