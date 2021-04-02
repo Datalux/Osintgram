@@ -47,7 +47,6 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 
 [**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/1.1) |
 [Commands](doc/COMMANDS.md) |
-[Docker Quick Start](#Docker-Quick-Start-🐳) |
 [CHANGELOG](doc/CHANGELOG.md)
 
 ## Installation ⚙️
@@ -66,11 +65,12 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
    - On Windows Powershell: `.\venv\Scripts\activate.ps1`
    - On Linux and Git Bash: `source venv/bin/activate`
   
-5.  Run `pip install -r requirements.txt`
+5. Run `pip install -r requirements.txt`
 
 6. Open the `credentials.ini` file in the `config` folder and write your Instagram account username and password in the corresponding fields
+    Alternatively, you can run the `make setup` command to populate this file for you.
 
-7. Run the main.py script 
+7. Run the main.py script
 
     `python3 main.py <target username>`
 
@@ -104,11 +104,11 @@ Run:
 docker run --rm -it -v "$PWD/output:/home/osintgram/output" osintgram <target>
 ```
 
-* The `<target>` is the Instagram account you wish to use as your target for recon.
-* The required `-i` flag enables an interactive terminal to use commands within the container. [docs](https://docs.docker.com/engine/reference/commandline/run/#assign-name-and-allocate-pseudo-tty---name--it)
-* The required `-v` flag mounts a volume between your local filesystem and the container to save to the `./output/` folder. [docs](https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only)
-* The optional `--rm` flag removes the container filesystem on completion to prevent cruft build-up. [docs](https://docs.docker.com/engine/reference/run/#clean-up---rm)
-* The optional `-t` flag allocates a pseudo-TTY which allows colored output. [docs](https://docs.docker.com/engine/reference/run/#foreground)
+- The `<target>` is the Instagram account you wish to use as your target for recon.
+- The required `-i` flag enables an interactive terminal to use commands within the container. [docs](https://docs.docker.com/engine/reference/commandline/run/#assign-name-and-allocate-pseudo-tty---name--it)
+- The required `-v` flag mounts a volume between your local filesystem and the container to save to the `./output/` folder. [docs](https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only)
+- The optional `--rm` flag removes the container filesystem on completion to prevent cruft build-up. [docs](https://docs.docker.com/engine/reference/run/#clean-up---rm)
+- The optional `-t` flag allocates a pseudo-TTY which allows colored output. [docs](https://docs.docker.com/engine/reference/run/#foreground)
 
 ### Using `docker-compose`
 
@@ -122,7 +122,7 @@ Where `target` is the Instagram target for recon.
 
 Alternatively you may run `docker-compose` with the `Makefile`:
 
-* `make run` - Builds and Runs with compose. Prompts for a `target` before running.
+`make run` - Builds and Runs with compose. Prompts for a `target` before running.
 
 ### Makefile (easy mode)
 
@@ -146,15 +146,16 @@ To use the development version with the latest feature and fixes just switch to 
 `git checkout development`
 
 ## Updating ⬇️
-and update to last version using: 
 
-`git pull origin development` 
+and update to last version using:
+
+`git pull origin development`
 
 ## Contributing 💡
 
 You can propose a feature request opening an issue or a pull request.
 
-Here is a list of Osintgram's contributors.
+Here is a list of Osintgram's contributors:
 
 <a href="https://github.com/Datalux/Osintgram/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=Datalux/Osintgram" />
