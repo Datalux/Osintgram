@@ -295,7 +295,6 @@ class Osintgram:
                 f.write("{ \"Comments\":[ \n")
                 f.write('\n'.join(json.dumps(comment) for comment in _comments) + ',\n')
                 f.write("]} ")
-                f.close()
 
 
     def get_followers(self):
