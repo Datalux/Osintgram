@@ -12,7 +12,7 @@ Osintgram is a **OSINT** tool on Instagram to collect, analyze, and run reconnai
 <img align="center" src=".img/carbon.svg" width="900">
 </p>
 
-Disclaimer: **The contributers do not assume any responsability for the use of this tool**
+Disclaimer: **The contributors do not assume any responsibility for the use of this tool**
 
 Warning: It is advisable to **not** use your own/primary account when using this tool.
 
