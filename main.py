@@ -17,11 +17,11 @@ except:
 
 def printlogo():
     pc.printout("________         .__        __                               \n", pc.YELLOW)
-    pc.printout(r"\_____  \   _____|__| _____/  |_  ________________    _____  \n", pc.YELLOW)
-    pc.printout(r" /   |   \ /  ___/  |/    \   __\/ ___\_  __ \__  \  /     \ \n", pc.YELLOW)
-    pc.printout(r"/    |    \\\___ \|  |   |  \  | / /_/  >  | \// __ \|  Y Y  \\\n", pc.YELLOW)
-    pc.printout(r"\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
-    pc.printout(r"        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
+    pc.printout("\_____  \   _____|__| _____/  |_  ________________    _____  \n", pc.YELLOW)
+    pc.printout(" /   |   \ /  ___/  |/    \   __\/ ___\_  __ \__  \  /     \ \n", pc.YELLOW)
+    pc.printout("/    |    \\\___ \|  |   |  \  | / /_/  >  | \// __ \|  Y Y  \\\n", pc.YELLOW)
+    pc.printout("\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
+    pc.printout("        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
     print('\n')
     pc.printout("Version 1.1 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
