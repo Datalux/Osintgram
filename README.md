@@ -6,7 +6,7 @@
 # Osintgram
 Osintgram is a **OSINT** tool on Instagram.
 
-**I don't assume any responsability for the use of this tool**
+:warning: **For Educational Purpose Only**: Use Responsibly!
 
 Osintgram offers an interactive shell to perform analysis on Instagram account of any users by its nickname. You can get:
 ```
@@ -55,15 +55,15 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 3. Run `pip3 install -r requirements.txt`
 
 
-4. Create a subdirectory `config`
+4. Create a sub-directory `config`
 
     `mkdir config`
 
-5. Create in `config` folder the file: `username.conf` and write your Instagram account username
+5. Inside `config` folder, create the file: `username.conf` and write your Instagram account username
 
-6. Create in `config` folder the file: `pw.conf` and write your Instagram account password
+6. Inside `config` folder, create the file: `pw.conf` and write your Instagram account password
 
-7. Create in `config` folder the file: `settings.json` and write the following string: "{}" without quotation marks
+7. Inside `config` folder, create the file: `settings.json` and write the following string: "{}" without quotation marks
 
 8. Run the main.py script 
 
