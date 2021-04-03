@@ -59,7 +59,9 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 
     `cd Osintgram`
 
-3. Run `pip3 install -r requirements.txt`
+3. Create a virtual environment for this project
+
+    `python3 -m venv venv`
 
 4. Load the virtual environment
    - On Windows Powershell: `.\venv\Scripts\activate.ps1`
