@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from src.Osintgram import Osintgram
 import argparse
@@ -26,9 +25,9 @@ def printlogo():
     print('\n')
     pc.printout("Version 1.1 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
-    pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (deafult is disabled)'\n")
+    pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (default is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
-    pc.printout("Type 'JSON=y' to export results to a JSON files like '<target username>_<command>.json (deafult is "
+    pc.printout("Type 'JSON=y' to export results to a JSON files like '<target username>_<command>.json (default is "
                 "disabled)'\n")
     pc.printout("Type 'JSON=n' to disable exporting to files'\n")
 
@@ -42,6 +41,8 @@ def cmdlist():
     print("Get all registered addressed by target photos")
     pc.printout("captions\t")
     print("Get target's photos captions")
+    pc.printout("commentdata\t")
+    print("Get a list of all the comments on the target's posts")
     pc.printout("comments\t")
     print("Get total comments of target's posts")
     pc.printout("followers\t")
@@ -128,6 +129,7 @@ commands = {
     'exit':             _quit,
     'addrs':            api.get_addrs,
     'captions':         api.get_captions,
+    "commentdata":      api.get_comment_data,
     'comments':         api.get_total_comments,
     'followers':        api.get_followers,
     'followings':       api.get_followings,

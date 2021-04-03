@@ -6,6 +6,8 @@ import os
 import codecs
 
 import requests
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 from geopy.geocoders import Nominatim
 from instagram_private_api import Client as AppClient
@@ -14,6 +16,7 @@ from instagram_private_api import ClientCookieExpiredError, ClientLoginRequiredE
 from prettytable import PrettyTable
 
 from src import printcolors as pc
+from src import config
 
 
 class Osintgram:
@@ -29,8 +32,8 @@ class Osintgram:
     jsonDump = False
 
     def __init__(self, target, is_file, is_json):
-        u = self.__getUsername__()
-        p = self.__getPassword__()
+        u = config.getUsername()
+        p = config.getPassword()
         print("\nAttempt to login...")
         self.login(u, p)
         self.setTarget(target)
@@ -44,26 +47,6 @@ class Osintgram:
         self.is_private = user['is_private']
         self.following = self.check_following()
         self.__printTargetBanner__()
-
-    def __getUsername__(self):
-        try:
-            u = open("config/username.conf", "r").read()
-            u = u.replace("\n", "")
-            return u
-        except FileNotFoundError:
-            pc.printout("Error: file \"config/username.conf\" not found!", pc.RED)
-            pc.printout("\n")
-            sys.exit(0)
-
-    def __getPassword__(self):
-        try:
-            p = open("config/pw.conf", "r").read()
-            p = p.replace("\n", "")
-            return p
-        except FileNotFoundError:
-            pc.printout("Error: file \"config/pw.conf\" not found!", pc.RED)
-            pc.printout("\n")
-            sys.exit(0)
 
     def __get_feed__(self):
         data = []
@@ -271,6 +254,48 @@ class Osintgram:
 
         pc.printout(str(comments_counter), pc.MAGENTA)
         pc.printout(" comments in " + str(posts) + " posts\n")
+
+    def get_comment_data(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Retrieving all comments, this may take a moment...\n")
+        data = self.__get_feed__()
+        
+        _comments = []
+        t = PrettyTable(['POST ID', 'ID', 'Username', 'Comment'])
+        t.align["POST ID"] = "l"
+        t.align["ID"] = "l"
+        t.align["Username"] = "l"
+        t.align["Comment"] = "l"
+
+        for post in data:
+            post_id = post.get('id')
+            comments = self.api.media_n_comments(post_id)
+            for comment in comments:
+                t.add_row([post_id, comment.get('user_id'), comment.get('user').get('username'), comment.get('text')])
+                comment = {
+                        "post_id": post_id,
+                        "user_id":comment.get('user_id'), 
+                        "username": comment.get('user').get('username'),
+                        "comment": comment.get('text')
+                    }
+                _comments.append(comment)
+        
+        print(t)
+        if self.writeFile:
+            file_name = "output/" + self.target + "_comment_data.txt"
+            with open(file_name, 'w') as f:
+                f.write(str(t))
+                f.close()
+        
+        if self.jsonDump:
+            file_name_json = "output/" + self.target + "_comment_data.json"
+            with open(file_name_json, 'w') as f:
+                f.write("{ \"Comments\":[ \n")
+                f.write('\n'.join(json.dumps(comment) for comment in _comments) + ',\n')
+                f.write("]} ")
+
 
     def get_followers(self):
         if self.check_private_profile():
@@ -814,7 +839,7 @@ class Osintgram:
         user_input = input()
         try:
             if user_input == "":
-                pc.printout("Downloading all photos avaible...\n")
+                pc.printout("Downloading all photos available...\n")
             else:
                 limit = int(user_input)
                 pc.printout("Downloading " + user_input + " photos...\n")
@@ -1056,7 +1081,7 @@ class Osintgram:
             settings_file = "config/settings.json"
             if not os.path.isfile(settings_file):
                 # settings file does not exist
-                print('Unable to find file: {0!s}'.format(settings_file))
+                print(f'Unable to find file: {settings_file!s}')
 
                 # login new
                 self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
@@ -1074,7 +1099,7 @@ class Osintgram:
                     on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except (ClientCookieExpiredError, ClientLoginRequiredError) as e:
-            print('ClientCookieExpiredError/ClientLoginRequiredError: {0!s}'.format(e))
+            print(f'ClientCookieExpiredError/ClientLoginRequiredError: {e!s}')
 
             # Login expired
             # Do relogin but use default ua, keys and such
@@ -1291,9 +1316,7 @@ class Osintgram:
     def get_fwingsnumber(self):
         if self.check_private_profile():
             return
-
-        results = []
-        
+       
         try:
 
             pc.printout("Searching for phone numbers of users followed by target... this can take a few minutes\n")
@@ -1326,6 +1349,7 @@ class Osintgram:
 
                 next_max_id = results.get('next_max_id')
        
+            results = []
 
             for follow in followings:
                 sys.stdout.write("\rCatched %i followings phone numbers" % len(results))
