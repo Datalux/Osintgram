@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2](https://github.com/Datalux/Osintgram/releases/tag/1.2)
+**Enhancements**
+- Added virtual environment (#126)
+- Removed some typos (#129, #118)
+- Added new configuration (#125)
+- Added new `commentdata` command (#131) 
+- Added Docker support (#141) 
+
+
+**Bug fixes**
+- Fix bug  #138 (fc2a6be)
+- SSL certificate error (#136) 
+
+
 ## [1.1](https://github.com/Datalux/Osintgram/releases/tag/1.1)
 **Enhancements**
 - Improved command parser (#86)
@@ -23,10 +37,10 @@
 **Enhancements**
 - Set itself as target (#53)
 -  Get others info from user (`info` command):
-  - Whats'App number (if avaible)
-  - City Name (if avaible)
-  - Address Street (if avaible)
-  - Contact phone number (if avaible)
+  - Whats'App number (if available)
+  - City Name (if available)
+  - Address Street (if available)
+  - Contact phone number (if available)
 
 **Bug fixes**
 - Fix login issue (#79, #80, #81)
