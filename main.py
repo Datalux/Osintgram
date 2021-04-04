@@ -115,10 +115,11 @@ parser.add_argument('id', type=str,  # var = id
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
 parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
 parser.add_argument('-c', '--cli', help='command line mode', action='store')
+parser.add_argument('-o', '--output', help='where to store photos', action='store')
 
 args = parser.parse_args()
 
-api = Osintgram(args.id, args.file, args.json, args.cli)
+api = Osintgram(args.id, args.file, args.json, args.cli, args.output)
 
 
 commands = {
