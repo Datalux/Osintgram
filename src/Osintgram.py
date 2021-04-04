@@ -31,10 +31,11 @@ class Osintgram:
     writeFile = False
     jsonDump = False
 
-    def __init__(self, target, is_file, is_json):
+    def __init__(self, target, is_file, is_json, is_cli):
         u = config.getUsername()
         p = config.getPassword()
-        print("\nAttempt to login...")
+        if not is_cli:
+          print("\nAttempt to login...")
         self.login(u, p)
         self.setTarget(target)
         self.writeFile = is_file

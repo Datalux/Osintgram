@@ -108,18 +108,17 @@ else:
     gnureadline.parse_and_bind("tab: complete")
     gnureadline.set_completer(completer)
 
-printlogo()
-
 parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell '
                                              'to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
                     help='username')
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
 parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
+parser.add_argument('-c', '--cli', help='command line mode', action='store')
 
 args = parser.parse_args()
 
-api = Osintgram(args.id, args.file, args.json)
+api = Osintgram(args.id, args.file, args.json, args.cli)
 
 
 commands = {
@@ -151,18 +150,24 @@ commands = {
     'wtagged':          api.get_people_who_tagged
 }
 
-signal.signal(signal.SIGINT, signal_handler)
-gnureadline.parse_and_bind("tab: complete")
-gnureadline.set_completer(completer)
+if not args.cli:
+    printlogo()
 
 while True:
-    pc.printout("Run a command: ", pc.YELLOW)
-    cmd = input()
+    if args.cli:
+        cmd = args.cli
+        _cmd = commands.get(args.cli)
+    else:
+        signal.signal(signal.SIGINT, signal_handler)
+        gnureadline.parse_and_bind("tab: complete")
+        gnureadline.set_completer(completer)
+        pc.printout("Run a command: ", pc.YELLOW)
+        cmd = input()
 
-    _cmd = commands.get(cmd)
-    
+        _cmd = commands.get(cmd)
+
     if _cmd:
-        _cmd()    
+        _cmd()
     elif cmd == "FILE=y":
         api.set_write_file(True)
     elif cmd == "FILE=n":
@@ -175,3 +180,6 @@ while True:
         print("")
     else:
         pc.printout("Unknown command\n", pc.RED)
+
+    if args.cli:
+        break
