@@ -32,6 +32,7 @@ class Osintgram:
     jsonDump = False
 
     def __init__(self, target, is_file, is_json, is_cli, output_dir):
+        output_dir = output_dir or "output"
         u = config.getUsername()
         p = config.getPassword()
         if not is_cli:
