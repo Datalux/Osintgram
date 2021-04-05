@@ -71,9 +71,10 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
     
     Alternatively, you can run the `make setup` command to populate this file for you.
 
-7. Run the main.py script
+7. Run the main.py script in one of two ways
 
-    `python3 main.py <target username>`
+    * As an interactive prompt `python3 main.py <target username>`
+    * Or execute your command straight away `python3 main.py <target username> --command <command>`
 
 ## Docker Quick Start 🐳
 
