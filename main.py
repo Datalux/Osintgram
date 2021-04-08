@@ -3,6 +3,7 @@
 from src.Osintgram import Osintgram
 import argparse
 from src import printcolors as pc
+from src import artwork
 import sys
 import signal
 
@@ -16,14 +17,8 @@ except:
 
 
 def printlogo():
-    pc.printout("________         .__        __                               \n", pc.YELLOW)
-    pc.printout(r"\_____  \   _____|__| _____/  |_  ________________    _____  \n", pc.YELLOW)
-    pc.printout(r" /   |   \ /  ___/  |/    \   __\/ ___\_  __ \__  \  /     \ \n", pc.YELLOW)
-    pc.printout(r"/    |    \\\___ \|  |   |  \  | / /_/  >  | \// __ \|  Y Y  \\\n", pc.YELLOW)
-    pc.printout(r"\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
-    pc.printout(r"        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
-    print('\n')
-    pc.printout("Version 1.1 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
+    pc.printout(artwork.ascii_art, pc.YELLOW)
+    pc.printout("\nVersion 1.1 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (default is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2](https://github.com/Datalux/Osintgram/releases/tag/1.2)
+**Enhancements**
+- Added virtual environment (#126)
+- Removed some typos (#129, #118)
+- Added new configuration (#125)
+- Added new `commentdata` command (#131) 
+- Added Docker support (#141) 
+
+
+**Bug fixes**
+- Fix bug  #138 (fc2a6be)
+- SSL certificate error (#136) 
+
+
 ## [1.1](https://github.com/Datalux/Osintgram/releases/tag/1.1)
 **Enhancements**
 - Improved command parser (#86)
