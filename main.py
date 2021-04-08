@@ -114,7 +114,7 @@ parser.add_argument('-o', '--output', help='where to store photos', action='stor
 
 args = parser.parse_args()
 
-api = Osintgram(args.id, args.file, args.json, args.cli, args.output)
+api = Osintgram(args.id, args.file, args.json, args.command, args.output)
 
 
 commands = {
@@ -146,13 +146,13 @@ commands = {
     'wtagged':          api.get_people_who_tagged
 }
 
-if not args.cli:
+if not args.command:
     printlogo()
 
 while True:
-    if args.cli:
-        cmd = args.cli
-        _cmd = commands.get(args.cli)
+    if args.command:
+        cmd = args.command
+        _cmd = commands.get(args.command)
     else:
         signal.signal(signal.SIGINT, signal_handler)
         gnureadline.parse_and_bind("tab: complete")
@@ -177,5 +177,5 @@ while True:
     else:
         pc.printout("Unknown command\n", pc.RED)
 
-    if args.cli:
+    if args.command:
         break
