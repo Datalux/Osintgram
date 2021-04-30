@@ -1201,7 +1201,6 @@ class Osintgram:
         except ClientThrottledError  as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
             pc.printout("\n")
-            return
 
         if len(results) > 0:
 
@@ -1281,7 +1280,6 @@ class Osintgram:
         except ClientThrottledError as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
             pc.printout("\n")
-            return
         
         print("\n")
 
@@ -1362,7 +1360,6 @@ class Osintgram:
         except ClientThrottledError as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
             pc.printout("\n")
-            return
         
         print("\n")
 
@@ -1444,7 +1441,6 @@ class Osintgram:
         except ClientThrottledError as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
             pc.printout("\n")
-            return
 
         print("\n")
 
