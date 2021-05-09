@@ -1192,7 +1192,7 @@ class Osintgram:
 
             results = []
             
-            pc.printout("Do you want to get the max amount of emails? y/n: ", pc.YELLOW)
+            pc.printout("Do you want to get all emails? y/n: ", pc.YELLOW)
             value = input()
             
             if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
@@ -1208,11 +1208,11 @@ class Osintgram:
                         value = new_value - 1
                         break
                     except ValueError:
-                        pc.printout("Error! Enter a valid integer!", pc.RED)
+                        pc.printout("Error! Please enter a valid integer!", pc.RED)
                         print("\n")
                         return
             else:
-                pc.printout("Error! Please enter y/n!", pc.RED)
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
                 print("\n")
                 return
 
@@ -1295,7 +1295,7 @@ class Osintgram:
         
             results = []
             
-            pc.printout("Do you want to get the max amount of emails? y/n: ", pc.YELLOW)
+            pc.printout("Do you want to get all emails? y/n: ", pc.YELLOW)
             value = input()
             
             if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
@@ -1311,11 +1311,11 @@ class Osintgram:
                         value = new_value - 1
                         break
                     except ValueError:
-                        pc.printout("Error! Enter a valid integer!", pc.RED)
+                        pc.printout("Error! Please enter a valid integer!", pc.RED)
                         print("\n")
                         return
             else:
-                pc.printout("Error! Please enter y/n!", pc.RED)
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
                 print("\n")
                 return
 
@@ -1401,7 +1401,7 @@ class Osintgram:
        
             results = []
         
-            pc.printout("Do you want to get the max amount of phone numbers? y/n: ", pc.YELLOW)
+            pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
             value = input()
             
             if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
@@ -1421,7 +1421,7 @@ class Osintgram:
                         print("\n")
                         return
             else:
-                pc.printout("Error! Please enter y/n!", pc.RED)
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
                 print("\n")
                 return
 
@@ -1508,7 +1508,7 @@ class Osintgram:
         
             results = []
             
-            pc.printout("Do you want to get the max amount of phone numbers? y/n: ", pc.YELLOW)
+            pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
             value = input()
             
             if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
@@ -1524,11 +1524,11 @@ class Osintgram:
                         value = new_value - 1
                         break
                     except ValueError:
-                        pc.printout("Error! Enter a valid integer!", pc.RED)
+                        pc.printout("Error! Please enter a valid integer!", pc.RED)
                         print("\n")
                         return
             else:
-                pc.printout("Error! Please enter y/n!", pc.RED)
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
                 print("\n")
                 return
 
