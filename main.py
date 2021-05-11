@@ -6,6 +6,14 @@ from src import printcolors as pc
 import sys
 import signal
 
+try:
+    f = open("config/settings.json",'w')
+    f.write("{}")
+except FileNotFoundError:
+    print("Settings.json don't exist.")
+finally:
+    f.close()
+
 is_windows = False
 
 try:
