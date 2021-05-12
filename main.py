@@ -34,6 +34,8 @@ def cmdlist():
     print("Enable/disable export in a '<target username>_<command>.json' file'")
     pc.printout("addrs\t\t")
     print("Get all registered addressed by target photos")
+    pc.printout("cache\t\t")
+    print("Clear cache of the tool")
     pc.printout("captions\t")
     print("Get target's photos captions")
     pc.printout("commentdata\t")
@@ -107,6 +109,7 @@ parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Insta
                                              'to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
                     help='username')
+parser.add_argument('-c','--cookies', help='clear\'s previous cookies', action="store_true")
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
 parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
 parser.add_argument('-c', '--command', help='run in single command mode & execute provided command', action='store')
@@ -114,7 +117,9 @@ parser.add_argument('-o', '--output', help='where to store photos', action='stor
 
 args = parser.parse_args()
 
-api = Osintgram(args.id, args.file, args.json, args.command, args.output)
+
+api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.cookies)
+
 
 
 commands = {
@@ -123,6 +128,7 @@ commands = {
     'quit':             _quit,
     'exit':             _quit,
     'addrs':            api.get_addrs,
+    'cache':            api.clear_cache,
     'captions':         api.get_captions,
     "commentdata":      api.get_comment_data,
     'comments':         api.get_total_comments,
@@ -145,6 +151,7 @@ commands = {
     'wcommented':       api.get_people_who_commented,
     'wtagged':          api.get_people_who_tagged
 }
+
 
 if not args.command:
     printlogo()
