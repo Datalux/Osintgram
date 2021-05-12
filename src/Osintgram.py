@@ -1535,3 +1535,13 @@ class Osintgram:
                     json.dump(json_data, f)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def clear_cache(self):
+        try:
+            f = open("config/settings.json",'w')
+            f.write("{}")
+            pc.printout("Cache Cleared.\n",pc.GREEN)
+        except FileNotFoundError:
+            pc.printout("Settings.json don't exist.\n",pc.RED)
+        finally:
+            f.close()

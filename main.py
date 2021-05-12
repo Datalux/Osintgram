@@ -6,14 +6,6 @@ from src import printcolors as pc
 import sys
 import signal
 
-try:
-    f = open("config/settings.json",'w')
-    f.write("{}")
-except FileNotFoundError:
-    print("Settings.json don't exist.")
-finally:
-    f.close()
-
 is_windows = False
 
 try:
@@ -47,6 +39,8 @@ def cmdlist():
     print("Enable/disable export in a '<target username>_<command>.json' file'")
     pc.printout("addrs\t\t")
     print("Get all registered addressed by target photos")
+    pc.printout("cache\t\t")
+    print("Clear cache of the tool")
     pc.printout("captions\t")
     print("Get target's photos captions")
     pc.printout("commentdata\t")
@@ -136,6 +130,7 @@ commands = {
     'quit':             _quit,
     'exit':             _quit,
     'addrs':            api.get_addrs,
+    'cache':            api.clear_cache,
     'captions':         api.get_captions,
     "commentdata":      api.get_comment_data,
     'comments':         api.get_total_comments,
