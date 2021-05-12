@@ -103,18 +103,18 @@ else:
     gnureadline.parse_and_bind("tab: complete")
     gnureadline.set_completer(completer)
 
-printlogo()
-
 parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell '
                                              'to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
                     help='username')
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
 parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
+parser.add_argument('-c', '--command', help='run in single command mode & execute provided command', action='store')
+parser.add_argument('-o', '--output', help='where to store photos', action='store')
 
 args = parser.parse_args()
 
-api = Osintgram(args.id, args.file, args.json)
+api = Osintgram(args.id, args.file, args.json, args.command, args.output)
 
 
 commands = {
@@ -146,18 +146,24 @@ commands = {
     'wtagged':          api.get_people_who_tagged
 }
 
-signal.signal(signal.SIGINT, signal_handler)
-gnureadline.parse_and_bind("tab: complete")
-gnureadline.set_completer(completer)
+if not args.command:
+    printlogo()
 
 while True:
-    pc.printout("Run a command: ", pc.YELLOW)
-    cmd = input()
+    if args.command:
+        cmd = args.command
+        _cmd = commands.get(args.command)
+    else:
+        signal.signal(signal.SIGINT, signal_handler)
+        gnureadline.parse_and_bind("tab: complete")
+        gnureadline.set_completer(completer)
+        pc.printout("Run a command: ", pc.YELLOW)
+        cmd = input()
 
-    _cmd = commands.get(cmd)
-    
+        _cmd = commands.get(cmd)
+
     if _cmd:
-        _cmd()    
+        _cmd()
     elif cmd == "FILE=y":
         api.set_write_file(True)
     elif cmd == "FILE=n":
@@ -170,3 +176,6 @@ while True:
         print("")
     else:
         pc.printout("Unknown command\n", pc.RED)
+
+    if args.command:
+        break
