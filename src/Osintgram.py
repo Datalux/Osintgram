@@ -1209,11 +1209,37 @@ class Osintgram:
             print("\n")
 
             results = []
+            
+            pc.printout("Do you want to get all emails? y/n: ", pc.YELLOW)
+            value = input()
+            
+            if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
+                value = len(followers)
+            elif value == str(""):
+                print("\n")
+                return
+            elif value == str("n") or value == str("no") or value == str("No") or value == str("NO"):
+                while True:
+                    try:
+                        pc.printout("How many emails do you want to get? ", pc.YELLOW)
+                        new_value = int(input())
+                        value = new_value - 1
+                        break
+                    except ValueError:
+                        pc.printout("Error! Please enter a valid integer!", pc.RED)
+                        print("\n")
+                        return
+            else:
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
+                print("\n")
+                return
 
             for follow in followers:
                 user = self.api.user_info(str(follow['id']))
                 if 'public_email' in user['user'] and user['user']['public_email']:
                     follow['email'] = user['user']['public_email']
+                    if len(results) > value:
+                        break
                     results.append(follow)
 
         except ClientThrottledError  as e:
@@ -1286,6 +1312,30 @@ class Osintgram:
                 next_max_id = results.get('next_max_id')
         
             results = []
+            
+            pc.printout("Do you want to get all emails? y/n: ", pc.YELLOW)
+            value = input()
+            
+            if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
+                value = len(followings)
+            elif value == str(""):
+                print("\n")
+                return
+            elif value == str("n") or value == str("no") or value == str("No") or value == str("NO"):
+                while True:
+                    try:
+                        pc.printout("How many emails do you want to get? ", pc.YELLOW)
+                        new_value = int(input())
+                        value = new_value - 1
+                        break
+                    except ValueError:
+                        pc.printout("Error! Please enter a valid integer!", pc.RED)
+                        print("\n")
+                        return
+            else:
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
+                print("\n")
+                return
 
             for follow in followings:
                 sys.stdout.write("\rCatched %i followings email" % len(results))
@@ -1293,6 +1343,8 @@ class Osintgram:
                 user = self.api.user_info(str(follow['id']))
                 if 'public_email' in user['user'] and user['user']['public_email']:
                     follow['email'] = user['user']['public_email']
+                    if len(results) > value:
+                        break
                     results.append(follow)
         
         except ClientThrottledError as e:
@@ -1366,6 +1418,30 @@ class Osintgram:
                 next_max_id = results.get('next_max_id')
        
             results = []
+        
+            pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
+            value = input()
+            
+            if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
+                value = len(followings)
+            elif value == str(""):
+                print("\n")
+                return
+            elif value == str("n") or value == str("no") or value == str("No") or value == str("NO"):
+                while True:
+                    try:
+                        pc.printout("How many phone numbers do you want to get? ", pc.YELLOW)
+                        new_value = int(input())
+                        value = new_value - 1
+                        break
+                    except ValueError:
+                        pc.printout("Error! Please enter a valid integer!", pc.RED)
+                        print("\n")
+                        return
+            else:
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
+                print("\n")
+                return
 
             for follow in followings:
                 sys.stdout.write("\rCatched %i followings phone numbers" % len(results))
@@ -1373,6 +1449,8 @@ class Osintgram:
                 user = self.api.user_info(str(follow['id']))
                 if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
                     follow['contact_phone_number'] = user['user']['contact_phone_number']
+                    if len(results) > value:
+                        break
                     results.append(follow)
 
         except ClientThrottledError as e:
@@ -1447,6 +1525,30 @@ class Osintgram:
                 next_max_id = results.get('next_max_id')
         
             results = []
+            
+            pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
+            value = input()
+            
+            if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
+                value = len(followings)
+            elif value == str(""):
+                print("\n")
+                return
+            elif value == str("n") or value == str("no") or value == str("No") or value == str("NO"):
+                while True:
+                    try:
+                        pc.printout("How many phone numbers do you want to get? ", pc.YELLOW)
+                        new_value = int(input())
+                        value = new_value - 1
+                        break
+                    except ValueError:
+                        pc.printout("Error! Please enter a valid integer!", pc.RED)
+                        print("\n")
+                        return
+            else:
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
+                print("\n")
+                return
 
             for follow in followings:
                 sys.stdout.write("\rCatched %i followers phone numbers" % len(results))
@@ -1454,6 +1556,8 @@ class Osintgram:
                 user = self.api.user_info(str(follow['id']))
                 if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
                     follow['contact_phone_number'] = user['user']['contact_phone_number']
+                    if len(results) > value:
+                        break
                     results.append(follow)
 
         except ClientThrottledError as e:
