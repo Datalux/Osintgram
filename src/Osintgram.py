@@ -553,8 +553,8 @@ class Osintgram:
                     'biography': data['biography'],
                     'edge_followed_by': data['follower_count'],
                     'edge_follow': data['following_count'],
-                    'is_business_account': data['is_business_account'],
-                    'is_verified': data['is_business'],
+                    'is_business_account': data['is_business'],
+                    'is_verified': data['is_verified'],
                     'profile_pic_url_hd': data['hd_profile_pic_url_info']['url']
                 }
                 if 'public_email' in data and data['public_email']:
