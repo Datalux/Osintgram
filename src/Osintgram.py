@@ -31,14 +31,19 @@ class Osintgram:
     writeFile = False
     jsonDump = False
 
-    def __init__(self, target, is_file, is_json):
+    def __init__(self, target, is_file, is_json, clear_cookies):
         u = config.getUsername()
         p = config.getPassword()
+        self.clear_cookies(clear_cookies)
         print("\nAttempt to login...")
         self.login(u, p)
         self.setTarget(target)
         self.writeFile = is_file
         self.jsonDump = is_json
+
+    def clear_cookies(self,clear_cookies):
+        if clear_cookies:
+            self.clear_cache()
 
     def setTarget(self, target):
         self.target = target
