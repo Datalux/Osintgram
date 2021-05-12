@@ -34,11 +34,13 @@ class Osintgram:
     cli_mode = False
     output_dir = "output"
 
-    def __init__(self, target, is_file, is_json, is_cli, output_dir):
+
+    def __init__(self, target, is_file, is_json, is_cli, output_dir, clear_cookies):
         self.output_dir = output_dir or self.output_dir
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         u = config.getUsername()
         p = config.getPassword()
+        self.clear_cookies(clear_cookies)
         self.cli_mode = is_cli
         if not is_cli:
           print("\nAttempt to login...")
@@ -46,6 +48,10 @@ class Osintgram:
         self.setTarget(target)
         self.writeFile = is_file
         self.jsonDump = is_json
+
+    def clear_cookies(self,clear_cookies):
+        if clear_cookies:
+            self.clear_cache()
 
     def setTarget(self, target):
         self.target = target
@@ -1647,4 +1653,13 @@ class Osintgram:
                     json.dump(json_data, f)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
-            
+
+    def clear_cache(self):
+        try:
+            f = open("config/settings.json",'w')
+            f.write("{}")
+            pc.printout("Cache Cleared.\n",pc.GREEN)
+        except FileNotFoundError:
+            pc.printout("Settings.json don't exist.\n",pc.RED)
+        finally:
+            f.close()
