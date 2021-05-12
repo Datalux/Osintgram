@@ -3,6 +3,7 @@
 from src.Osintgram import Osintgram
 import argparse
 from src import printcolors as pc
+from src import artwork
 import sys
 import signal
 
@@ -16,14 +17,8 @@ except:
 
 
 def printlogo():
-    pc.printout("________         .__        __                               \n", pc.YELLOW)
-    pc.printout("\_____  \   _____|__| _____/  |_  ________________    _____  \n", pc.YELLOW)
-    pc.printout(" /   |   \ /  ___/  |/    \   __\/ ___\_  __ \__  \  /     \ \n", pc.YELLOW)
-    pc.printout("/    |    \\\___ \|  |   |  \  | / /_/  >  | \// __ \|  Y Y  \\\n", pc.YELLOW)
-    pc.printout("\_______  /____  >__|___|  /__| \___  /|__|  (____  /__|_|  /\n", pc.YELLOW)
-    pc.printout("        \/     \/        \/    /_____/            \/      \/ \n", pc.YELLOW)
-    print('\n')
-    pc.printout("Version 1.2 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
+    pc.printout(artwork.ascii_art, pc.YELLOW)
+    pc.printout("\nVersion 1.1 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (default is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
@@ -110,8 +105,6 @@ else:
     gnureadline.parse_and_bind("tab: complete")
     gnureadline.set_completer(completer)
 
-printlogo()
-
 parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell '
                                              'to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
@@ -119,10 +112,14 @@ parser.add_argument('id', type=str,  # var = id
 parser.add_argument('-c','--cookies', help='clear\'s previous cookies', action="store_true")
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
 parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
+parser.add_argument('-c', '--command', help='run in single command mode & execute provided command', action='store')
+parser.add_argument('-o', '--output', help='where to store photos', action='store')
 
 args = parser.parse_args()
 
-api = Osintgram(args.id, args.file, args.json, args.cookies)
+
+api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.cookies)
+
 
 
 commands = {
@@ -155,22 +152,25 @@ commands = {
     'wtagged':          api.get_people_who_tagged
 }
 
-signal.signal(signal.SIGINT, signal_handler)
-if is_windows:
-    pyreadline.Readline().parse_and_bind("tab: complete")
-    pyreadline.Readline().set_completer(completer)
-else:
-    gnureadline.parse_and_bind("tab: complete")
-    gnureadline.set_completer(completer)
+
+if not args.command:
+    printlogo()
 
 while True:
-    pc.printout("Run a command: ", pc.YELLOW)
-    cmd = input()
+    if args.command:
+        cmd = args.command
+        _cmd = commands.get(args.command)
+    else:
+        signal.signal(signal.SIGINT, signal_handler)
+        gnureadline.parse_and_bind("tab: complete")
+        gnureadline.set_completer(completer)
+        pc.printout("Run a command: ", pc.YELLOW)
+        cmd = input()
 
-    _cmd = commands.get(cmd)
-    
+        _cmd = commands.get(cmd)
+
     if _cmd:
-        _cmd()    
+        _cmd()
     elif cmd == "FILE=y":
         api.set_write_file(True)
     elif cmd == "FILE=n":
@@ -183,3 +183,6 @@ while True:
         print("")
     else:
         pc.printout("Unknown command\n", pc.RED)
+
+    if args.command:
+        break
