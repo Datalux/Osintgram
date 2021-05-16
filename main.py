@@ -109,7 +109,7 @@ parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Insta
                                              'to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
                     help='username')
-parser.add_argument('-c','--cookies', help='clear\'s previous cookies', action="store_true")
+parser.add_argument('-C','--cookies', help='clear\'s previous cookies', action="store_true")
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
 parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
 parser.add_argument('-c', '--command', help='run in single command mode & execute provided command', action='store')
