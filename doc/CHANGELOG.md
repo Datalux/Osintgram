@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.3](https://github.com/Datalux/Osintgram/releases/tag/1.3)
+**Enhancements**
+- Artwork refactoring (#149) 
+- Added command line mode (#155)
+- Added output limiter (#201)
+
+**Bug fixes**
+- Losing collected data (#156)
+- JSON user info (#202)
+- Issue #198 (#200)
+- Issue #204 (12e730e)
+
+
 ## [1.2](https://github.com/Datalux/Osintgram/releases/tag/1.2)
 **Enhancements**
 - Added virtual environment (#126)

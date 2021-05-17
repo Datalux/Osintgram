@@ -1,6 +1,6 @@
 # Osintgram 🔎📸
 
-[![version-1.2](https://img.shields.io/badge/version-1.2-green)](https://github.com/Datalux/Osintgram/releases/tag/1.2)
+[![version-1.3](https://img.shields.io/badge/version-1.3-green)](https://github.com/Datalux/Osintgram/releases/tag/1.3)
 [![GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
 [![Python3](https://img.shields.io/badge/language-Python3-red)](https://img.shields.io/badge/language-Python3-red)
 [![Telegram](https://img.shields.io/badge/Telegram-Channel-blue.svg)](https://t.me/osintgram)
@@ -9,10 +9,10 @@
 Osintgram is a **OSINT** tool on Instagram to collect, analyze, and run reconnaissance.
 
 <p align="center">
-<img align="center" src=".img/carbon.svg" width="900">
+<img align="center" src=".img/carbon.png" width="900">
 </p>
 
-Disclaimer: **The contributors do not assume any responsibility for the use of this tool**
+Disclaimer: **FOR EDUCATIONAL PURPOSE ONLY! The contributors do not assume any responsibility for the use of this tool.**
 
 Warning: It is advisable to **not** use your own/primary account when using this tool.
 
@@ -45,7 +45,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 
 You can find detailed commands usage [here](doc/COMMANDS.md).
 
-[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/1.2) |
+[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/1.3) |
 [Commands](doc/COMMANDS.md) |
 [CHANGELOG](doc/CHANGELOG.md)
 
@@ -73,9 +73,10 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
     
     Alternatively, you can run the `make setup` command to populate this file for you.
 
-7. Run the main.py script
+7. Run the main.py script in one of two ways
 
-    `python3 main.py <target username>`
+    * As an interactive prompt `python3 main.py <target username>`
+    * Or execute your command straight away `python3 main.py <target username> --command <command>`
 
 ## Docker Quick Start 🐳
 
