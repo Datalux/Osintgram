@@ -171,8 +171,12 @@ while True:
         _cmd = commands.get(args.command)
     else:
         signal.signal(signal.SIGINT, signal_handler)
-        gnureadline.parse_and_bind("tab: complete")
-        gnureadline.set_completer(completer)
+        if is_windows:
+            pyreadline.Readline().parse_and_bind("tab: complete")
+            pyreadline.Readline().set_completer(completer)
+        else:
+            gnureadline.parse_and_bind("tab: complete")
+            gnureadline.set_completer(completer)
         pc.printout("Run a command: ", pc.YELLOW)
         cmd = input()
 
