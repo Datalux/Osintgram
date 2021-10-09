@@ -149,11 +149,18 @@ To use the development version with the latest feature and fixes just switch to 
 
 `git checkout development`
 
-## Updating ⬇️
-
 and update to last version using:
 
 `git pull origin development`
+
+
+## Updating ⬇️
+
+To update Osintgram with the stable release just pull the latest commit using Git.
+
+1. Make sure you are in the master branch running: `git checkout master`
+2. Download the latest version: `git pull origin master`
+
 
 ## Contributing 💡
 

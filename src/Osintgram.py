@@ -1381,15 +1381,122 @@ class Osintgram:
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
 
-    def get_fwingsnumber(self):
+    def get_fwersnumber(self):
         if self.check_private_profile():
             return
        
         try:
 
+            pc.printout("Searching for phone numbers of users followers... this can take a few minutes\n")
+
+            followers = []
+
+            rank_token = AppClient.generate_uuid()
+            data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
+
+            for user in data.get('users', []):
+                u = {
+                    'id': user['pk'],
+                    'username': user['username'],
+                    'full_name': user['full_name']
+                }
+                followers.append(u)
+
+            next_max_id = data.get('next_max_id')
+            
+            while next_max_id:
+                results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+
+                for user in results.get('users', []):
+                    u = {
+                        'id': user['pk'],
+                        'username': user['username'],
+                        'full_name': user['full_name']
+                    }
+                    followers.append(u)
+
+                next_max_id = results.get('next_max_id')
+       
+            results = []
+        
+            pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
+            value = input()
+            
+            if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
+                value = len(followers)
+            elif value == str(""):
+                print("\n")
+                return
+            elif value == str("n") or value == str("no") or value == str("No") or value == str("NO"):
+                while True:
+                    try:
+                        pc.printout("How many phone numbers do you want to get? ", pc.YELLOW)
+                        new_value = int(input())
+                        value = new_value - 1
+                        break
+                    except ValueError:
+                        pc.printout("Error! Please enter a valid integer!", pc.RED)
+                        print("\n")
+                        return
+            else:
+                pc.printout("Error! Please enter y/n :-)", pc.RED)
+                print("\n")
+                return
+
+            for follow in followers:
+                sys.stdout.write("\rCatched %i followers phone numbers" % len(results))
+                sys.stdout.flush()
+                user = self.api.user_info(str(follow['id']))
+                if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
+                    follow['contact_phone_number'] = user['user']['contact_phone_number']
+                    if len(results) > value:
+                        break
+                    results.append(follow)
+
+        except ClientThrottledError as e:
+            pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
+            pc.printout("\n")
+        
+        print("\n")
+
+        if len(results) > 0:
+            t = PrettyTable(['ID', 'Username', 'Full Name', 'Phone'])
+            t.align["ID"] = "l"
+            t.align["Username"] = "l"
+            t.align["Full Name"] = "l"
+            t.align["Phone number"] = "l"
+
+            json_data = {}
+
+            for node in results:
+                t.add_row([str(node['id']), node['username'], node['full_name'], node['contact_phone_number']])
+
+            if self.writeFile:
+                file_name = self.output_dir + "/" + self.target + "_fwersnumber.txt"
+                file = open(file_name, "w")
+                file.write(str(t))
+                file.close()
+
+            if self.jsonDump:
+                json_data['followers_phone_numbers'] = results
+                json_file_name = self.output_dir + "/" + self.target + "_fwersnumber.json"
+                with open(json_file_name, 'w') as f:
+                    json.dump(json_data, f)
+
+            print(t)
+        else:
+            pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_fwingsnumber(self):
+        if self.check_private_profile():
+            return
+
+        followings = []
+
+        try:
+
             pc.printout("Searching for phone numbers of users followed by target... this can take a few minutes\n")
 
-            followings = []
 
             rank_token = AppClient.generate_uuid()
             data = self.api.user_following(str(self.target_id), rank_token=rank_token)
@@ -1416,9 +1523,9 @@ class Osintgram:
                     followings.append(u)
 
                 next_max_id = results.get('next_max_id')
-       
-            results = []
         
+            results = []
+            
             pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
             value = input()
             
@@ -1456,7 +1563,7 @@ class Osintgram:
         except ClientThrottledError as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
             pc.printout("\n")
-        
+
         print("\n")
 
         if len(results) > 0:
@@ -1480,113 +1587,6 @@ class Osintgram:
             if self.jsonDump:
                 json_data['followings_phone_numbers'] = results
                 json_file_name = self.output_dir + "/" + self.target + "_fwingsnumber.json"
-                with open(json_file_name, 'w') as f:
-                    json.dump(json_data, f)
-
-            print(t)
-        else:
-            pc.printout("Sorry! No results found :-(\n", pc.RED)
-
-    def get_fwersnumber(self):
-        if self.check_private_profile():
-            return
-
-        followings = []
-
-        try:
-
-            pc.printout("Searching for phone numbers of users followers... this can take a few minutes\n")
-
-
-            rank_token = AppClient.generate_uuid()
-            data = self.api.user_following(str(self.target_id), rank_token=rank_token)
-
-            for user in data.get('users', []):
-                u = {
-                    'id': user['pk'],
-                    'username': user['username'],
-                    'full_name': user['full_name']
-                }
-                followings.append(u)
-
-            next_max_id = data.get('next_max_id')
-            
-            while next_max_id:
-                results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
-
-                for user in results.get('users', []):
-                    u = {
-                        'id': user['pk'],
-                        'username': user['username'],
-                        'full_name': user['full_name']
-                    }
-                    followings.append(u)
-
-                next_max_id = results.get('next_max_id')
-        
-            results = []
-            
-            pc.printout("Do you want to get all phone numbers? y/n: ", pc.YELLOW)
-            value = input()
-            
-            if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
-                value = len(followings)
-            elif value == str(""):
-                print("\n")
-                return
-            elif value == str("n") or value == str("no") or value == str("No") or value == str("NO"):
-                while True:
-                    try:
-                        pc.printout("How many phone numbers do you want to get? ", pc.YELLOW)
-                        new_value = int(input())
-                        value = new_value - 1
-                        break
-                    except ValueError:
-                        pc.printout("Error! Please enter a valid integer!", pc.RED)
-                        print("\n")
-                        return
-            else:
-                pc.printout("Error! Please enter y/n :-)", pc.RED)
-                print("\n")
-                return
-
-            for follow in followings:
-                sys.stdout.write("\rCatched %i followers phone numbers" % len(results))
-                sys.stdout.flush()
-                user = self.api.user_info(str(follow['id']))
-                if 'contact_phone_number' in user['user'] and user['user']['contact_phone_number']:
-                    follow['contact_phone_number'] = user['user']['contact_phone_number']
-                    if len(results) > value:
-                        break
-                    results.append(follow)
-
-        except ClientThrottledError as e:
-            pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
-            pc.printout("\n")
-
-        print("\n")
-
-        if len(results) > 0:
-            t = PrettyTable(['ID', 'Username', 'Full Name', 'Phone'])
-            t.align["ID"] = "l"
-            t.align["Username"] = "l"
-            t.align["Full Name"] = "l"
-            t.align["Phone number"] = "l"
-
-            json_data = {}
-
-            for node in results:
-                t.add_row([str(node['id']), node['username'], node['full_name'], node['contact_phone_number']])
-
-            if self.writeFile:
-                file_name = self.output_dir + "/" + self.target + "_fwersnumber.txt"
-                file = open(file_name, "w")
-                file.write(str(t))
-                file.close()
-
-            if self.jsonDump:
-                json_data['followings_phone_numbers'] = results
-                json_file_name = self.output_dir + "/" + self.target + "_fwerssnumber.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
 
