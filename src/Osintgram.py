@@ -114,7 +114,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target localizations...\n")
+        pc.printout("Searching for " + self.target + " localizations...\n")
 
         data = self.__get_feed__()
 
@@ -181,7 +181,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target captions...\n")
+        pc.printout("Searching for " + self.target + " captions...\n")
 
         captions = []
 
@@ -239,7 +239,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target total comments...\n")
+        pc.printout("Searching for " + self.target + " total comments...\n")
 
         comments_counter = 0
         posts = 0
@@ -314,7 +314,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target followers...\n")
+        pc.printout("Searching for " + self.target + " followers...\n")
 
         _followers = []
         followers = []
@@ -380,7 +380,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target followings...\n")
+        pc.printout("Searching for " + self.target + " followings...\n")
 
         _followings = []
         followings = []
@@ -445,7 +445,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target hashtags...\n")
+        pc.printout("Searching for " + self.target + " hashtags...\n")
 
         hashtags = []
         counter = 1
@@ -590,7 +590,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target total likes...\n")
+        pc.printout("Searching for " + self.target + " total likes...\n")
 
         like_counter = 0
         posts = 0
@@ -623,7 +623,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target captions...\n")
+        pc.printout("Searching for " + self.target + " captions...\n")
 
         counter = 0
         photo_counter = 0
@@ -946,7 +946,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        pc.printout("Searching for target stories...\n")
+        pc.printout("Searching for " + self.target + " stories...\n")
 
         data = self.api.user_reel_media(str(self.target_id))
 
