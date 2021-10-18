@@ -45,7 +45,7 @@ class Osintgram:
         if not is_cli:
           print("\nAttempt to login...")
         self.login(u, p)
-        self.setTarget(target)
+        self.setTarget(target, True)
         self.writeFile = is_file
         self.jsonDump = is_json
 
@@ -53,13 +53,14 @@ class Osintgram:
         if clear_cookies:
             self.clear_cache()
 
-    def setTarget(self, target):
+    def setTarget(self, target, show_output):
         self.target = target
         user = self.get_user(target)
         self.target_id = user['id']
         self.is_private = user['is_private']
         self.following = self.check_following()
-        self.__printTargetBanner__()
+        if(show_output):
+            self.__printTargetBanner__()
 
     def __get_feed__(self):
         data = []
@@ -107,7 +108,7 @@ class Osintgram:
     def change_target(self):
         pc.printout("Insert new target username: ", pc.YELLOW)
         line = input()
-        self.setTarget(line)
+        self.setTarget(line, True)
         return
 
     def get_addrs(self):
@@ -1160,7 +1161,7 @@ class Osintgram:
 
     def check_private_profile(self):
         if self.is_private and not self.following:
-            pc.printout("Impossible to execute command: user has private profile\n", pc.RED)
+            pc.printout("Impossible to execute command: " + self.target + " has private profile\n", pc.RED)
             send = input("Do you want send a follow request? [Y/N]: ")
             if send.lower() == "y":
                 self.api.friendships_create(self.target_id)
@@ -1654,6 +1655,102 @@ class Osintgram:
                     json.dump(json_data, f)
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
+
+    def get_followers_subset(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout("Searching for " + self.target + " followers...\n")
+
+        target_1 = self.target
+        _followers_target_1 = []
+        _followers_target_2 = []
+        followers_subset = []
+
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
+
+        _followers_target_1.extend(data.get('users', []))
+
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            sys.stdout.write("\rCatched %i followers" % len(_followers_target_1))
+            sys.stdout.flush()
+            results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+            _followers_target_1.extend(results.get('users', []))
+            next_max_id = results.get('next_max_id')
+
+        print("\n")
+
+        pc.printout("Insert target two username: ", pc.YELLOW)
+        line = input()
+        self.setTarget(line, False)
+        target_2 = self.target
+        if self.check_private_profile():
+            return
+
+
+        pc.printout("Searching for " + self.target + " followers...\n")
+
+        rank_token = AppClient.generate_uuid()
+        data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
+
+        _followers_target_2.extend(data.get('users', []))
+
+        next_max_id = data.get('next_max_id')
+        while next_max_id:
+            sys.stdout.write("\rCatched %i followers" % len(_followers_target_2))
+            sys.stdout.flush()
+            results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
+            _followers_target_2.extend(results.get('users', []))
+            next_max_id = results.get('next_max_id')
+
+        print("\n")
+            
+        for user in _followers_target_1:
+            ff = list(filter(lambda x: x['pk'] == user['pk'], _followers_target_2))
+            if(len(ff) > 0):
+                f = {
+                    'id': ff[0]['pk'],
+                    'username': ff[0]['username'],
+                    'full_name': ff[0]['full_name']
+                }
+                followers_subset.append(f)
+
+        t = PrettyTable(['ID', 'Username', 'Full Name'])
+        t.align["ID"] = "l"
+        t.align["Username"] = "l"
+        t.align["Full Name"] = "l"
+
+        json_data = {}
+        followings_subset_list = []
+
+        for node in followers_subset:
+            t.add_row([str(node['id']), node['username'], node['full_name']])
+
+            if self.jsonDump:
+                follow = {
+                    'id': node['id'],
+                    'username': node['username'],
+                    'full_name': node['full_name']
+                }
+                followings_subset_list.append(follow)
+
+        if self.writeFile:
+            file_name = self.output_dir + "/" + target_1 + "-" + target_2 + "_followers.txt"
+            file = open(file_name, "w")
+            file.write(str(t))
+            file.close()
+
+        if self.jsonDump:
+            json_data['followers'] = followers
+            json_file_name = self.output_dir + "/" + target_1 + "-" + target_2 + "_followers.txt"
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
+
+        print(t)
+        pc.printout("Founded " + str(len(followers_subset)) + " users!\n", pc.GREEN)
 
     def clear_cache(self):
         try:
