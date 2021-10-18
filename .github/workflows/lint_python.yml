@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
-      - run: pip install bandit black codespell flake8 isort mypy pytest pyupgrade safety
+      - run: pip install bandit black codespell flake8 isort mypy pytest pyupgrade safety types-requests
       - run: bandit -r . || true
       - run: black --check . || true
       - run: codespell --ignore-words-list="followings" --quiet-level=2
