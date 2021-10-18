@@ -1192,8 +1192,6 @@ class Osintgram:
 
             next_max_id = data.get('next_max_id')
             while next_max_id:
-                sys.stdout.write("\rCatched %i followers email" % len(followers))
-                sys.stdout.flush()
                 results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
                 
                 for user in results.get('users', []):
@@ -1205,6 +1203,7 @@ class Osintgram:
                     followers.append(u)
 
                 next_max_id = results.get('next_max_id')
+            
             
             print("\n")
 
@@ -1235,6 +1234,8 @@ class Osintgram:
                 return
 
             for follow in followers:
+                sys.stdout.write("\rCatched %i followers email" % len(results))
+                sys.stdout.flush()
                 user = self.api.user_info(str(follow['id']))
                 if 'public_email' in user['user'] and user['user']['public_email']:
                     follow['email'] = user['user']['public_email']
