@@ -1744,7 +1744,7 @@ class Osintgram:
             file.close()
 
         if self.jsonDump:
-            json_data['followers'] = followers
+            json_data['followers'] = followers_subset
             json_file_name = self.output_dir + "/" + target_1 + "-" + target_2 + "_followers.txt"
             with open(json_file_name, 'w') as f:
                 json.dump(json_data, f)
