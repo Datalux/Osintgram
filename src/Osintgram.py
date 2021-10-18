@@ -333,6 +333,8 @@ class Osintgram:
             results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
             _followers.extend(results.get('users', []))
             next_max_id = results.get('next_max_id')
+        sys.stdout.write("\rCatched %i followers" % len(_followers))
+        sys.stdout.flush()
 
         print("\n")
             
@@ -398,6 +400,8 @@ class Osintgram:
             results = self.api.user_following(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
             _followings.extend(results.get('users', []))
             next_max_id = results.get('next_max_id')
+        sys.stdout.write("\rCatched %i followings" % len(_followings))
+        sys.stdout.flush()
 
         print("\n")
 
@@ -1243,6 +1247,8 @@ class Osintgram:
                     if len(results) > value:
                         break
                     results.append(follow)
+            sys.stdout.write("\rCatched %i followers email" % len(results))
+            sys.stdout.flush()
 
         except ClientThrottledError  as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
@@ -1348,6 +1354,8 @@ class Osintgram:
                     if len(results) > value:
                         break
                     results.append(follow)
+            sys.stdout.write("\rCatched %i followings email" % len(results))
+            sys.stdout.flush()
         
         except ClientThrottledError as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
@@ -1454,6 +1462,8 @@ class Osintgram:
                     if len(results) > value:
                         break
                     results.append(follow)
+            sys.stdout.write("\rCatched %i followers phone numbers" % len(results))
+            sys.stdout.flush()
 
         except ClientThrottledError as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
@@ -1561,6 +1571,8 @@ class Osintgram:
                     if len(results) > value:
                         break
                     results.append(follow)
+            sys.stdout.write("\rCatched %i followings phone numbers" % len(results))
+            sys.stdout.flush()
 
         except ClientThrottledError as e:
             pc.printout("\nError: Instagram blocked the requests. Please wait a few minutes before you try again.", pc.RED)
@@ -1680,6 +1692,8 @@ class Osintgram:
             results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
             _followers_target_1.extend(results.get('users', []))
             next_max_id = results.get('next_max_id')
+        sys.stdout.write("\rCatched %i followers" % len(_followers_target_1))
+        sys.stdout.flush()
 
         print("\n")
 
@@ -1705,7 +1719,9 @@ class Osintgram:
             results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
             _followers_target_2.extend(results.get('users', []))
             next_max_id = results.get('next_max_id')
-
+            sys.stdout.write("\rCatched %i followers" % len(_followers_target_2))
+            sys.stdout.flush()
+            
         print("\n")
             
         for user in _followers_target_1:
