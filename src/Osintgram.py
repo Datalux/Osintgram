@@ -22,7 +22,6 @@ from src import config
 
 class Osintgram:
     api = None
-    api2 = None
     geolocator = Nominatim(user_agent="http")
     user_id = None
     target_id = None
@@ -61,6 +60,12 @@ class Osintgram:
         self.following = self.check_following()
         if(show_output):
             self.__printTargetBanner__()
+
+    def get_api(self):
+        return self.api
+    
+    def generate_uuid(self):
+        return AppClient.generate_uuid()
 
     def __get_feed__(self):
         data = []
@@ -312,72 +317,27 @@ class Osintgram:
 
 
     def get_followers(self):
-        if self.check_private_profile():
-            return
-
-        pc.printout("Searching for " + self.target + " followers...\n")
-
-        _followers = []
         followers = []
 
-
-        rank_token = AppClient.generate_uuid()
+        rank_token = self.generate_uuid()
         data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
 
-        _followers.extend(data.get('users', []))
+        followers.extend(data.get('users', []))
 
         next_max_id = data.get('next_max_id')
         while next_max_id:
-            sys.stdout.write("\rCatched %i followers" % len(_followers))
+            sys.stdout.write("\rCatched %i followers" % len(followers))
             sys.stdout.flush()
             results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
-            _followers.extend(results.get('users', []))
+            followers.extend(results.get('users', []))
             next_max_id = results.get('next_max_id')
-        sys.stdout.write("\rCatched %i followers" % len(_followers))
+        sys.stdout.write("\rCatched %i followers" % len(followers))
         sys.stdout.flush()
 
         print("\n")
-            
-        for user in _followers:
-            u = {
-                'id': user['pk'],
-                'username': user['username'],
-                'full_name': user['full_name']
-            }
-            followers.append(u)
 
-        t = PrettyTable(['ID', 'Username', 'Full Name'])
-        t.align["ID"] = "l"
-        t.align["Username"] = "l"
-        t.align["Full Name"] = "l"
+        return followers
 
-        json_data = {}
-        followings_list = []
-
-        for node in followers:
-            t.add_row([str(node['id']), node['username'], node['full_name']])
-
-            if self.jsonDump:
-                follow = {
-                    'id': node['id'],
-                    'username': node['username'],
-                    'full_name': node['full_name']
-                }
-                followings_list.append(follow)
-
-        if self.writeFile:
-            file_name = self.output_dir + "/" + self.target + "_followers.txt"
-            file = open(file_name, "w")
-            file.write(str(t))
-            file.close()
-
-        if self.jsonDump:
-            json_data['followers'] = followers
-            json_file_name = self.output_dir + "/" + self.target + "_followers.json"
-            with open(json_file_name, 'w') as f:
-                json.dump(json_data, f)
-
-        print(t)
 
     def get_followings(self):
         if self.check_private_profile():

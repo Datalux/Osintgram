@@ -1,0 +1,15 @@
+---
+name: "followers"
+description: "List target followers"
+commands: 
+  - set
+  - help
+  - options
+  - run
+options:
+  output_limit: 0
+  delay: 0
+  output: 
+    - json
+    - csv
+    
