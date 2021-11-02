@@ -28,6 +28,9 @@ The list has post, address and date fields.
 ### captions 
 Return a list of all captions used by target in his photos.
 
+### commentdata
+Return a list of all the comments on the target's posts
+
 ### comments
 Return the total number of comments in target's posts
 
