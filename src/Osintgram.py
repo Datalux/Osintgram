@@ -307,7 +307,7 @@ class Osintgram:
             file_name_json = self.output_dir + "/" + self.target + "_comment_data.json"
             with open(file_name_json, 'w') as f:
                 f.write("{ \"Comments\":[ \n")
-                f.write('\n'.join(json.dumps(comment) for comment in _comments) + ',\n')
+                f.write(',\n'.join(json.dumps(comment) for comment in _comments) + '\n')
                 f.write("]} ")
 
 
