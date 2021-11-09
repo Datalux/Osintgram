@@ -12,6 +12,6 @@ import time
 
 class Command:
 
-    def __init__(self, path, api):
+    def __init__(self, status, api):
         pc.printout("\nGoodbye!\n", pc.RED)
         sys.exit(0)

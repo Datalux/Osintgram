@@ -5,3 +5,5 @@ output/
 *.json
 venv/
 config/credentials.ini
+config/credentials.ini
+config/settings.json

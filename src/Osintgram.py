@@ -63,6 +63,9 @@ class Osintgram:
 
     def get_api(self):
         return self.api
+
+    def get_target(self):
+        return self.target
     
     def generate_uuid(self):
         return AppClient.generate_uuid()

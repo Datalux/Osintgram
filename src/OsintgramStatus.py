@@ -1,4 +1,5 @@
 import yaml
+from src import utils as utils
 
 class OsintgramStatus:
 
@@ -8,6 +9,8 @@ class OsintgramStatus:
         self.command = ""
         self.subcommand = ""
         self.commands = []
+        self.output_config = []
+        self.target = None
 
     def get_command(self):
         return self.command
@@ -18,6 +21,12 @@ class OsintgramStatus:
         stream = open(self.get_path(), 'r')
         setup = yaml.safe_load(stream)
         self.commands = setup['commands']
+
+    def get_target(self):
+        return self.target
+
+    def set_target(self, target):
+        self.target = target      
 
     def get_subcommand(self):
         return self.subcommand
@@ -38,9 +47,27 @@ class OsintgramStatus:
     def set_commands(self, commands):
         self.commands = commands
 
+    def set_output_config(self, output_config):
+        self.output_config = output_config
+
     def get_path(self):
         return "src/commands/" + self.command + "/config.yaml"
     
     def get_module(self):
         return "src.commands." + self.command + ".run"
 
+    def release(self):
+        self.command = ""
+        self.subcommand = ""
+        self.command_mode = False
+        self.setted_subcommand = False
+        stream = open("src/setup.yaml", 'r')
+        setup = yaml.safe_load(stream)
+        self.commands = setup['commands']
+
+    def print_output(self, data, table_header = [], table_contents = []):
+        for output in self.output_config:
+            if output == 'table':
+                utils.print_in_table(data, table_header, table_contents)
+            elif output == "json":
+                utils.print_in_json(data, self)       

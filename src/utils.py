@@ -8,6 +8,8 @@ from prettytable import PrettyTable
 from src import printcolors as pc
 from src import artwork
 
+import json
+
 
 def printlogo(version, author):
     pc.printout(artwork.ascii_art, pc.YELLOW)
@@ -23,6 +25,8 @@ def completer(commands, text, state):
 
 
 def print_in_table(data, header, values):
+    print("\n")
+    
     t = PrettyTable(header)
     for i in header:
         t.align[i] = "l"
@@ -32,12 +36,20 @@ def print_in_table(data, header, values):
 
     print(t)
 
+def print_in_json(data, config):
+    json_file_name = "output/" + config.get_target() + "_fwingsemail.json"
+    with open(json_file_name, 'w') as f:
+        json.dump(data, f)
 
+
+def print_error(message):
+    pc.printout(message +"\n", pc.RED)
 
 class Completer(object):  # Custom completer
 
     def __init__(self, options):
-        self.options = sorted(options)
+        if(options is not None):
+            self.options = sorted(options)
 
     def complete(self, text, state):
         if state == 0:  # on first trigger, build possible matches

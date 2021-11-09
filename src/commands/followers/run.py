@@ -9,12 +9,16 @@ import json
 import sys
 import time
 
+from src import CommandFather as CommandFather
 
-class Command:
 
-    def __init__(self, path, api):
+class Command():
+
+    def __init__(self, status, api):
+        # super().__init__(status, api)
         self.commands = []
-        self.path = path
+        self.path = status.get_path()
+        self.status = status
         stream = open(self.path, 'r')
         self.config = yaml.safe_load(stream)
         self.options_values = self.config['options']
@@ -22,7 +26,7 @@ class Command:
 
     def get_options(self):
         return self.config['options']
-   
+
     def options(self):
         t = PrettyTable(['Option', 'Value'])
         for key, value in self.options_values.items():
@@ -35,14 +39,17 @@ class Command:
             print(str(i) + ". " + key)
             i = i + 1
         try:
-            index = input("Choose option: ")        
+            index = input("Choose option: ")
             key = list(self.options_values.keys())[int(index) - 1]
             v = input("[" + key + "] Choose a value: ")
             self.options_values[key] = v
             print(self.options_values)
 
         except ValueError:
-            print("Not a number")
+            utils.print_error("Not a number")
+
+        except IndexError:
+            utils.print_error("Value not in range (1-" + str(i-1) + ")")
 
     def run(self):
         if self.osintgram.check_private_profile():
@@ -59,6 +66,9 @@ class Command:
 
         next_max_id = data.get('next_max_id')
         while next_max_id:
+            if(int(self.options_values['output_limit']) > 0 and len(followers) > int(self.options_values['output_limit'])):
+                break
+
             if(int(self.options_values['delay']) > 0):
                 time.sleep(int(self.options_values['delay']))
 
@@ -69,7 +79,7 @@ class Command:
             next_max_id = results.get('next_max_id')
         sys.stdout.write("\rCatched %i followers" % len(followers))
         sys.stdout.flush()
-            
+
         data = []
         for user in followers:
             u = {
@@ -79,16 +89,5 @@ class Command:
             }
             data.append(u)
 
-        utils.print_in_table(data, ['ID', 'Username', 'Full Name'], ['id', 'username', 'full_name'])
-
-     
-        
-
-                    
-
-
-
-            
-
-        
-
+        # utils.print_in_table(data, ['ID', 'Username', 'Full Name'], ['id', 'username', 'full_name'])
+        self.status.print_output(data, ['ID', 'Username', 'Full Name'], ['id', 'username', 'full_name'])

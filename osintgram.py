@@ -73,6 +73,8 @@ api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.c
 
 
 status.set_commands(setup['commands'])
+status.set_output_config(setup['output_config'])
+status.set_target(api.get_target())
 
 
 while True:
@@ -112,7 +114,7 @@ while True:
         if status.is_subcommand():
             command.__getattribute__(_cmd)()
         else:
-            command = mymodule.Command(status.get_path(), api)
+            command = mymodule.Command(status, api)
             
     elif _cmd == "":
         print("")

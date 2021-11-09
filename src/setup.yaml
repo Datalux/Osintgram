@@ -1,7 +1,11 @@
 ---
 version: 2.0.0
 author: "Giuseppe Criscione"
+output_config:
+  # - table
+  - json
 
 commands: 
   - followers
   - exit
+  - help

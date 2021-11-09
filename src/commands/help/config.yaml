@@ -1,0 +1,5 @@
+---
+name: "help"
+description: "Show Osintgram commands with its description"
+commands: 
+options:   

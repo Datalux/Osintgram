@@ -3,7 +3,6 @@ name: "followers"
 description: "List target followers"
 commands: 
   - set
-  - help
   - options
   - run
 options:
