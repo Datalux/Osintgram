@@ -1,0 +1,8 @@
+---
+name: "address"
+description: "Get all registered address in target photos"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0    

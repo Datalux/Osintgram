@@ -6,6 +6,7 @@ output_config:
   - json
 
 commands: 
+  - address
   - captions
   - comments
   - exit
