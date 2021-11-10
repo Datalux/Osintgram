@@ -88,7 +88,6 @@ while True:
         readline.set_completer_delims(' \t\n;')
         readline.set_completer(completer.complete)
         readline.parse_and_bind('tab: complete')
-        readline.set_completion_display_matches_hook(completer.display_matches)
 
         if(status.is_command_mode()):
             pc.printout(status.get_command() + '> ', pc.GREEN)
