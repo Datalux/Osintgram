@@ -18,6 +18,7 @@ commands:
   - mediatype
   - photos
   - propic
+  - tagged
   - totalcomments
   - totalikes
   - whocommented

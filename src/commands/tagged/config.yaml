@@ -1,0 +1,9 @@
+---
+name: "tagged"
+description: "Get list of users tagged by target"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    
