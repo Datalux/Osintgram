@@ -1,0 +1,9 @@
+---
+name: "fwingsubset"
+description: "Get the list of users followed by both target1 and target2"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    
