@@ -16,7 +16,6 @@ class Command(CommandFather):
     def __init__(self, status, api):
         super().__init__(status)
         self.status = status
-        stream = open(status.get_path(), 'r')
         self.osintgram = api
 
     def run(self):
