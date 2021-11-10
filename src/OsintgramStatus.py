@@ -3,6 +3,11 @@ from src import utils as utils
 
 class OsintgramStatus:
 
+    __default_commands_ = [
+        'help',
+        'exit'
+    ]
+
     def __init__(self):
         self.command_mode = False
         self.setted_subcommand = False
@@ -21,6 +26,8 @@ class OsintgramStatus:
         stream = open(self.get_path(), 'r')
         setup = yaml.safe_load(stream)
         self.commands = setup['commands']
+        if self.commands is not None:
+            self.commands.extend(self.__default_commands_)
 
     def get_target(self):
         return self.target

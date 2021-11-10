@@ -19,10 +19,13 @@ class CommandFather(object):
         stream = open(self.path, 'r')
         self.config = yaml.safe_load(stream)
         self.options_values = self.config['options']
-        self.osintgram = api
 
     def get_options(self):
         return self.config['options']
+
+    def get_option(self, option_key):
+        return self.options_values[option_key]
+
 
     def options(self):
         t = PrettyTable(['Option', 'Value'])
@@ -47,3 +50,6 @@ class CommandFather(object):
 
         except IndexError:
             utils.print_error("Value not in range (1-" + str(i-1) + ")")
+
+    def exit(self):
+        self.status.release()
