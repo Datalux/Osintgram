@@ -78,34 +78,28 @@ status.set_target(api.get_target())
 
 
 while True:
-    if args.command:
-        cmd = args.command
-        _cmd = commands.get(args.command)
+    signal.signal(signal.SIGINT, signal_handler)
+    
+    completer = utils.Completer(status.get_commands())
+    readline.set_completer_delims(' \t\n;')
+    readline.set_completer(completer.complete)
+    readline.parse_and_bind('tab: complete')
+
+    if(status.is_command_mode()):
+        pc.printout(status.get_command() + '> ', pc.GREEN)
     else:
-        signal.signal(signal.SIGINT, signal_handler)
-        
-        completer = utils.Completer(status.get_commands())
-        readline.set_completer_delims(' \t\n;')
-        readline.set_completer(completer.complete)
-        readline.parse_and_bind('tab: complete')
+        pc.printout("Run a command: ", pc.YELLOW)
+    cmd = input()
+    
+    if cmd in status.get_commands():
+        _cmd = cmd
 
-        if(status.is_command_mode()):
-            pc.printout(status.get_command() + '> ', pc.GREEN)
+        if status.is_command_mode():
+            status.set_subcommand(cmd)
         else:
-            pc.printout("Run a command: ", pc.YELLOW)
-        cmd = input()
-        
-        if cmd in status.get_commands():
-            _cmd = cmd
-
-            if status.is_command_mode():
-                status.set_subcommand(cmd)
-            else:
-                status.set_command(cmd)
-
-            commands = status.get_commands()
-        else:
-            _cmd = None
+            status.set_command(cmd)
+    else:
+        _cmd = None
 
     if _cmd:
         __import__(status.get_module())
