@@ -18,16 +18,28 @@ class Command(CommandFather):
         self.status = status
         self.osintgram = api
 
+    def __get_comments__(self, media_id):
+        comments = []
+
+        result = self.osintgram.get_api().media_comments(str(media_id))
+        comments.extend(result.get('comments', []))
+
+        next_max_id = result.get('next_max_id')
+        while next_max_id:
+            results = self.osintgram.get_api().media_comments(str(media_id), max_id=next_max_id)
+            comments.extend(results.get('comments', []))
+            next_max_id = results.get('next_max_id')
+
+        return comments
+
     def run(self):
+
         if self.osintgram.check_private_profile():
             return
 
-        pc.printout("Searching for " + self.osintgram.target + " hashtags...\n")
+        pc.printout("Searching for users who commented...\n")
 
-        hashtags = []
-        counter = 1
         posts = []
-
         rank_token = self.osintgram.generate_uuid()
         data = self.osintgram.get_api().user_feed(str(self.osintgram.target_id), rank_token=rank_token)
         posts.extend(data.get('items', []))
@@ -48,38 +60,23 @@ class Command(CommandFather):
         sys.stdout.write("\rCatched %i posts\n" % len(posts))
         sys.stdout.flush()
 
-        for post in posts:
-            if(int(super().get_option('output_limit')) > 0 and len(hashtags) > int(super().get_option('output_limit'))):
-                break
+        if len(posts) > 0:
+            output = []
 
-            if post['caption'] is not None:
-                caption = post['caption']['text']
-                for s in caption.split():
-                    if s.startswith('#'):
-                        hashtags.append(s.encode('UTF-8'))
-                        counter += 1
+            item_counter = 1
+            for post in posts:
+                if(int(super().get_option('output_limit')) > 0 and len(output) > int(super().get_option('output_limit'))):
+                    break
+                    
+                comments = self.__get_comments__(post['id'])
+                for comment in comments:
+                    output.append({
+                        'item': item_counter,
+                        'comment': comment['text']
+                    })
+                    item_counter += 1
 
-        if len(hashtags) > 0:
-            hashtag_counter = {}
+            self.status.print_output(output, ['Comment', 'Text'], ['item', 'comment'])
 
-            for i in hashtags:
-                if i in hashtag_counter:
-                    hashtag_counter[i] += 1
-                else:
-                    hashtag_counter[i] = 1
-
-            ssort = sorted(hashtag_counter.items(), key=lambda value: value[1], reverse=True)
-
-            data = []
-
-            for k, v in ssort:
-                hashtag = str(k.decode('utf-8'))
-                h = {
-                    'time': str(v),
-                    'hashtag': hashtag
-                }
-                data.append(h)
-
-            self.status.print_output(data, ['Occurences', 'Hashtag'], ['time', 'hashtag'])
         else:
             pc.printout("Sorry! No results found :-(\n", pc.RED)
