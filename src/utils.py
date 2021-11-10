@@ -9,6 +9,7 @@ from src import printcolors as pc
 from src import artwork
 
 import json
+import csv
 
 
 def printlogo(version, author):
@@ -39,6 +40,13 @@ def print_in_json(data, config):
     json_file_name = "output/" + config.get_target() + "_" + config.get_command() + ".json"
     with open(json_file_name, 'w') as f:
         json.dump(data, f)
+
+def print_in_csv(data, keys, config):
+    csv_file_name = "output/" + config.get_target() + "_" + config.get_command() + ".csv"
+    with open(csv_file_name, 'w', newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys)
+        dict_writer.writeheader()
+        dict_writer.writerows(data)
 
 
 def print_error(message):

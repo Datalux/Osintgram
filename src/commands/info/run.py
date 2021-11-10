@@ -7,6 +7,7 @@ from src import utils as utils
 import json
 import sys
 import time
+from instagram_private_api import ClientError
 
 from src.CommandFather import CommandFather
 

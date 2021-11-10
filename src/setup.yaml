@@ -4,6 +4,7 @@ author: "Giuseppe Criscione"
 output_config:
   - table
   - json
+  - csv
 
 commands: 
   - address

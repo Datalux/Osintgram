@@ -80,4 +80,7 @@ class OsintgramStatus:
                 if not no_table:
                     utils.print_in_table(data, table_header, table_contents)
             elif output == "json":
-                utils.print_in_json(data, self)       
+                utils.print_in_json(data, self)   
+            elif output == "csv":
+                if not no_table:
+                    utils.print_in_csv(data, table_contents, self)
