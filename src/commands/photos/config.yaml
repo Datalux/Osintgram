@@ -6,4 +6,5 @@ commands:
 options:
   output_limit: 0
   delay: 0
+  output_path: "output"
     

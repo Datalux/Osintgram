@@ -3,6 +3,7 @@ from src import printcolors as pc
 import sys
 import time
 import urllib
+import os
 
 
 from src.CommandFather import CommandFather
@@ -38,6 +39,9 @@ class Command(CommandFather):
             next_max_id = results.get('next_max_id')
 
         try:
+            if not os.path.isdir(super().get_option('output_path')):
+                os.makedirs(super().get_option('output_path'))
+
             for item in data:
                 if(int(super().get_option('output_limit')) > 0 and counter == int(super().get_option('output_limit'))):
                     break
@@ -46,7 +50,7 @@ class Command(CommandFather):
                     counter = counter + 1
                     url = item["image_versions2"]["candidates"][0]["url"]
                     photo_id = item["id"]
-                    end = "output/" + self.osintgram.target + "_" + photo_id + ".jpg"
+                    end = super().get_option('output_path') + "/" + self.osintgram.target + "_" + photo_id + ".jpg"
                     urllib.request.urlretrieve(url, end)
                     sys.stdout.write("\rDownloaded %i" % counter)
                     sys.stdout.flush()
@@ -58,7 +62,7 @@ class Command(CommandFather):
                         counter = counter + 1
                         url = i["image_versions2"]["candidates"][0]["url"]
                         photo_id = i["id"]
-                        end = "output/" + self.osintgram.target + "_" + photo_id + ".jpg"
+                        end = super().get_option('output_path') + "/" + self.osintgram.target + "_" + photo_id + ".jpg"
                         urllib.request.urlretrieve(url, end)
                         sys.stdout.write("\rDownloaded %i" % counter)
                         sys.stdout.flush()
@@ -72,4 +76,4 @@ class Command(CommandFather):
         sys.stdout.write(" photos")
         sys.stdout.flush()
 
-        pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in output folder) \n", pc.GREEN)
+        pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in " + super().get_option('output_path') +  " folder) \n", pc.GREEN)
