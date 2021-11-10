@@ -2,8 +2,6 @@
 name: "followers"
 description: "List target followers"
 commands: 
-  - set
-  - options
   - run
 options:
   output_limit: 0

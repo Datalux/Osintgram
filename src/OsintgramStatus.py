@@ -5,7 +5,9 @@ class OsintgramStatus:
 
     __default_commands_ = [
         'help',
-        'exit'
+        'exit',
+        'set',
+        'options'
     ]
 
     def __init__(self):

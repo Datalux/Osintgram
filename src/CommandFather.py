@@ -4,7 +4,6 @@ import signal
 from prettytable import PrettyTable
 from src import printcolors as pc
 from src import utils as utils
-from src import Command
 import json
 import sys
 import time
@@ -41,8 +40,13 @@ class CommandFather(object):
         try:
             index = input("Choose option: ")
             key = list(self.options_values.keys())[int(index) - 1]
-            v = input("[" + key + "] Choose a value: ")
-            self.options_values[key] = v
+            while True:
+                v = input("[" + key + "] Choose a value: ")
+                if v == "":
+                    utils.print_error("Empty value")
+                else:
+                    self.options_values[key] = v
+                    break
             print(self.options_values)
 
         except ValueError:
