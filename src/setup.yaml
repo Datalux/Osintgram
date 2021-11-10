@@ -21,6 +21,7 @@ commands:
   - photos
   - propic
   - tagged
+  - target
   - totalcomments
   - totalikes
   - whocommented
