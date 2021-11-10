@@ -6,6 +6,7 @@ output_config:
   - json
 
 commands: 
+  - captions
   - comments
   - exit
   - followers
