@@ -19,3 +19,4 @@ commands:
   - totalcomments
   - totalikes
   - whocommented
+  - whotagged
