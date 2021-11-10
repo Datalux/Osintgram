@@ -30,7 +30,6 @@ def print_in_table(data, header, values):
     t = PrettyTable(header)
     for i in header:
         t.align[i] = "l"
-
     for d in data:
         t.add_row([d[i] for i in values])
 

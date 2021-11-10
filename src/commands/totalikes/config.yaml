@@ -1,0 +1,9 @@
+---
+name: "totalikes"
+description: "Get total likes of target's posts"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    
