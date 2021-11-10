@@ -20,6 +20,7 @@ commands:
   - mediatype
   - photos
   - propic
+  - stories
   - tagged
   - target
   - totalcomments
