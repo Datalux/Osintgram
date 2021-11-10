@@ -39,8 +39,7 @@ class Command(CommandFather):
             next_max_id = results.get('next_max_id')
 
         try:
-            if not os.path.isdir(super().get_option('output_path')):
-                os.makedirs(super().get_option('output_path'))
+            super().create_folder_if_not_exists()
 
             for item in data:
                 if(int(super().get_option('output_limit')) > 0 and counter == int(super().get_option('output_limit'))):

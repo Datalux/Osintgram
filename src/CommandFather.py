@@ -6,6 +6,7 @@ from src import printcolors as pc
 from src import utils as utils
 import json
 import sys
+import os
 import time
 
 
@@ -24,7 +25,6 @@ class CommandFather(object):
 
     def get_option(self, option_key):
         return self.options_values[option_key]
-
 
     def options(self):
         t = PrettyTable(['Option', 'Value'])
@@ -57,3 +57,10 @@ class CommandFather(object):
 
     def exit(self):
         self.status.release()
+
+    def help(self):
+        print(self.config['description'])
+
+    def create_folder_if_not_exists(self):
+        if not os.path.isdir(self.get_option('output_path')):
+            os.makedirs(self.get_option('output_path'))
