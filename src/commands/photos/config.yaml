@@ -1,0 +1,9 @@
+---
+name: "photos"
+description: "Download target's photos"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    
