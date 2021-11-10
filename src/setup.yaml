@@ -13,5 +13,6 @@ commands:
   - followings
   - hashtags
   - help
+  - info
   - photos
   - propic

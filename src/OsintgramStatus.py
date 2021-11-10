@@ -74,9 +74,10 @@ class OsintgramStatus:
         setup = yaml.safe_load(stream)
         self.commands = setup['commands']
 
-    def print_output(self, data, table_header = [], table_contents = []):
+    def print_output(self, data, table_header = [], table_contents = [], no_table = False):
         for output in self.output_config:
             if output == 'table':
-                utils.print_in_table(data, table_header, table_contents)
+                if not no_table:
+                    utils.print_in_table(data, table_header, table_contents)
             elif output == "json":
                 utils.print_in_json(data, self)       
