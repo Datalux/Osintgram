@@ -1,0 +1,8 @@
+---
+name: "mediatype"
+description: "Get target's posts type (photo or video)"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0    
