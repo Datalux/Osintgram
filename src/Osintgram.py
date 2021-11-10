@@ -319,29 +319,6 @@ class Osintgram:
                 f.write("]} ")
 
 
-    def get_followers(self):
-        followers = []
-
-        rank_token = self.generate_uuid()
-        data = self.api.user_followers(str(self.target_id), rank_token=rank_token)
-
-        followers.extend(data.get('users', []))
-
-        next_max_id = data.get('next_max_id')
-        while next_max_id:
-            sys.stdout.write("\rCatched %i followers" % len(followers))
-            sys.stdout.flush()
-            results = self.api.user_followers(str(self.target_id), rank_token=rank_token, max_id=next_max_id)
-            followers.extend(results.get('users', []))
-            next_max_id = results.get('next_max_id')
-        sys.stdout.write("\rCatched %i followers" % len(followers))
-        sys.stdout.flush()
-
-        print("\n")
-
-        return followers
-
-
     def get_followings(self):
         if self.check_private_profile():
             return

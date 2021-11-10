@@ -1,6 +1,6 @@
 ---
-name: "followers"
-description: "List target followers"
+name: "followings"
+description: "List users followed by target"
 commands: 
   - run
 options:

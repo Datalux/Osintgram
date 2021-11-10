@@ -26,7 +26,7 @@ def completer(commands, text, state):
 
 def print_in_table(data, header, values):
     print("\n")
-    
+
     t = PrettyTable(header)
     for i in header:
         t.align[i] = "l"
@@ -37,7 +37,7 @@ def print_in_table(data, header, values):
     print(t)
 
 def print_in_json(data, config):
-    json_file_name = "output/" + config.get_target() + "_fwingsemail.json"
+    json_file_name = "output/" + config.get_target() + "_" + config.get_command() + ".json"
     with open(json_file_name, 'w') as f:
         json.dump(data, f)
 

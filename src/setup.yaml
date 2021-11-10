@@ -7,5 +7,6 @@ output_config:
 
 commands: 
   - followers
+  - followings
   - exit
   - help
