@@ -12,6 +12,7 @@ commands:
   - exit
   - followers
   - followings
+  - fwersubset
   - fwingsubset
   - hashtags
   - help

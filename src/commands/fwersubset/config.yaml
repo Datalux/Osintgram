@@ -1,0 +1,9 @@
+---
+name: "fwersubset"
+description: "Get the list of users who follow both target1 and target2"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    
