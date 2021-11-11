@@ -2,7 +2,7 @@ from prettytable import PrettyTable
 from src import printcolors as pc
 import sys
 import time
-import datetime
+import datetime as dt
 import os
 from src.CommandFather import CommandFather
 
@@ -53,7 +53,7 @@ class Command(CommandFather):
         address = {}
         for k, v in locations.items():
             details = self.osintgram.geolocator.reverse(k)
-            unix_timestamp = datetime.datetime.fromtimestamp(v)
+            unix_timestamp = dt.datetime.fromtimestamp(v)
             address[details.address] = unix_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
         sort_addresses = sorted(address.items(), key=lambda p: p[1], reverse=True)

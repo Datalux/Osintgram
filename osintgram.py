@@ -71,6 +71,7 @@ status = OsintgramStatus.OsintgramStatus()
 
 api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.cookies)
 
+command = None
 
 status.set_commands(setup['commands'])
 status.set_output_config(setup['output_config'])
