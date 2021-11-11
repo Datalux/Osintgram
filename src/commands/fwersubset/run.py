@@ -36,7 +36,7 @@ class Command(CommandFather):
 
         next_max_id = data.get('next_max_id')
         while next_max_id:
-            if(int(super().get_option('output_limit')) > 0 and len(_followers_target_1) > int(super().get_option('output_limit'))):
+            if(int(super().get_option('output_limit')) > 0 and len(_followers_target_1) >= int(super().get_option('output_limit'))):
                 break
 
             if(int(super().get_option('delay')) > 0):
@@ -69,7 +69,7 @@ class Command(CommandFather):
 
         next_max_id = data.get('next_max_id')
         while next_max_id:
-            if(int(super().get_option('output_limit')) > 0 and len(_followers_target_2) > int(super().get_option('output_limit'))):
+            if(int(super().get_option('output_limit')) > 0 and len(_followers_target_2) >= int(super().get_option('output_limit'))):
                 break
 
             if(int(super().get_option('delay')) > 0):
@@ -104,7 +104,7 @@ class Command(CommandFather):
         followers_subset_list = []
 
         for node in followers_subset:
-            if(int(super().get_option('output_limit')) > 0 and len(followers_subset_list) > int(super().get_option('output_limit'))):
+            if(int(super().get_option('output_limit')) > 0 and len(followers_subset_list) >= int(super().get_option('output_limit'))):
                     break
             follow = {
                 'id': node['id'],

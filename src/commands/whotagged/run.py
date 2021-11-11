@@ -31,7 +31,7 @@ class Command(CommandFather):
 
         next_max_id = data.get('next_max_id')
         while next_max_id:
-            if(int(super().get_option('output_limit')) > 0 and len(posts) > int(super().get_option('output_limit'))):
+            if(int(super().get_option('output_limit')) > 0 and len(posts) >= int(super().get_option('output_limit'))):
                 break
 
             if(int(super().get_option('delay')) > 0):
@@ -49,7 +49,7 @@ class Command(CommandFather):
             users = []
 
             for post in posts:
-                if(int(super().get_option('output_limit')) > 0 and len(users) > int(super().get_option('output_limit'))):
+                if(int(super().get_option('output_limit')) > 0 and len(users) >= int(super().get_option('output_limit'))):
                     break
 
                 if not any(u['id'] == post['user']['pk'] for u in users):

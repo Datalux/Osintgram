@@ -29,7 +29,7 @@ class Command(CommandFather):
 
         next_max_id = data.get('next_max_id')
         while next_max_id:
-            if(int(super().get_option('output_limit')) > 0 and len(posts) > int(super().get_option('output_limit'))):
+            if(int(super().get_option('output_limit')) > 0 and len(posts) >= int(super().get_option('output_limit'))):
                 break
 
             if(int(super().get_option('delay')) > 0):
@@ -64,7 +64,7 @@ class Command(CommandFather):
             output = []
             i = 0
             for address, time in sort_addresses:
-                if(int(super().get_option('output_limit')) > 0 and i > int(super().get_option('output_limit'))):
+                if(int(super().get_option('output_limit')) > 0 and i >= int(super().get_option('output_limit'))):
                     break
 
                 output.append({

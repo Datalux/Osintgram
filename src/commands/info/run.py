@@ -91,7 +91,7 @@ class Command(CommandFather):
 
         except ClientError as e:
             print(e)
-            pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
+            pc.printout("Oops... user " + str(self.osintgram.target) + " not exist, please enter a valid username.", pc.RED)
             pc.printout("\n")
 
         self.status.release()

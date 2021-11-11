@@ -32,7 +32,7 @@ class Command(CommandFather):
 
         next_max_id = result.get('next_max_id')
         while next_max_id:
-            if(int(super().get_option('output_limit')) > 0 and len(data) > int(super().get_option('output_limit'))):
+            if(int(super().get_option('output_limit')) > 0 and len(data) >= int(super().get_option('output_limit'))):
                 break
 
             if(int(super().get_option('delay')) > 0):
