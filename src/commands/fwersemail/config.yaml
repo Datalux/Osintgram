@@ -1,6 +1,6 @@
 ---
-name: "fwingsemail"
-description: "Get email of users followed by target"
+name: "fwersemail"
+description: "Get email of target followers"
 commands: 
   - run
 options:
