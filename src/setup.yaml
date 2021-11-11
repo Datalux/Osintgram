@@ -13,7 +13,11 @@ commands:
   - exit
   - followers
   - followings
+  - fwersemail
+  - fwersnumber
   - fwersubset
+  - fwingsemail
+  - fwingsnumber
   - fwingsubset
   - hashtags
   - help
