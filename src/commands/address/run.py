@@ -4,8 +4,6 @@ import sys
 import time
 import datetime
 import os
-
-
 from src.CommandFather import CommandFather
 
 
