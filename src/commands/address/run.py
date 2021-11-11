@@ -1,10 +1,10 @@
 from prettytable import PrettyTable
 from src import printcolors as pc
 import sys
-import time
 import datetime as dt
 import os
 from src.CommandFather import CommandFather
+import time
 
 
 class Command(CommandFather):
