@@ -4,7 +4,7 @@ import sys
 import datetime as dt
 import os
 from src.CommandFather import CommandFather
-from time import time as time
+import time as time
 
 
 class Command(CommandFather):
@@ -31,7 +31,7 @@ class Command(CommandFather):
                 break
 
             if(int(super().get_option('delay')) > 0):
-                time.sleep(int(super().get_option('delay')))
+                time.time.sleep(int(super().get_option('delay')))
 
             sys.stdout.write("\rCatched %i posts" % len(posts))
             sys.stdout.flush()
