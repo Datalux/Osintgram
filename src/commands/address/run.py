@@ -4,7 +4,7 @@ import sys
 import datetime as dt
 import os
 from src.CommandFather import CommandFather
-import time
+from time import time as time
 
 
 class Command(CommandFather):
