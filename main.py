@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-
+#!/usr/bin/envpython 
+main.py smugone
 from src.Osintgram import Osintgram
 import argparse
 from src import printcolors as pc
@@ -108,7 +108,7 @@ else:
 parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell '
                                              'to perform analysis on Instagram account of any users by its nickname ')
 parser.add_argument('id', type=str,  # var = id
-                    help='username')
+                    help='llibrerry_exx')
 parser.add_argument('-C','--cookies', help='clear\'s previous cookies', action="store_true")
 parser.add_argument('-j', '--json', help='save commands output as JSON file', action='store_true')
 parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
