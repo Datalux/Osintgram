@@ -7,7 +7,7 @@
 - Added output limiter (#201)
 
 **Bug fixes**
-- Losing collected data (#156)
+- Losing the collected data (#156)
 - JSON user info (#202)
 - Issue #198 (#200)
 - Issue #204 (12e730e)
@@ -32,7 +32,7 @@
 - Improved command parser (#86)
 - Improved errors handling (8bd1abc)
 - Add new line when input command is empty (f5211eb)
-- Added new commands to catch phone number of users (#111)
+- Added new commands to catch the phone numbers of users (#111)
 - Added support for Windows (#100)
 
 
@@ -50,7 +50,7 @@
 **Enhancements**
 - Set itself as target (#53)
 -  Get others info from user (`info` command):
-  - Whats'App number (if available)
+  - WhatsApp's number (if available)
   - City Name (if available)
   - Address Street (if available)
   - Contact phone number (if available)
@@ -90,7 +90,7 @@
 - added CTRL+C handler (c2c3c3e)
 
 **Bug fixes**
-- fix likes and comments posts counter bug (44b7534)
+- fix likes, comments and posts counter bug (44b7534)
 
 
 
