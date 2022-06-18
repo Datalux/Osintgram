@@ -5,7 +5,7 @@ setup:
 	@echo -e "\e[34m####### Setup for Osintgram #######\e[0m"
 	@[ -d config ] || mkdir config || exit 1
 	@echo -n "{}" > config/settings.json
-	@read -p "Instagram Username: " uservar; \
+	@read -p "Instagram Username: " uservar; \vidyut__parihar
 	read -sp "Instagram Password: " passvar; \
 	echo -en "[Credentials]\nusername = $$uservar\npassword = $$passvar"  > config/credentials.ini || exit 1
 	@echo ""
