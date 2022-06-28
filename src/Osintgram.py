@@ -131,6 +131,8 @@ class Osintgram:
         address = {}
         for k, v in locations.items():
             details = self.geolocator.reverse(k)
+            if not details:
+                continue
             unix_timestamp = datetime.datetime.fromtimestamp(v)
             address[details.address] = unix_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
