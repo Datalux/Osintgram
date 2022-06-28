@@ -53,6 +53,8 @@ class Command(CommandFather):
         address = {}
         for k, v in locations.items():
             details = self.osintgram.geolocator.reverse(k)
+            if not details:
+                continue
             unix_timestamp = dt.datetime.fromtimestamp(v)
             address[details.address] = unix_timestamp.strftime('%Y-%m-%d %H:%M:%S')
 
