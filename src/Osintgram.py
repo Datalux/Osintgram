@@ -61,6 +61,13 @@ class Osintgram:
         self.following = self.check_following()
         if(show_output):
             self.__printTargetBanner__()
+    
+    def create_target_output_directory(self):
+        # Create directory for target (if absent)
+        user_output_dir = self.output_dir + "/" + self.target
+        if not os.path.exists(user_output_dir):
+            os.mkdir(user_output_dir)
+        return user_output_dir
 
     def __get_feed__(self):
         data = []
@@ -885,6 +892,8 @@ class Osintgram:
             next_max_id = results.get('next_max_id')
 
         try:
+            target_output_directory = self.create_target_output_directory()
+
             for item in data:
                 if counter == limit:
                     break
@@ -892,7 +901,7 @@ class Osintgram:
                     counter = counter + 1
                     url = item["image_versions2"]["candidates"][0]["url"]
                     photo_id = item["id"]
-                    end = self.output_dir + "/" + self.target + "_" + photo_id + ".jpg"
+                    end = target_output_directory + "/" + photo_id + ".jpg"
                     urllib.request.urlretrieve(url, end)
                     sys.stdout.write("\rDownloaded %i" % counter)
                     sys.stdout.flush()
@@ -904,7 +913,7 @@ class Osintgram:
                         counter = counter + 1
                         url = i["image_versions2"]["candidates"][0]["url"]
                         photo_id = i["id"]
-                        end = self.output_dir + "/" + self.target + "_" + photo_id + ".jpg"
+                        end = target_output_directory + "/" + photo_id + ".jpg"
                         urllib.request.urlretrieve(url, end)
                         sys.stdout.write("\rDownloaded %i" % counter)
                         sys.stdout.flush()
