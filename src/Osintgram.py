@@ -626,6 +626,35 @@ class Osintgram:
         pc.printout(str(like_counter), pc.MAGENTA)
         pc.printout(" likes in " + str(posts) + " posts\n")
 
+    def get_total_views(self):
+        if self.check_private_profile():
+            return
+
+        pc.printout(f'Searching for {self.target} total views...\n')
+
+        data = self.__get_feed__()
+
+        total_number_of_views = sum(list(map(lambda x: x.get('view_count', 0), data)))
+        total_number_of_posts = len(data)
+
+        if self.writeFile:
+            file_name = f'{self.output_dir}/{self.target}_views.txt'
+            file = open(file_name, "w")
+            file.write(f'{total_number_of_views} views in {total_number_of_posts} posts\n')
+            file.close()
+
+        if self.jsonDump:
+            json_data = {
+                'view_counter': total_number_of_views,
+                'posts': total_number_of_posts
+            }
+            json_file_name = f'{self.output_dir}/{self.target}_views.json'
+            with open(json_file_name, 'w') as f:
+                json.dump(json_data, f)
+
+        pc.printout(f'{total_number_of_views}', pc.MAGENTA)
+        pc.printout(f' views in {total_number_of_posts} posts\n')
+
     def get_media_type(self):
         if self.check_private_profile():
             return

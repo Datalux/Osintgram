@@ -154,6 +154,7 @@ commands = {
     'stories':          api.get_user_stories,
     'tagged':           api.get_people_tagged_by_user,
     'target':           api.change_target,
+    'views':            api.get_total_views,
     'wcommented':       api.get_people_who_commented,
     'wtagged':          api.get_people_who_tagged
 }
