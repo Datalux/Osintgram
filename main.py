@@ -82,6 +82,8 @@ def cmdlist():
     print("Get a list of user who commented target's photos")
     pc.printout("wtagged\t\t")
     print("Get a list of user who tagged target")
+    pc.printout("nfollowback\t\t")
+    print("Get a list of users who don't follow back target")
 
 
 def signal_handler(sig, frame):
@@ -155,7 +157,8 @@ commands = {
     'tagged':           api.get_people_tagged_by_user,
     'target':           api.change_target,
     'wcommented':       api.get_people_who_commented,
-    'wtagged':          api.get_people_who_tagged
+    'wtagged':          api.get_people_who_tagged,
+    'nfollowback':      api.get_not_follows_back,
 }
 
 
