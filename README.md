@@ -82,6 +82,10 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
 
     * As an interactive prompt `python3 main.py <target username>`
     * Or execute your command straight away `python3 main.py <target username> --command <command>`
+    
+### Use Osintgram v2 (beta)
+You can use Osintgram2 beta just switching to `v2` [branch](https://github.com/Datalux/Osintgram/tree/v2).
+The v2 has some improvements and faster with a new command execution interface. Try it just running `git checkout v2`.
 
 ## Docker Quick Start 🐳
 
