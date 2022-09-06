@@ -1,0 +1,9 @@
+---
+name: "hashtags"
+description: "List hashtags used by target"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    

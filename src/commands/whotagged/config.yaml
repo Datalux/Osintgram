@@ -1,0 +1,9 @@
+---
+name: "whotagged"
+description: "Get a list of user who tagged target"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    

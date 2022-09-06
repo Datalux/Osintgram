@@ -1,0 +1,9 @@
+---
+name: "fwingsemail"
+description: "Get email of users followed by target"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    

@@ -1,0 +1,9 @@
+---
+name: "whocommented"
+description: "Get a list of user who commented target's photos"
+commands: 
+  - run
+options:
+  output_limit: 0
+  delay: 0
+    

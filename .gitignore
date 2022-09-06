@@ -4,4 +4,6 @@ output/
 *.pyc
 *.json
 venv/
-credentials.ini
+config/credentials.ini
+config/credentials.ini
+config/settings.json

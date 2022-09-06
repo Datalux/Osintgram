@@ -1,0 +1,34 @@
+---
+version: 2.0.0
+author: "Giuseppe Criscione"
+output_config:
+  - table
+  - json
+  - csv
+
+commands: 
+  - address
+  - captions
+  - comments
+  - exit
+  - followers
+  - followings
+  - fwersemail
+  - fwersnumber
+  - fwersubset
+  - fwingsemail
+  - fwingsnumber
+  - fwingsubset
+  - hashtags
+  - help
+  - info
+  - mediatype
+  - photos
+  - propic
+  - stories
+  - tagged
+  - target
+  - totalcomments
+  - totalikes
+  - whocommented
+  - whotagged
