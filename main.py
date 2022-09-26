@@ -48,12 +48,16 @@ def cmdlist():
     print("Get users followed by target")
     pc.printout("fwersemail\t")
     print("Get email of target followers")
-    pc.printout("fwingsemail\t")
-    print("Get email of users followed by target")
     pc.printout("fwersnumber\t")
     print("Get phone number of target followers")
+    pc.printout("fwersubset\t")
+    print("Get the list of users who follow both target1 and target2")
+    pc.printout("fwingsemail\t")
+    print("Get email of users followed by target")
     pc.printout("fwingsnumber\t")
-    print("Get phone number of users followed by target")    
+    print("Get phone number of users followed by target")
+    pc.printout("fwingsubset\t")
+    print("Get the list of users followed by both target1 and target2")        
     pc.printout("hashtags\t")
     print("Get hashtags used by target")
     pc.printout("info\t\t")
@@ -135,9 +139,11 @@ commands = {
     'followers':        api.get_followers,
     'followings':       api.get_followings,
     'fwersemail':       api.get_fwersemail,
-    'fwingsemail':      api.get_fwingsemail,
     'fwersnumber':      api.get_fwersnumber,
+    'fwersubset':       api.get_followers_subset,
+    'fwingsemail':      api.get_fwingsemail,
     'fwingsnumber':     api.get_fwingsnumber,
+    'fwingsubset':      api.get_followings_subset,
     'hashtags':         api.get_hashtags,
     'info':             api.get_user_info,
     'likes':            api.get_total_likes,

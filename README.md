@@ -24,6 +24,7 @@ Osintgram offers an interactive shell to perform analysis on Instagram account o
 - addrs           Get all registered addressed by target photos
 - captions        Get user's photos captions
 - comments        Get total comments of target's posts
+- commentdata     Get a list of all the comments on the target's posts
 - followers       Get target followers
 - followings      Get users followed by target
 - fwersemail      Get email of target followers
