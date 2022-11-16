@@ -59,7 +59,7 @@ class Osintgram:
         self.is_private = user['is_private']
         self.following = self.check_following()
         self.__printTargetBanner__()
-        self.output_dir = self.output_dir + "/" + str(self.target_id)
+        self.output_dir = self.output_dir + "/" + str(self.target)
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
 
     def __get_feed__(self):
