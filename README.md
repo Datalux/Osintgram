@@ -6,7 +6,7 @@
 [![Telegram](https://img.shields.io/badge/Telegram-Channel-blue.svg)](https://t.me/osintgram)
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://img.shields.io/badge/Docker-Supported-blue)
 
-Osintgram is a **OSINT** tool on Instagram to collect, analyze, and run reconnaissance.
+Osintgram is an **OSINT** tool on Instagram to collect, analyze, and run reconnaissance.
 
 <p align="center">
 <img align="center" src=".img/carbon.png" width="900">
@@ -85,7 +85,7 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
     
 ### Use Osintgram v2 (beta)
 You can use Osintgram2 beta just switching to `v2` [branch](https://github.com/Datalux/Osintgram/tree/v2).
-The v2 has some improvements and faster with a new command execution interface. Try it just running `git checkout v2`.
+The v2 has some improvements and is faster with a new command execution interface. Try it just running `git checkout v2`.
 
 ## Docker Quick Start 🐳
 
@@ -133,7 +133,7 @@ docker-compose run osintgram <target>
 
 Where `target` is the Instagram target for recon.
 
-Alternatively you may run `docker-compose` with the `Makefile`:
+Alternatively, you may run `docker-compose` with the `Makefile`:
 
 `make run` - Builds and Runs with compose. Prompts for a `target` before running.
 
