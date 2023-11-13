@@ -1,4 +1,4 @@
-FROM python:3.9.2-alpine3.13 as build
+FROM python:3.13-rc-slim as build
 WORKDIR /wheels
 RUN apk add --no-cache \
     ncurses-dev \
@@ -7,7 +7,7 @@ COPY docker_reqs.txt /opt/osintgram/requirements.txt
 RUN pip3 wheel -r /opt/osintgram/requirements.txt
 
 
-FROM python:3.9.2-alpine3.13
+FROM python:3.13-rc-slim
 WORKDIR /home/osintgram
 RUN adduser -D osintgram
 
