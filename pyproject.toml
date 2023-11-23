@@ -9,6 +9,7 @@ python = ">=3.10.0,<3.11"
 auto-mix-prep = "^0.2.0"
 gnureadline = "^8.1.2"
 pyreadline = "^2.1"
+pyreadline3 = "3.4.1"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md

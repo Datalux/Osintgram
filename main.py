@@ -1,3 +1,98 @@
+# Main loop
+while True:
+    if args.command:
+        # ... rest of the single command mode logic ...
+        break # This break will exit the while loop after the command is executed
+    else:
+        # ... start of the interactive mode logic ...
+        pc.printout("Run a command: ", pc.YELLOW)
+        cmd = input()
+
+        _cmd = commands.get(cmd)
+
+        if _cmd:
+            _cmd()
+        elif cmd == "FILE=y":
+            api.set_write_file(True)
+        elif cmd == "FILE=n":
+            api.set_write_file(False)
+        elif cmd == "JSON=y":
+            api.set_json_dump(True)
+        elif cmd == "JSON=n":
+            api.set_json_dump(False)
+        elif cmd == "":
+            print("")
+        else:
+            pc.printout("Unknown command\n", pc.RED)
+        # ... end of the interactive mode logic ...
+# While loop that you have provided; starting after the comment # Main loop
+while True:
+    if args.command:
+        # ... rest of the single command mode logic ...
+        break  # This break will exit the while loop after the command is executed
+    else:
+        # ... rest of the interactive mode logic ...
+        # Interactive mode logic should be indented here
+        pass  # Remove 'pass' and replace # ... rest of the interactive mode logic ...
+
+if condition1:
+    # code block for condition1
+elif condition2:
+    # code block for condition2
+else:
+    # code block for else
+with actual interactive mode logic code
+        # ... rest of the interactive mode logic ...
+    else:  #if condition1:
+    # code block for condition1
+elif condition2:
+    # code block for condition2
+else:
+    # code block for else
+else:  #if condition1:
+        # Your logic for the else condition here
+        # It should be properly indented
+        pass  # Replace 'pass' with your code
+# Main loop
+while True:
+    if args.command:
+        # ... rest of the single command mode logic ...
+        break  # This break will exit the while loop after the command is executed
+    else:
+        # ... start of the interactive mode logic ...
+        pc.printout("Run a command: ", pc.YELLOW)
+        cmd = input()
+
+        _cmd = commands.get(cmd)
+
+        if _cmd:
+            _cmd()
+        elif cmd == "FILE=y":
+            api.set_write_file(True)
+        elif cmd == "FILE=n":
+            api.set_write_file(False)
+        elif cmd == "JSON=y":
+            api.set_json_dump(True)
+        elif cmd == "JSON=n":
+            api.set_json_dump(False)
+        elif cmd == "":
+            print("")
+        else:# ... rest of the interactive mode logic ...
+
+if condition1:
+    # code block for condition1 goes here
+    # Remember to indent the contents of this block
+elif condition2:
+    # code block for condition2 goes here
+    # Remember to indent the contents of this block
+else:
+    # this is the final else block, there should only be one else block
+    # Your logic for the else condition here
+    # It should be properly indented
+    pass  # Replace 'pass' with your actual code
+
+            pc.printout("Unknown command\n", pc.RED)
+        # ... end of the interactive mode logic ...
 #!/usr/bin/env python3
 
 from src.Osintgram import Osintgram
@@ -10,16 +105,20 @@ except ImportError:
     is_windows = True
     import pyreadline
 
-sys
+import sys
 import signal
-
 is_windows = False
 
 try:
-    import gnureadline  
-except: 
+    import gnureadline
+except ImportError:
     is_windows = True
-    import pyreadline
+    try:
+        import pyreadline
+    except ImportError:
+        print("Error: 'pyreadline' module is not installed. Please install it with 'pip install pyreadline'.")
+        sys.exit(1)
+
 
 
 def printlogo():
@@ -178,30 +277,112 @@ while True:
     else:
         signal.signal(signal.SIGINT, signal_handler)
         if is_windows:
-            pyreadline.Readline().parse_and_bind("tab: complete")
-            pyreadline.Readline().set_completer(completer)
-        else:
-            gnureadline.parse_and_bind("tab: complete")
-            gnureadline.set_completer(completer)
-        pc.printout("Run a command: ", pc.YELLOW)
-        cmd = input()
+            if is_windows:
+                try:
+                    import pyreadline
+                    pyreadline.Readline().parse_and_bind("tab: complete")
+                    pyreadline.Readline().set_completer(completer)
+                except ImportError:
+                    print("Error: 'pyreadline' module is not installed.")
+                    sys.exit(1)
+            else:
+                gnureadline.parse_and_bind("tab: complete")
+                gnureadline.set_completer(completer)
 
-        _cmd = commands.get(cmd)
-
-    if _cmd:
-        _cmd()
-    elif cmd == "FILE=y":
-        api.set_write_file(True)
-    elif cmd == "FILE=n":
-        api.set_write_file(False)
-    elif cmd == "JSON=y":
-        api.set_json_dump(True)
-    elif cmd == "JSON=n":
-        api.set_json_dump(False)
-    elif cmd == "":
-        print("")
+    # Set up the signal handler and completer based on the OS
+    signal.signal(signal.SIGINT, signal_handler)
+    if is_windows:
+        pyreadline.Readline().parse_and_bind("tab: complete")
+        pyreadline.Readline().set_completer(completer)
     else:
-        pc.printout("Unknown command\n", pc.RED)
+        gnureadline.parse_and_bind("tab: complete")
+        gnureadline.set_completer(completer)
 
+    # If not in single command mode, print the logo
+    if not args.command:
+        printlogo()
+
+    # Main loop
+    while True:
+        if args.command:
+            # ... rest of the single command mode logic ...
+            break # This break will exit the while loop after the command is executed
+        else:
+            # ... rest of the interactive mode logic ...
+        else:else:
+    # Your logic for the else condition here
+    # It should be properly indented
+    pass  # replace 'pass' with your code
+
+            # Main loop
+while True:
     if args.command:
-        break
+        # ... rest of the single command mode logic ...
+        break # This break will exit the while loop after the command execution
+    else:  # Corrected by adding colon
+        # ... rest of the interactive mode logic ...
+        # Your logic for the else condition here
+        # It should be properly indented
+        pass  # Corrected indentation (if 'pass' is supposed to be here)
+
+        # Your logic for the else condition here
+        # It should be properly indented
+        pass
+
+            # Your logic for the else condition here
+            # It should be properly indented
+
+    printlogo()
+
+# while True:
+#     if args.command:
+#         cmd = args.command
+#         _cmd = commands.get(args.command)
+#     else:
+#         signal.signal(signal.SIGINT, signal_handler)
+#         if is_windows:
+
+
+#     import gnureadline
+# except ImportError:
+#     is_windows = True
+#     import pyreadline
+# .Readline().parse_and_bind("tab: complete")
+# if not args.command:
+#     printlogo()
+
+# while True:
+#     if args.command:
+#         cmd = args.command
+#         _cmd = commands.get(args.command)
+#     else:
+#         signal.signal(signal.SIGINT, signal_handler)
+#         if is_windows:
+#             pyreadline.Readline().parse_and_bind("tab: complete")
+#             pyreadline.Readline().set_completer(completer)
+#         else:
+#             gnureadline.parse_and_bind("tab: complete")
+#             gnureadline.set_completer(completer)
+#         pc.printout("Run a command: ", pc.YELLOW)
+#         cmd = input()
+
+#         _cmd = commands.get(cmd)
+
+#     if _cmd:
+#         _cmd()
+#     elif cmd == "FILE=y":
+#         api.set_write_file(True)
+#     elif cmd == "FILE=n":
+#         api.set_write_file(False)
+#     elif cmd == "JSON=y":
+#         api.set_json_dump(True)
+#     elif cmd == "JSON=n":
+#         api.set_json_dump(False)
+#     elif cmd == "":
+#         print("")
+#     else:
+#         pc.printout("Unknown command\n", pc.RED)
+
+#     if args.command:
+#         break
+#             pyreadline.Readline().set_completer(completer)
