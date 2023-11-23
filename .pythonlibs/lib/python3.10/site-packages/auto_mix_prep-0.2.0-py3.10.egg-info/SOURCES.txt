@@ -1,0 +1,10 @@
+setup.cfg
+setup.py
+auto_mix_prep.egg-info/PKG-INFO
+auto_mix_prep.egg-info/SOURCES.txt
+auto_mix_prep.egg-info/dependency_links.txt
+auto_mix_prep.egg-info/entry_points.txt
+auto_mix_prep.egg-info/requires.txt
+auto_mix_prep.egg-info/top_level.txt
+src/__init__.py
+src/main.py
