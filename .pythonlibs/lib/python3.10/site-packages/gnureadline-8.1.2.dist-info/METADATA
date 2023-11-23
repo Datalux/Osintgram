@@ -1,0 +1,243 @@
+Metadata-Version: 2.1
+Name: gnureadline
+Version: 8.1.2
+Summary: The standard Python readline extension statically linked against the GNU readline library.
+Home-page: http://github.com/ludwigschwardt/python-gnureadline
+Maintainer: Ludwig Schwardt, Sridhar Ratnakumar
+Maintainer-email: ludwig.schwardt@gmail.com, srid@srid.ca
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: C
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+License-File: LICENSE
+
+Stand-alone GNU readline module
+===============================
+
+.. image:: https://img.shields.io/github/workflow/status/ludwigschwardt/python-gnureadline/Build%20and%20test%20package
+   :alt: GitHub Workflow Status
+   :target: https://github.com/ludwigschwardt/python-gnureadline/actions/workflows/test.yaml
+
+First... STOP
+-------------
+
+Consider this: do you really need this package in 2022? You typically don't if
+
+- you use the Python provided by a standard Linux distribution like Ubuntu,
+  Debian, CentOS, etc. *(It already uses the proper readline.)*
+- you run **Windows**
+  *(It won't work! Try* `pyreadline`_ or `prompt_toolkit`_ *instead.)*
+- you use the Python provided by **Homebrew** or Fink on macOS
+  *(It has real readline already!)*
+- you want it for `IPython`_
+  *(It switched to* `prompt_toolkit`_ *in version 5.0.)*
+- you use a Python distribution like Anaconda or Enthought / Canopy
+  *(Again, real readline.)*
+
+You might need it if
+
+- you use Python provided by MacPorts or the system on macOS
+  *(Python compiled against libedit.)*
+- you use a Python distribution like ActivePython on Linux or macOS
+  *(This used to ship without readline.)*
+- you want to get the latest bug fixes and features in either the readline
+  library or its Python module *(Typically when stuck on older systems.)*
+
+Still interested?
+-----------------
+
+Some platforms, such as macOS, do not ship with `GNU readline`_ installed.
+The readline extension module in the standard library of Mac "system" Python
+uses NetBSD's `editline`_ (libedit) library instead, which is a readline
+replacement with a less restrictive software license.
+
+As the alternatives to GNU readline do not have fully equivalent functionality,
+it is useful to add proper readline support to these platforms. This module
+achieves this by bundling the standard Python readline module with the GNU
+readline source code, which is compiled and statically linked to it. The end
+result is a package which is simple to install and requires no extra shared
+libraries.
+
+The module is called *gnureadline* so as not to clash with the readline module
+in the standard library. This keeps polite installers such as `pip`_ happy and
+is sufficient for shells such as `IPython`_. **Please take note that IPython
+does not depend on gnureadline anymore since version 5.0 as it now uses**
+`prompt_toolkit`_ **instead.**
+
+A typical use case is to override readline in your code like this:
+
+.. code:: python
+
+  try:
+      import gnureadline as readline
+  except ImportError:
+      import readline
+
+If you want to use this module as a drop-in replacement for readline in the
+standard Python shell, it has to be installed with the less polite easy_install
+script found in `setuptools`_. **Please take note that easy_install has been
+deprecated for a while and is about to be dropped from setuptools. Proceed at
+your own risk!**
+
+The module can be used with both Python 2.x and 3.x, and has been tested with
+Python versions 2.6, 2.7, and 3.2 to 3.10. The first three numbers of the module
+version reflect the version of the underlying GNU readline library (major,
+minor and patch level), while any additional fourth number distinguishes
+different module updates based on the same readline library.
+
+This module is usually unnecessary on Linux and other Unix systems with default
+readline support. An exception is if you have a Python distribution that does
+not include GNU readline due to licensing restrictions (such as ActiveState's
+ActivePython in the past). If you are using Windows, which also ships without
+GNU readline, you might want to consider using the `pyreadline`_ module instead,
+which is a readline replacement written in pure Python that interacts with the
+Windows clipboard.
+
+The latest development version is available from the `GitHub repository`_.
+
+.. _GNU readline: http://www.gnu.org/software/readline/
+.. _editline: http://www.thrysoee.dk/editline/
+.. _pip: http://www.pip-installer.org/
+.. _IPython: http://ipython.org/
+.. _prompt_toolkit: http://python-prompt-toolkit.readthedocs.io/en/stable/
+.. _setuptools: https://pypi.python.org/pypi/setuptools
+.. _pyreadline: http://pypi.python.org/pypi/pyreadline
+.. _GitHub repository: http://github.com/ludwigschwardt/python-gnureadline
+
+
+History
+=======
+
+8.1.2 (2022-06-14)
+------------------
+* #57, #58: Now supports arm64 architecture (Apple M1, Raspberry Pi)
+* Moved CI from Travis to GitHub Actions and added cibuildwheel
+* Uses Python 3.11.0a7 readline.c (commit aac29af, 2021-10-13), OK for 3.10, 3.9
+* Uses Python 3.8.8 readline.c (commit f9d7c12, 2021-02-16), also OK for 3.7
+* Uses Python 2.7.18 readline.c (commit f32bcf8, 2019-11-07)
+* Updated to build against readline 8.1 (patch-level 2)
+
+8.0.0 (2019-07-10)
+------------------
+
+* Uses Python 3.7.4 readline.c (commit ef10f88, 2019-03-20), also OK for 3.8
+* Uses Python 3.6.8 readline.c (commit 25555e0, 2018-12-08), also OK for 3.5
+* Uses Python 3.4.4 readline.c (commit 7462b64, 2015-11-02)
+* Uses Python 2.7.16 readline.c (commit 89b5ea2, 2018-12-19)
+* Updated to build against readline 8.0
+
+6.3.8 (2017-10-20)
+------------------
+
+* #42, #44: Address compiler issues (avoid Cygwin, fix multi-arch on gcc)
+* #40: Make GPLv3 license explicit
+* #39: Look for bash shell in more places
+* Uses Python 2.x readline.c from hg 2.7 branch (95814:192f9efe4a38)
+* Uses Python 3.x readline.c from hg 3.4 / 3.5 branch (95813:ec6ed10d611e)
+* Updated to build against readline 6.3 (patch-level 8)
+
+6.3.3 (2014-04-08)
+------------------
+
+* Major rework of OS X build process (detect arches, no custom flags)
+* #20, #22, #28: Various issues addressed by new streamlined build
+* #28: Use $CC or cc to compile libreadline instead of default gcc
+* #35: Workaround for clang from Xcode 5.1 and Mac OS X 10.9.2
+* Uses Python 3.4 readline.c from hg 3.4 branch (89086:3110fb3095a2)
+* Updated to build against readline 6.3 (patch-level 3)
+
+6.2.5 (2014-02-19)
+------------------
+
+* Renamed module to *gnureadline* to improve installation with pip
+* #23, #25-27, #29-33: Tweaks and package reworked to gnureadline
+* Uses Python 2.x readline.c from hg 2.7 branch (89084:6b10943a5916)
+* Uses Python 3.x readline.c from hg 3.3 branch (89085:6adac0d9b933)
+* Updated to build against readline 6.2 (patch-level 5)
+
+6.2.4.1 (2012-10-22)
+--------------------
+
+* #21: Fixed building on Python.org 3.3 / Mac OS 10.8
+
+6.2.4 (2012-10-17)
+------------------
+
+* #15: Improved detection of compilers before Xcode 4.3
+* Uses Python 3.x readline.c from v3.3.0 tag (changeset 73997)
+* Updated to build against readline 6.2 (patch-level 4)
+
+6.2.2 (2012-02-24)
+------------------
+
+* #14: Fixed compilation with Xcode 4.3 on Mac OS 10.7
+* Updated to build against readline 6.2 (patch-level 2)
+
+6.2.1 (2011-08-31)
+------------------
+
+* #10: Fixed '_emacs_meta_keymap' missing symbol on Mac OS 10.7
+* #7: Fixed SDK version check to work with Mac OS 10.7 and later
+* Uses Python 2.x readline.c from release27-maint branch (r87358)
+* Uses Python 3.x readline.c from release32-maint branch (r88446)
+
+6.2.0 (2011-06-02)
+------------------
+
+* #5: Removed '-arch ppc' on Mac OS 10.6, as Snow Leopard supports Intel only
+* Updated to build against readline 6.2 (patch-level 1)
+
+6.1.0 (2010-09-20)
+------------------
+
+* Changed version number to reflect readline version instead of Python version
+* #4: Updated to build against readline 6.1 (patch-level 2)
+* #2: Python 3 support
+* Uses Python 2.x readline.c from release27-maint branch (r83672)
+* Uses Python 3.x readline.c from r32a2 tag (r84541)
+* Source code moved to GitHub
+* Additional maintainer: Sridhar Ratnakumar
+
+2.6.4 (2009-11-26)
+------------------
+
+* Added -fPIC to compiler flags to fix linking error on 64-bit Ubuntu
+* Enabled all readline functionality specified in pyconfig.h macros
+* Uses readline.c from Python svn trunk (r75725), which followed 2.6.4 release
+* Patched readline.c to replace Py_XDECREF calls with the safer Py_CLEAR
+* Fixed compilation error on Mac OS 10.4 with XCode older than version 2.4
+
+2.6.1 (2009-11-18)
+------------------
+
+* Updated package to work with Mac OS 10.6 (Snow Leopard), which ships with
+  Python 2.6.1
+* Uses readline.c from Python 2.6.1 release
+* Backported "spurious trailing space" bugfix from Python svn trunk (see e.g.
+  https://bugs.launchpad.net/python/+bug/470824 for details on bug)
+* Updated to build against readline 6.0 (patch-level 4)
+* Now builds successfully on Linux (removed Mac-specific flags in this case),
+  and still supports Mac OS 10.4 and 10.5
+
+2.5.1 (2008-05-28)
+------------------
+
+* Updated package to work with Mac OS 10.5 (Leopard), which ships with Python
+  2.5.1
+* Uses readline.c from Python 2.5.1 release
+* Updated to build against readline 5.2 (patch-level 12)
+* New maintainer: Ludwig Schwardt
+
+2.4.2 (2005-12-26)
+------------------
+
+* Original package by Bob Ippolito, supporting Python 2.3 / 2.4 on Mac OS 10.3
+  (Panther) and 10.4 (Tiger)
+* Builds against readline 5.1

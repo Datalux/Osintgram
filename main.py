@@ -4,7 +4,13 @@ from src.Osintgram import Osintgram
 import argparse
 from src import printcolors as pc
 from src import artwork
-import sys
+try:
+    import gnureadline
+except ImportError:
+    is_windows = True
+    import pyreadline
+
+sys
 import signal
 
 is_windows = False
