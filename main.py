@@ -16,7 +16,7 @@ while True:
             api.set_write_file(True)
         elif cmd == "FILE=n":
             api.set_write_file(False)
-        elif cmd == "JSON=y":
+        elif cmd == "JSON=y":parser
             api.set_json_dump(True)
         elif cmd == "JSON=n":
             api.set_json_dump(False)
