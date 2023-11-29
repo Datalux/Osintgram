@@ -83,11 +83,9 @@ class SessionCommandMixin(CommandContextMixIn):
         """Return a list of index urls from user-provided options."""
         index_urls = []
         if not getattr(options, "no_index", False):
-            url = getattr(options, "index_url", None)
-            if url:
+            if url := getattr(options, "index_url", None):
                 index_urls.append(url)
-        urls = getattr(options, "extra_index_urls", None)
-        if urls:
+        if urls := getattr(options, "extra_index_urls", None):
             index_urls.extend(urls)
         # Return None rather than an empty list
         return index_urls or None
@@ -214,7 +212,7 @@ def warn_if_run_as_root() -> None:
     #
     # We choose sys.platform over utils.compat.WINDOWS here to enable Mypy platform
     # checks: https://mypy.readthedocs.io/en/stable/common_issues.html
-    if sys.platform == "win32" or sys.platform == "cygwin":
+    if sys.platform in ["win32", "cygwin"]:
         return
 
     if os.getuid() != 0:
@@ -475,8 +473,7 @@ class RequirementCommand(IndexGroupCommand):
         """
         # Display where finder is looking for packages
         search_scope = finder.search_scope
-        locations = search_scope.get_formatted_locations()
-        if locations:
+        if locations := search_scope.get_formatted_locations():
             logger.info(locations)
 
     def _build_package_finder(

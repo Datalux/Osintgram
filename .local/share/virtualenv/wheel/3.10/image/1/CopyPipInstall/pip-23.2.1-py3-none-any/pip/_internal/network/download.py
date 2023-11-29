@@ -42,7 +42,7 @@ def _prepare_download(
     logged_url = redact_auth_from_url(url)
 
     if total_length:
-        logged_url = "{} ({})".format(logged_url, format_size(total_length))
+        logged_url = f"{logged_url} ({format_size(total_length)})"
 
     if is_from_cache(resp):
         logger.info("Using cached %s", logged_url)
@@ -96,9 +96,7 @@ def _get_http_response_filename(resp: Response, link: Link) -> str:
     the link filename if not provided.
     """
     filename = link.filename  # fallback
-    # Have a look at the Content-Disposition header for a better guess
-    content_disposition = resp.headers.get("content-disposition")
-    if content_disposition:
+    if content_disposition := resp.headers.get("content-disposition"):
         filename = parse_content_disposition(content_disposition, filename)
     ext: Optional[str] = splitext(filename)[1]
     if not ext:
@@ -106,8 +104,7 @@ def _get_http_response_filename(resp: Response, link: Link) -> str:
         if ext:
             filename += ext
     if not ext and link.url != resp.url:
-        ext = os.path.splitext(resp.url)[1]
-        if ext:
+        if ext := os.path.splitext(resp.url)[1]:
             filename += ext
     return filename
 

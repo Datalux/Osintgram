@@ -122,8 +122,8 @@ class SingleByteCharSetProber(CharSetProber):
             self._last_order = order
 
         charset_name = self._model.charset_name
-        if self.state == ProbingState.DETECTING:
-            if self._total_seqs > self.SB_ENOUGH_REL_THRESHOLD:
+        if self._total_seqs > self.SB_ENOUGH_REL_THRESHOLD:
+            if self.state == ProbingState.DETECTING:
                 confidence = self.get_confidence()
                 if confidence > self.POSITIVE_SHORTCUT_THRESHOLD:
                     self.logger.debug(

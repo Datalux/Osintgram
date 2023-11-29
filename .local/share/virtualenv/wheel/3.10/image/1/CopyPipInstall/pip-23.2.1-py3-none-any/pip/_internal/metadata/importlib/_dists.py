@@ -140,15 +140,11 @@ class Distribution(BaseDistribution):
 
     @property
     def location(self) -> Optional[str]:
-        if self._info_location is None:
-            return None
-        return str(self._info_location.parent)
+        return None if self._info_location is None else str(self._info_location.parent)
 
     @property
     def info_location(self) -> Optional[str]:
-        if self._info_location is None:
-            return None
-        return str(self._info_location)
+        return None if self._info_location is None else str(self._info_location)
 
     @property
     def installed_location(self) -> Optional[str]:
@@ -164,9 +160,7 @@ class Distribution(BaseDistribution):
         if self._info_location is None:
             return None
         stem, suffix = os.path.splitext(self._info_location.name)
-        if suffix not in (".dist-info", ".egg-info"):
-            return None
-        return stem.split("-", 1)[0]
+        return stem.split("-", 1)[0] if suffix in (".dist-info", ".egg-info") else None
 
     @property
     def canonical_name(self) -> NormalizedName:

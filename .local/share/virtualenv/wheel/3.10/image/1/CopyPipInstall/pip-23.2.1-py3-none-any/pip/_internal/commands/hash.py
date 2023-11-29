@@ -31,9 +31,7 @@ class HashCommand(Command):
             choices=STRONG_HASHES,
             action="store",
             default=FAVORITE_HASH,
-            help="The hash algorithm to use: one of {}".format(
-                ", ".join(STRONG_HASHES)
-            ),
+            help=f'The hash algorithm to use: one of {", ".join(STRONG_HASHES)}',
         )
         self.parser.insert_option_group(0, self.cmd_opts)
 

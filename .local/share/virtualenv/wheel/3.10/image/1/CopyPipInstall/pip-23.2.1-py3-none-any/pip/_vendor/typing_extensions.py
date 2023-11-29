@@ -221,9 +221,7 @@ else:
             return super().__instancecheck__(obj)
 
         def __repr__(self):
-            if self is Any:
-                return "typing_extensions.Any"
-            return super().__repr__()
+            return "typing_extensions.Any" if self is Any else super().__repr__()
 
     class Any(metaclass=_AnyMeta):
         """Special type indicating an unconstrained type.
@@ -245,7 +243,7 @@ ClassVar = typing.ClassVar
 
 class _ExtensionsSpecialForm(typing._SpecialForm, _root=True):
     def __repr__(self):
-        return 'typing_extensions.' + self._name
+        return f'typing_extensions.{self._name}'
 
 
 # On older versions of typing there is an internal class named "Final".
@@ -615,7 +613,7 @@ else:
         # NOTE: DO NOT call super() in any methods in this class
         # That would call the methods on typing._ProtocolMeta on Python 3.8-3.11
         # and those are slow
-        def __new__(mcls, name, bases, namespace, **kwargs):
+        def __new__(cls, name, bases, namespace, **kwargs):
             if name == "Protocol" and len(bases) < 2:
                 pass
             elif {Protocol, _typing_Protocol} & set(bases):
@@ -629,88 +627,87 @@ else:
                             f"Protocols can only inherit from other protocols, "
                             f"got {base!r}"
                         )
-            return abc.ABCMeta.__new__(mcls, name, bases, namespace, **kwargs)
+            return abc.ABCMeta.__new__(cls, name, bases, namespace, **kwargs)
 
-        def __init__(cls, *args, **kwargs):
-            abc.ABCMeta.__init__(cls, *args, **kwargs)
-            if getattr(cls, "_is_protocol", False):
-                cls.__protocol_attrs__ = _get_protocol_attrs(cls)
+        def __init__(self, *args, **kwargs):
+            abc.ABCMeta.__init__(self, *args, **kwargs)
+            if getattr(self, "_is_protocol", False):
+                self.__protocol_attrs__ = _get_protocol_attrs(self)
                 # PEP 544 prohibits using issubclass()
                 # with protocols that have non-method members.
-                cls.__callable_proto_members_only__ = all(
-                    callable(getattr(cls, attr, None)) for attr in cls.__protocol_attrs__
+                self.__callable_proto_members_only__ = all(
+                    callable(getattr(cls, attr, None))
+                    for attr in cls.__protocol_attrs__
                 )
 
-        def __subclasscheck__(cls, other):
-            if cls is Protocol:
-                return type.__subclasscheck__(cls, other)
+        def __subclasscheck__(self, other):
+            if self is Protocol:
+                return type.__subclasscheck__(self, other)
             if (
-                getattr(cls, '_is_protocol', False)
+                getattr(self, '_is_protocol', False)
                 and not _allow_reckless_class_checks()
             ):
                 if not isinstance(other, type):
                     # Same error message as for issubclass(1, int).
                     raise TypeError('issubclass() arg 1 must be a class')
                 if (
-                    not cls.__callable_proto_members_only__
-                    and cls.__dict__.get("__subclasshook__") is _proto_hook
+                    not self.__callable_proto_members_only__
+                    and self.__dict__.get("__subclasshook__") is _proto_hook
                 ):
                     raise TypeError(
                         "Protocols with non-method members don't support issubclass()"
                     )
-                if not getattr(cls, '_is_runtime_protocol', False):
+                if not getattr(self, '_is_runtime_protocol', False):
                     raise TypeError(
                         "Instance and class checks can only be used with "
                         "@runtime_checkable protocols"
                     )
-            return abc.ABCMeta.__subclasscheck__(cls, other)
+            return abc.ABCMeta.__subclasscheck__(self, other)
 
-        def __instancecheck__(cls, instance):
+        def __instancecheck__(self, instance):
             # We need this method for situations where attributes are
             # assigned in __init__.
-            if cls is Protocol:
-                return type.__instancecheck__(cls, instance)
-            if not getattr(cls, "_is_protocol", False):
+            if self is Protocol:
+                return type.__instancecheck__(self, instance)
+            if not getattr(self, "_is_protocol", False):
                 # i.e., it's a concrete subclass of a protocol
-                return abc.ABCMeta.__instancecheck__(cls, instance)
+                return abc.ABCMeta.__instancecheck__(self, instance)
 
             if (
-                not getattr(cls, '_is_runtime_protocol', False) and
-                not _allow_reckless_class_checks()
+                not getattr(self, '_is_runtime_protocol', False)
+                and not _allow_reckless_class_checks()
             ):
                 raise TypeError("Instance and class checks can only be used with"
                                 " @runtime_checkable protocols")
 
-            if abc.ABCMeta.__instancecheck__(cls, instance):
+            if abc.ABCMeta.__instancecheck__(self, instance):
                 return True
 
-            for attr in cls.__protocol_attrs__:
+            for attr in self.__protocol_attrs__:
                 try:
                     val = inspect.getattr_static(instance, attr)
                 except AttributeError:
                     break
-                if val is None and callable(getattr(cls, attr, None)):
+                if val is None and callable(getattr(self, attr, None)):
                     break
             else:
                 return True
 
             return False
 
-        def __eq__(cls, other):
+        def __eq__(self, other):
             # Hack so that typing.Generic.__class_getitem__
             # treats typing_extensions.Protocol
             # as equivalent to typing.Protocol on Python 3.8+
-            if abc.ABCMeta.__eq__(cls, other) is True:
+            if abc.ABCMeta.__eq__(self, other) is True:
                 return True
-            return (
-                cls is Protocol and other is getattr(typing, "Protocol", object())
-            )
+            return self is Protocol and other is getattr(typing, "Protocol", object())
 
         # This has to be defined, or the abc-module cache
         # complains about classes with this metaclass being unhashable,
         # if we define only __eq__!
-        def __hash__(cls) -> int:
-            return type.__hash__(cls)
+        def __hash__(self) -> int:
+            return type.__hash__(self)
 
     @classmethod
     def _proto_hook(cls, other):
@@ -1045,20 +1042,18 @@ else:
             for annotation_key, annotation_type in own_annotations.items():
                 annotation_origin = get_origin(annotation_type)
                 if annotation_origin is Annotated:
-                    annotation_args = get_args(annotation_type)
-                    if annotation_args:
+                    if annotation_args := get_args(annotation_type):
                         annotation_type = annotation_args[0]
                         annotation_origin = get_origin(annotation_type)
 
-                if annotation_origin is Required:
-                    required_keys.add(annotation_key)
-                elif annotation_origin is NotRequired:
-                    optional_keys.add(annotation_key)
-                elif total:
+                if (
+                    annotation_origin is Required
+                    or annotation_origin is not NotRequired
+                    and total
+                ):
                     required_keys.add(annotation_key)
                 else:
                     optional_keys.add(annotation_key)
-
             tp_dict.__annotations__ = annotations
             tp_dict.__required_keys__ = frozenset(required_keys)
             tp_dict.__optional_keys__ = frozenset(optional_keys)
@@ -1068,7 +1063,7 @@ else:
 
         __call__ = dict  # static method
 
-        def __subclasscheck__(cls, other):
+        def __subclasscheck__(self, other):
             # Typed dicts are only for static structural subtyping.
             raise TypeError('TypedDict does not support instance and class checks')
 
@@ -1125,17 +1120,13 @@ else:
         See PEP 655 for more details on Required and NotRequired.
         """
         if __fields is _marker or __fields is None:
-            if __fields is _marker:
-                deprecated_thing = "Failing to pass a value for the 'fields' parameter"
-            else:
-                deprecated_thing = "Passing `None` as the 'fields' parameter"
-
             example = f"`{__typename} = TypedDict({__typename!r}, {{}})`"
-            deprecation_msg = (
-                f"{deprecated_thing} is deprecated and will be disallowed in "
-                "Python 3.15. To create a TypedDict class with 0 fields "
-                "using the functional syntax, pass an empty dictionary, e.g. "
-            ) + example + "."
+            deprecated_thing = (
+                "Failing to pass a value for the 'fields' parameter"
+                if __fields is _marker
+                else "Passing `None` as the 'fields' parameter"
+            )
+            deprecation_msg = f"{deprecated_thing} is deprecated and will be disallowed in Python 3.15. To create a TypedDict class with 0 fields using the functional syntax, pass an empty dictionary, e.g. {example}."
             warnings.warn(deprecation_msg, DeprecationWarning, stacklevel=2)
             __fields = kwargs
         elif kwargs:
@@ -1214,9 +1205,7 @@ else:
             return _strip_extras(t.__args__[0])
         if isinstance(t, typing._GenericAlias):
             stripped_args = tuple(_strip_extras(a) for a in t.__args__)
-            if stripped_args == t.__args__:
-                return t
-            return t.copy_with(stripped_args)
+            return t if stripped_args == t.__args__ else t.copy_with(stripped_args)
         if hasattr(_types, "GenericAlias") and isinstance(t, _types.GenericAlias):
             stripped_args = tuple(_strip_extras(a) for a in t.__args__)
             if stripped_args == t.__args__:
@@ -1417,9 +1406,7 @@ else:
         if isinstance(tp, (typing._GenericAlias, _typing_GenericAlias, _BaseGenericAlias,
                            ParamSpecArgs, ParamSpecKwargs)):
             return tp.__origin__
-        if tp is typing.Generic:
-            return typing.Generic
-        return None
+        return typing.Generic if tp is typing.Generic else None
 
     def get_args(tp):
         """Get type arguments with all substitutions performed.
@@ -1505,8 +1492,8 @@ class _DefaultMixin:
 
 # Classes using this metaclass must provide a _backported_typevarlike ClassVar
 class _TypeVarLikeMeta(type):
-    def __instancecheck__(cls, __instance: Any) -> bool:
-        return isinstance(__instance, cls._backported_typevarlike)
+    def __instancecheck__(self, __instance: Any) -> bool:
+        return isinstance(__instance, self._backported_typevarlike)
 
 
 # Add default and infer_variance parameters from PEP 696 and 695
@@ -2222,7 +2209,7 @@ if hasattr(typing, "TypeVarTuple"):  # 3.11+
             _set_module(tvt)
             return tvt
 
-        def __init_subclass__(self, *args, **kwds):
+        def __init_subclass__(cls, *args, **kwds):
             raise TypeError("Cannot subclass special typing classes")
 
 else:
@@ -2299,7 +2286,7 @@ else:
         def __reduce__(self):
             return self.__name__
 
-        def __init_subclass__(self, *args, **kwds):
+        def __init_subclass__(cls, *args, **kwds):
             if '_root' not in kwds:
                 raise TypeError("Cannot subclass special typing classes")
 
@@ -2641,7 +2628,7 @@ else:
             # update from user namespace without overriding special namedtuple attributes
             for key in ns:
                 if key in _prohibited_namedtuple_fields:
-                    raise AttributeError("Cannot overwrite NamedTuple attribute " + key)
+                    raise AttributeError(f"Cannot overwrite NamedTuple attribute {key}")
                 elif key not in _special_namedtuple_fields and key not in nm_tpl._fields:
                     setattr(nm_tpl, key, ns[key])
             if typing.Generic in bases:
@@ -2697,15 +2684,14 @@ else:
                     "Cannot pass `None` as the 'fields' parameter "
                     "and also specify fields using keyword arguments"
                 )
-            else:
-                deprecated_thing = "Passing `None` as the 'fields' parameter"
-                example = f"`{__typename} = NamedTuple({__typename!r}, [])`"
-                deprecation_msg = (
-                    "{name} is deprecated and will be disallowed in Python {remove}. "
-                    "To create a NamedTuple class with 0 fields "
-                    "using the functional syntax, "
-                    "pass an empty list, e.g. "
-                ) + example + "."
+            deprecated_thing = "Passing `None` as the 'fields' parameter"
+            example = f"`{__typename} = NamedTuple({__typename!r}, [])`"
+            deprecation_msg = (
+                "{name} is deprecated and will be disallowed in Python {remove}. "
+                "To create a NamedTuple class with 0 fields "
+                "using the functional syntax, "
+                "pass an empty list, e.g. "
+            ) + example + "."
         elif kwargs:
             raise TypeError("Either list of fields or keywords"
                             " can be provided to NamedTuple, not both")
@@ -2973,14 +2959,10 @@ else:
             def __or__(self, right):
                 # For forward compatibility with 3.12, reject Unions
                 # that are not accepted by the built-in Union.
-                if not _is_unionable(right):
-                    return NotImplemented
-                return typing.Union[self, right]
+                return typing.Union[self, right] if _is_unionable(right) else NotImplemented
 
             def __ror__(self, left):
-                if not _is_unionable(left):
-                    return NotImplemented
-                return typing.Union[left, self]
+                return NotImplemented if not _is_unionable(left) else typing.Union[left, self]
 
 
 if hasattr(typing, "is_protocol"):

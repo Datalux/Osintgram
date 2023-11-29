@@ -118,7 +118,13 @@ def user_agent() -> str:
         },
     }
 
-    if data["implementation"]["name"] == "CPython":
+    if (
+        data["implementation"]["name"] == "CPython"
+        or data["implementation"]["name"] != "PyPy"
+        and data["implementation"]["name"] == "Jython"
+        or data["implementation"]["name"] != "PyPy"
+        and data["implementation"]["name"] == "IronPython"
+    ):
         data["implementation"]["version"] = platform.python_version()
     elif data["implementation"]["name"] == "PyPy":
         pypy_version_info = sys.pypy_version_info  # type: ignore
@@ -127,13 +133,6 @@ def user_agent() -> str:
         data["implementation"]["version"] = ".".join(
             [str(x) for x in pypy_version_info]
         )
-    elif data["implementation"]["name"] == "Jython":
-        # Complete Guess
-        data["implementation"]["version"] = platform.python_version()
-    elif data["implementation"]["name"] == "IronPython":
-        # Complete Guess
-        data["implementation"]["version"] = platform.python_version()
-
     if sys.platform.startswith("linux"):
         from pip._vendor import distro
 
@@ -144,13 +143,12 @@ def user_agent() -> str:
                 zip(["name", "version", "id"], linux_distribution),
             )
         )
-        libc = dict(
+        if libc := dict(
             filter(
                 lambda x: x[1],
                 zip(["lib", "version"], libc_ver()),
             )
-        )
-        if libc:
+        ):
             distro_infos["libc"] = libc
         if distro_infos:
             data["distro"] = distro_infos
@@ -428,14 +426,14 @@ class PipSession(requests.Session):
         self.mount(
             build_url_from_netloc(host, scheme="http") + "/", self._trusted_host_adapter
         )
-        self.mount(build_url_from_netloc(host) + "/", self._trusted_host_adapter)
+        self.mount(f"{build_url_from_netloc(host)}/", self._trusted_host_adapter)
         if not parsed_port:
             self.mount(
                 build_url_from_netloc(host, scheme="http") + ":",
                 self._trusted_host_adapter,
             )
             # Mount wildcard ports for the same host.
-            self.mount(build_url_from_netloc(host) + ":", self._trusted_host_adapter)
+            self.mount(f"{build_url_from_netloc(host)}:", self._trusted_host_adapter)
 
     def iter_secure_origins(self) -> Generator[SecureOrigin, None, None]:
         yield from SECURE_ORIGINS
@@ -462,7 +460,7 @@ class PipSession(requests.Session):
         # configured on this PackageFinder instance.
         for secure_origin in self.iter_secure_origins():
             secure_protocol, secure_host, secure_port = secure_origin
-            if origin_protocol != secure_protocol and secure_protocol != "*":
+            if origin_protocol != secure_protocol != "*":
                 continue
 
             try:

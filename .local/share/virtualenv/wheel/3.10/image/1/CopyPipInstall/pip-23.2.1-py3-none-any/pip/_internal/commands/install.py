@@ -390,11 +390,10 @@ class InstallCommand(RequirementCommand):
                 # In non dry-run mode, the legacy versions and specifiers check
                 # will be done as part of conflict detection.
                 requirement_set.warn_legacy_versions_and_specifiers()
-                would_install_items = sorted(
+                if would_install_items := sorted(
                     (r.metadata["name"], r.metadata["version"])
                     for r in requirement_set.requirements_to_install
-                )
-                if would_install_items:
+                ):
                     write_output(
                         "Would install %s",
                         " ".join("-".join(item) for item in would_install_items),
@@ -427,10 +426,7 @@ class InstallCommand(RequirementCommand):
 
             if build_failures:
                 raise InstallationError(
-                    "Could not build wheels for {}, which is required to "
-                    "install pyproject.toml-based projects".format(
-                        ", ".join(r.name for r in build_failures)  # type: ignore
-                    )
+                    f'Could not build wheels for {", ".join(r.name for r in build_failures)}, which is required to install pyproject.toml-based projects'
                 )
 
             to_install = resolver.get_installation_order(requirement_set)
@@ -487,8 +483,7 @@ class InstallCommand(RequirementCommand):
                     resolver_variant=self.determine_resolver_variant(options),
                 )
 
-            installed_desc = " ".join(items)
-            if installed_desc:
+            if installed_desc := " ".join(items):
                 write_output(
                     "Successfully installed %s",
                     installed_desc,
@@ -728,13 +723,10 @@ def create_os_error_message(
 
     It may occur anytime during the execution of the install command.
     """
-    parts = []
+    parts = ["Could not install packages due to an OSError"]
 
-    # Mention the error if we are not going to show a traceback
-    parts.append("Could not install packages due to an OSError")
     if not show_traceback:
-        parts.append(": ")
-        parts.append(str(error))
+        parts.extend((": ", str(error)))
     else:
         parts.append(".")
 
@@ -744,10 +736,10 @@ def create_os_error_message(
     # Suggest useful actions to the user:
     #  (1) using user site-packages or (2) verifying the permissions
     if error.errno == errno.EACCES:
-        user_option_part = "Consider using the `--user` option"
         permissions_part = "Check the permissions"
 
         if not running_under_virtualenv() and not using_user_site:
+            user_option_part = "Consider using the `--user` option"
             parts.extend(
                 [
                     user_option_part,

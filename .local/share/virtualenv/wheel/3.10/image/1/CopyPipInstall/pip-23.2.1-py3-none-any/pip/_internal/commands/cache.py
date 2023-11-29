@@ -126,11 +126,7 @@ class CacheCommand(Command):
         if len(args) > 1:
             raise CommandError("Too many arguments")
 
-        if args:
-            pattern = args[0]
-        else:
-            pattern = "*"
-
+        pattern = args[0] if args else "*"
         files = self._find_wheels(options, pattern)
         if options.list_format == "human":
             self.format_for_human(files)
@@ -154,10 +150,7 @@ class CacheCommand(Command):
         if not files:
             return
 
-        results = []
-        for filename in files:
-            results.append(filename)
-
+        results = list(files)
         logger.info("\n".join(sorted(results)))
 
     def remove_cache_items(self, options: Values, args: List[Any]) -> None:
@@ -175,7 +168,7 @@ class CacheCommand(Command):
             files += self._find_http_files(options)
         else:
             # Add the pattern to the log message
-            no_matching_msg += ' for pattern "{}"'.format(args[0])
+            no_matching_msg += f' for pattern "{args[0]}"'
 
         if not files:
             logger.warning(no_matching_msg)
@@ -217,6 +210,6 @@ class CacheCommand(Command):
         #   match the hyphen before the version, followed by anything else.
         #
         # PEP 427: https://www.python.org/dev/peps/pep-0427/
-        pattern = pattern + ("*.whl" if "-" in pattern else "-*.whl")
+        pattern += "*.whl" if "-" in pattern else "-*.whl"
 
         return filesystem.find_files(wheel_dir, pattern)

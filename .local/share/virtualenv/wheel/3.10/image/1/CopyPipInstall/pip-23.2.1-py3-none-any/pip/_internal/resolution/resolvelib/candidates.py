@@ -45,19 +45,14 @@ def as_base_candidate(candidate: Candidate) -> Optional[BaseCandidate]:
         EditableCandidate,
         LinkCandidate,
     )
-    if isinstance(candidate, base_candidate_classes):
-        return candidate
-    return None
+    return candidate if isinstance(candidate, base_candidate_classes) else None
 
 
 def make_install_req_from_link(
     link: Link, template: InstallRequirement
 ) -> InstallRequirement:
     assert not template.editable, "template is editable"
-    if template.req:
-        line = str(template.req)
-    else:
-        line = link.url
+    line = str(template.req) if template.req else link.url
     ireq = install_req_from_line(
         line,
         user_supplied=template.user_supplied,
@@ -194,11 +189,7 @@ class _InstallRequirementBackedCandidate(Candidate):
         return self._version
 
     def format_for_error(self) -> str:
-        return "{} {} (from {})".format(
-            self.name,
-            self.version,
-            self._link.file_path if self._link.is_file else self._link,
-        )
+        return f"{self.name} {self.version} (from {self._link.file_path if self._link.is_file else self._link})"
 
     def _prepare_distribution(self) -> BaseDistribution:
         raise NotImplementedError("Override in subclass")
@@ -433,7 +424,7 @@ class ExtrasCandidate(Candidate):
 
     def __str__(self) -> str:
         name, rest = str(self.base).split(" ", 1)
-        return "{}[{}] {}".format(name, ",".join(self.extras), rest)
+        return f'{name}[{",".join(self.extras)}] {rest}'
 
     def __repr__(self) -> str:
         return "{class_name}(base={base!r}, extras={extras!r})".format(
@@ -464,9 +455,7 @@ class ExtrasCandidate(Candidate):
         return self.base.version
 
     def format_for_error(self) -> str:
-        return "{} [{}]".format(
-            self.base.format_for_error(), ", ".join(sorted(self.extras))
-        )
+        return f'{self.base.format_for_error()} [{", ".join(sorted(self.extras))}]'
 
     @property
     def is_installed(self) -> bool:
@@ -502,10 +491,9 @@ class ExtrasCandidate(Candidate):
             )
 
         for r in self.base.dist.iter_dependencies(valid_extras):
-            requirement = factory.make_requirement_from_spec(
+            if requirement := factory.make_requirement_from_spec(
                 str(r), self.base._ireq, valid_extras
-            )
-            if requirement:
+            ):
                 yield requirement
 
     def get_install_requirement(self) -> Optional[InstallRequirement]:

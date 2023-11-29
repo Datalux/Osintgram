@@ -40,14 +40,12 @@ def get_path_uid(path: str) -> int:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
         file_uid = os.fstat(fd).st_uid
         os.close(fd)
-    else:  # AIX and Jython
-        # WARNING: time of check vulnerability, but best we can do w/o NOFOLLOW
-        if not os.path.islink(path):
-            # older versions of Jython don't have `os.fstat`
-            file_uid = os.stat(path).st_uid
-        else:
-            # raise OSError for parity with os.O_NOFOLLOW above
-            raise OSError(f"{path} is a symlink; Will not return uid for symlinks")
+    elif os.path.islink(path):
+        # raise OSError for parity with os.O_NOFOLLOW above
+        raise OSError(f"{path} is a symlink; Will not return uid for symlinks")
+    else:
+        # older versions of Jython don't have `os.fstat`
+        file_uid = os.stat(path).st_uid
     return file_uid
 
 

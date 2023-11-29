@@ -229,9 +229,7 @@ def call_subprocess(
                 proc.returncode,
                 cwd,
             )
-        elif on_returncode == "ignore":
-            pass
-        else:
+        elif on_returncode != "ignore":
             raise ValueError(f"Invalid value: on_returncode={on_returncode!r}")
     return output
 

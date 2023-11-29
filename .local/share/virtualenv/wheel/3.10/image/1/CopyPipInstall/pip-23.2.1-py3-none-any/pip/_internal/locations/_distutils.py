@@ -79,10 +79,7 @@ def distutils_scheme(
     i.root = root or i.root
     i.finalize_options()
 
-    scheme = {}
-    for key in SCHEME_KEYS:
-        scheme[key] = getattr(i, "install_" + key)
-
+    scheme = {key: getattr(i, f"install_{key}") for key in SCHEME_KEYS}
     # install_lib specified in setup.cfg should install *everything*
     # into there (i.e. it takes precedence over both purelib and
     # platlib).  Note, i.install_lib is *always* set after

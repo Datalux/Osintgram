@@ -66,12 +66,7 @@ class Cache:
         # difference for our use case here.
         hashed = _hash_dict(key_parts)
 
-        # We want to nest the directories some to prevent having a ton of top
-        # level directories where we might run out of sub directories on some
-        # FS.
-        parts = [hashed[:2], hashed[2:4], hashed[4:6], hashed[6:]]
-
-        return parts
+        return [hashed[:2], hashed[2:4], hashed[4:6], hashed[6:]]
 
     def _get_candidates(self, link: Link, canonical_package_name: str) -> List[Any]:
         can_not_cache = not self.cache_dir or not canonical_package_name or not link
@@ -81,8 +76,7 @@ class Cache:
         candidates = []
         path = self.get_path_for_link(link)
         if os.path.isdir(path):
-            for candidate in os.listdir(path):
-                candidates.append((candidate, path))
+            candidates.extend((candidate, path) for candidate in os.listdir(path))
         return candidates
 
     def get_path_for_link(self, link: Link) -> str:
@@ -232,9 +226,7 @@ class WheelCache(Cache):
         supported_tags: List[Tag],
     ) -> Link:
         cache_entry = self.get_cache_entry(link, package_name, supported_tags)
-        if cache_entry is None:
-            return link
-        return cache_entry.link
+        return link if cache_entry is None else cache_entry.link
 
     def get_cache_entry(
         self,
@@ -259,10 +251,7 @@ class WheelCache(Cache):
             package_name=package_name,
             supported_tags=supported_tags,
         )
-        if retval is not link:
-            return CacheEntry(retval, persistent=False)
-
-        return None
+        return CacheEntry(retval, persistent=False) if retval is not link else None
 
     @staticmethod
     def record_download_origin(cache_dir: str, download_info: DirectUrl) -> None:

@@ -42,20 +42,21 @@ def msg_to_json(msg: Message) -> Dict[str, Any]:
     """Convert a Message object into a JSON-compatible dictionary."""
 
     def sanitise_header(h: Union[Header, str]) -> str:
-        if isinstance(h, Header):
-            chunks = []
-            for bytes, encoding in decode_header(h):
-                if encoding == "unknown-8bit":
-                    try:
-                        # See if UTF-8 works
-                        bytes.decode("utf-8")
-                        encoding = "utf-8"
-                    except UnicodeDecodeError:
-                        # If not, latin1 at least won't fail
-                        encoding = "latin1"
-                chunks.append((bytes, encoding))
-            return str(make_header(chunks))
-        return str(h)
+        if not isinstance(h, Header):
+            return str(h)
+
+        chunks = []
+        for bytes, encoding in decode_header(h):
+            if encoding == "unknown-8bit":
+                try:
+                    # See if UTF-8 works
+                    bytes.decode("utf-8")
+                    encoding = "utf-8"
+                except UnicodeDecodeError:
+                    # If not, latin1 at least won't fail
+                    encoding = "latin1"
+            chunks.append((bytes, encoding))
+        return str(make_header(chunks))
 
     result = {}
     for field, multi in METADATA_FIELDS:

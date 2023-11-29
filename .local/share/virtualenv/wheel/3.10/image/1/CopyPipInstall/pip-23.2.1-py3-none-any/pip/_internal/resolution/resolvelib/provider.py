@@ -70,9 +70,7 @@ def _get_with_identifier(
     # kinds of identifiers: normalized PEP 503 names, normalized names plus
     # extras, and Requires-Python, we can cheat a bit here.
     name, open_bracket, _ = identifier.partition("[")
-    if open_bracket and name in mapping:
-        return mapping[name]
-    return default
+    return mapping[name] if open_bracket and name in mapping else default
 
 
 class PipProvider(_ProviderBase):
@@ -166,7 +164,7 @@ class PipProvider(_ProviderBase):
                     self._known_depths[parent.name] if parent is not None else 0.0
                     for _, parent in information[identifier]
                 )
-                inferred_depth = min(d for d in parent_depths) + 1.0
+                inferred_depth = min(parent_depths) + 1.0
             else:
                 inferred_depth = math.inf
         else:

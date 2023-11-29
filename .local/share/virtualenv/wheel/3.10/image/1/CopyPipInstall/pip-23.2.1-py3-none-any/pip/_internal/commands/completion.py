@@ -107,15 +107,13 @@ class CompletionCommand(Command):
     def run(self, options: Values, args: List[str]) -> int:
         """Prints the completion code of the given shell"""
         shells = COMPLETION_SCRIPTS.keys()
-        shell_options = ["--" + shell for shell in sorted(shells)]
+        shell_options = [f"--{shell}" for shell in sorted(shells)]
         if options.shell in shells:
             script = textwrap.dedent(
                 COMPLETION_SCRIPTS.get(options.shell, "").format(prog=get_prog())
             )
             print(BASE_COMPLETION.format(script=script, shell=options.shell))
-            return SUCCESS
         else:
-            sys.stderr.write(
-                "ERROR: You must pass {}\n".format(" or ".join(shell_options))
-            )
-            return SUCCESS
+            sys.stderr.write(f'ERROR: You must pass {" or ".join(shell_options)}\n')
+
+        return SUCCESS

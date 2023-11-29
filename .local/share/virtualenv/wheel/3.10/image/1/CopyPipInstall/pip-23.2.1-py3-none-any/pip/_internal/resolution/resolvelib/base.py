@@ -16,7 +16,7 @@ def format_name(project: str, extras: FrozenSet[str]) -> str:
     if not extras:
         return project
     canonical_extras = sorted(canonicalize_name(e) for e in extras)
-    return "{}[{}]".format(project, ",".join(canonical_extras))
+    return f'{project}[{",".join(canonical_extras)}]'
 
 
 class Constraint:

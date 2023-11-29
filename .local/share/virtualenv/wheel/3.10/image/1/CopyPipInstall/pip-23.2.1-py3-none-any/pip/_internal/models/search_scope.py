@@ -76,8 +76,8 @@ class SearchScope:
 
     def get_formatted_locations(self) -> str:
         lines = []
-        redacted_index_urls = []
         if self.index_urls and self.index_urls != [PyPI.simple_url]:
+            redacted_index_urls = []
             for url in self.index_urls:
                 redacted_index_url = redact_auth_from_url(url)
 
@@ -97,15 +97,11 @@ class SearchScope:
 
                 redacted_index_urls.append(redacted_index_url)
 
-            lines.append(
-                "Looking in indexes: {}".format(", ".join(redacted_index_urls))
-            )
+            lines.append(f'Looking in indexes: {", ".join(redacted_index_urls)}')
 
         if self.find_links:
             lines.append(
-                "Looking in links: {}".format(
-                    ", ".join(redact_auth_from_url(url) for url in self.find_links)
-                )
+                f'Looking in links: {", ".join(redact_auth_from_url(url) for url in self.find_links)}'
             )
         return "\n".join(lines)
 
@@ -126,7 +122,7 @@ class SearchScope:
             # implementations might break if they relied on easy_install's
             # behavior.
             if not loc.endswith("/"):
-                loc = loc + "/"
+                loc = f"{loc}/"
             return loc
 
         return [mkurl_pypi_url(url) for url in self.index_urls]

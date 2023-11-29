@@ -75,10 +75,7 @@ class UTF1632Prober(CharSetProber):
             return "utf-32le"
         if self.is_likely_utf16be():
             return "utf-16be"
-        if self.is_likely_utf16le():
-            return "utf-16le"
-        # default to something valid
-        return "utf-16"
+        return "utf-16le" if self.is_likely_utf16le() else "utf-16"
 
     @property
     def language(self) -> str:
@@ -142,13 +139,15 @@ class UTF1632Prober(CharSetProber):
         if (
             quad[0] != 0
             or quad[1] > 0x10
-            or (quad[0] == 0 and quad[1] == 0 and 0xD8 <= quad[2] <= 0xDF)
+            or quad[1] == 0
+            and 0xD8 <= quad[2] <= 0xDF
         ):
             self.invalid_utf32be = True
         if (
             quad[3] != 0
             or quad[2] > 0x10
-            or (quad[3] == 0 and quad[2] == 0 and 0xD8 <= quad[1] <= 0xDF)
+            or quad[2] == 0
+            and 0xD8 <= quad[1] <= 0xDF
         ):
             self.invalid_utf32le = True
 
@@ -162,27 +161,34 @@ class UTF1632Prober(CharSetProber):
 
         https://en.wikipedia.org/wiki/UTF-16
         """
-        if not self.first_half_surrogate_pair_detected_16be:
-            if 0xD8 <= pair[0] <= 0xDB:
-                self.first_half_surrogate_pair_detected_16be = True
-            elif 0xDC <= pair[0] <= 0xDF:
-                self.invalid_utf16be = True
-        else:
-            if 0xDC <= pair[0] <= 0xDF:
-                self.first_half_surrogate_pair_detected_16be = False
-            else:
-                self.invalid_utf16be = True
-
-        if not self.first_half_surrogate_pair_detected_16le:
-            if 0xD8 <= pair[1] <= 0xDB:
-                self.first_half_surrogate_pair_detected_16le = True
-            elif 0xDC <= pair[1] <= 0xDF:
-                self.invalid_utf16le = True
-        else:
-            if 0xDC <= pair[1] <= 0xDF:
-                self.first_half_surrogate_pair_detected_16le = False
-            else:
-                self.invalid_utf16le = True
+        if (
+            not self.first_half_surrogate_pair_detected_16be
+            and 0xD8 <= pair[0] <= 0xDB
+        ):
+            self.first_half_surrogate_pair_detected_16be = True
+        elif (
+            not self.first_half_surrogate_pair_detected_16be
+            and 0xDC <= pair[0] <= 0xDF
+            or self.first_half_surrogate_pair_detected_16be
+            and not 0xDC <= pair[0] <= 0xDF
+        ):
+            self.invalid_utf16be = True
+        elif self.first_half_surrogate_pair_detected_16be:
+            self.first_half_surrogate_pair_detected_16be = False
+        if (
+            not self.first_half_surrogate_pair_detected_16le
+            and 0xD8 <= pair[1] <= 0xDB
+        ):
+            self.first_half_surrogate_pair_detected_16le = True
+        elif (
+            not self.first_half_surrogate_pair_detected_16le
+            and 0xDC <= pair[1] <= 0xDF
+            or self.first_half_surrogate_pair_detected_16le
+            and not 0xDC <= pair[1] <= 0xDF
+        ):
+            self.invalid_utf16le = True
+        elif self.first_half_surrogate_pair_detected_16le:
+            self.first_half_surrogate_pair_detected_16le = False
 
     def feed(self, byte_str: Union[bytes, bytearray]) -> ProbingState:
         for c in byte_str:
@@ -190,7 +196,7 @@ class UTF1632Prober(CharSetProber):
             self.quad[mod4] = c
             if mod4 == 3:
                 self.validate_utf32_characters(self.quad)
-                self.validate_utf16_characters(self.quad[0:2])
+                self.validate_utf16_characters(self.quad[:2])
                 self.validate_utf16_characters(self.quad[2:4])
             if c == 0:
                 self.zeros_at_mod[mod4] += 1

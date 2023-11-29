@@ -234,8 +234,8 @@ class ListCommand(IndexGroupCommand):
             finder = self._build_package_finder(options, session)
 
             def latest_info(
-                dist: "_DistWithLatestInfo",
-            ) -> Optional["_DistWithLatestInfo"]:
+                        dist: "_DistWithLatestInfo",
+                    ) -> Optional["_DistWithLatestInfo"]:
                 all_candidates = finder.find_all_candidates(dist.canonical_name)
                 if not options.pre:
                     # Remove prereleases
@@ -253,10 +253,7 @@ class ListCommand(IndexGroupCommand):
                     return None
 
                 remote_version = best_candidate.version
-                if best_candidate.link.is_wheel:
-                    typ = "wheel"
-                else:
-                    typ = "sdist"
+                typ = "wheel" if best_candidate.link.is_wheel else "sdist"
                 dist.latest_version = remote_version
                 dist.latest_filetype = typ
                 return dist
@@ -290,13 +287,13 @@ class ListCommand(IndexGroupCommand):
         self, data: List[List[str]], header: List[str]
     ) -> None:
         # insert the header first: we need to know the size of column names
-        if len(data) > 0:
+        if data:
             data.insert(0, header)
 
         pkg_strings, sizes = tabulate(data)
 
         # Create and add a separator.
-        if len(data) > 0:
+        if data:
             pkg_strings.insert(1, " ".join(map(lambda x: "-" * x, sizes)))
 
         for val in pkg_strings:
@@ -321,10 +318,7 @@ def format_for_columns(
         header.append("Editable project location")
 
     if options.verbose >= 1:
-        header.append("Location")
-    if options.verbose >= 1:
-        header.append("Installer")
-
+        header.extend(("Location", "Installer"))
     data = []
     for proj in pkgs:
         # if we're working on the 'outdated' list, separate out the
@@ -332,17 +326,12 @@ def format_for_columns(
         row = [proj.raw_name, str(proj.version)]
 
         if running_outdated:
-            row.append(str(proj.latest_version))
-            row.append(proj.latest_filetype)
-
+            row.extend((str(proj.latest_version), proj.latest_filetype))
         if has_editables:
             row.append(proj.editable_project_location or "")
 
         if options.verbose >= 1:
-            row.append(proj.location or "")
-        if options.verbose >= 1:
-            row.append(proj.installer)
-
+            row.extend(((proj.location or ""), proj.installer))
         data.append(row)
 
     return data, header
@@ -361,8 +350,7 @@ def format_for_json(packages: "_ProcessedDists", options: Values) -> str:
         if options.outdated:
             info["latest_version"] = str(dist.latest_version)
             info["latest_filetype"] = dist.latest_filetype
-        editable_project_location = dist.editable_project_location
-        if editable_project_location:
+        if editable_project_location := dist.editable_project_location:
             info["editable_project_location"] = editable_project_location
         data.append(info)
     return json.dumps(data)

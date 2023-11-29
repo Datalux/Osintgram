@@ -22,6 +22,4 @@ ARCHIVE_EXTENSIONS = ZIP_EXTENSIONS + BZ2_EXTENSIONS + TAR_EXTENSIONS + XZ_EXTEN
 def is_archive_file(name: str) -> bool:
     """Return True if `name` is a considered as an archive file."""
     ext = splitext(name)[1].lower()
-    if ext in ARCHIVE_EXTENSIONS:
-        return True
-    return False
+    return ext in ARCHIVE_EXTENSIONS

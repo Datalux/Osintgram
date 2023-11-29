@@ -69,7 +69,7 @@ class SpecifierRequirement(Requirement):
         # risking a change in meaning. (Hopefully! Not all edge cases have
         # been checked)
         parts = [s.strip() for s in str(self).split(",")]
-        if len(parts) == 0:
+        if not parts:
             return ""
         elif len(parts) == 1:
             return parts[0]

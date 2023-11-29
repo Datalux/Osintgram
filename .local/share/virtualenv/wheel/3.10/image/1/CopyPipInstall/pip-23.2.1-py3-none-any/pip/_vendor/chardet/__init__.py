@@ -84,7 +84,7 @@ def detect_all(
         probers: List[CharSetProber] = []
         for prober in detector.charset_probers:
             if isinstance(prober, CharSetGroupProber):
-                probers.extend(p for p in prober.probers)
+                probers.extend(iter(prober.probers))
             else:
                 probers.append(prober)
         for prober in probers:
@@ -109,7 +109,7 @@ def detect_all(
                         "language": prober.language,
                     }
                 )
-        if len(results) > 0:
+        if results:
             return sorted(results, key=lambda result: -result["confidence"])
 
     return [detector.result]

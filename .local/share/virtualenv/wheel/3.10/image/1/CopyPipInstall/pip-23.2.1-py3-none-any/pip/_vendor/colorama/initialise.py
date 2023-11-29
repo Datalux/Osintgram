@@ -21,12 +21,9 @@ def _wipe_internal_state_for_tests():
     global fixed_windows_console
     fixed_windows_console = False
 
-    try:
+    with contextlib.suppress(AttributeError):
         # no-op if it wasn't registered
         atexit.unregister(reset_all)
-    except AttributeError:
-        # python 2: no atexit.unregister. Oh well, we did our best.
-        pass
 
 
 def reset_all():

@@ -63,7 +63,7 @@ class Subversion(VersionControl):
 
             if base == location:
                 assert dirurl is not None
-                base = dirurl + "/"  # save the root url
+                base = f"{dirurl}/"
             elif not dirurl or not dirurl.startswith(base):
                 dirs[:] = []
                 continue  # not part of the same svn tree, skip it
@@ -90,7 +90,7 @@ class Subversion(VersionControl):
         # hotfix the URL scheme after removing svn+ from svn+ssh:// re-add it
         url, rev, user_pass = super().get_url_rev_and_auth(url)
         if url.startswith("ssh://"):
-            url = "svn+" + url
+            url = f"svn+{url}"
         return url, rev, user_pass
 
     @staticmethod
@@ -172,11 +172,7 @@ class Subversion(VersionControl):
             except InstallationError:
                 url, revs = None, []
 
-        if revs:
-            rev = max(revs)
-        else:
-            rev = 0
-
+        rev = max(revs) if revs else 0
         return url, rev
 
     @classmethod
@@ -272,10 +268,7 @@ class Subversion(VersionControl):
         # e.g. RHEL/CentOS 7, which is supported until 2024, ships with
         # SVN 1.7, pip should continue to support SVN 1.7. Therefore, pip
         # can't safely add the option if the SVN version is < 1.8 (or unknown).
-        if svn_version >= (1, 8):
-            return ["--force-interactive"]
-
-        return []
+        return ["--force-interactive"] if svn_version >= (1, 8) else []
 
     def fetch_new(
         self, dest: str, url: HiddenText, rev_options: RevOptions, verbosity: int
@@ -287,10 +280,7 @@ class Subversion(VersionControl):
             rev_display,
             display_path(dest),
         )
-        if verbosity <= 0:
-            flag = "--quiet"
-        else:
-            flag = ""
+        flag = "--quiet" if verbosity <= 0 else ""
         cmd_args = make_command(
             "checkout",
             flag,

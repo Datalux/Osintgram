@@ -20,6 +20,7 @@
 
 """Utilities for writing code that runs on Python 2 and 3"""
 
+
 from __future__ import absolute_import
 
 import functools
@@ -35,7 +36,7 @@ __version__ = "1.16.0"
 # Useful for very coarse version differentiation.
 PY2 = sys.version_info[0] == 2
 PY3 = sys.version_info[0] == 3
-PY34 = sys.version_info[0:2] >= (3, 4)
+PY34 = sys.version_info[:2] >= (3, 4)
 
 if PY3:
     string_types = str,
@@ -150,10 +151,7 @@ class MovedAttribute(_LazyDescr):
                 new_mod = name
             self.mod = new_mod
             if new_attr is None:
-                if old_attr is None:
-                    new_attr = name
-                else:
-                    new_attr = old_attr
+                new_attr = name if old_attr is None else old_attr
             self.attr = new_attr
         else:
             self.mod = old_mod
@@ -181,15 +179,13 @@ class _SixMetaPathImporter(object):
 
     def _add_module(self, mod, *fullnames):
         for fullname in fullnames:
-            self.known_modules[self.name + "." + fullname] = mod
+            self.known_modules[f"{self.name}.{fullname}"] = mod
 
     def _get_module(self, fullname):
-        return self.known_modules[self.name + "." + fullname]
+        return self.known_modules[f"{self.name}.{fullname}"]
 
     def find_module(self, fullname, path=None):
-        if fullname in self.known_modules:
-            return self
-        return None
+        return self if fullname in self.known_modules else None
 
     def find_spec(self, fullname, path, target=None):
         if fullname in self.known_modules:
@@ -200,7 +196,7 @@ class _SixMetaPathImporter(object):
         try:
             return self.known_modules[fullname]
         except KeyError:
-            raise ImportError("This loader does not know module " + fullname)
+            raise ImportError(f"This loader does not know module {fullname}")
 
     def load_module(self, fullname):
         try:
@@ -251,7 +247,9 @@ class _MovedItems(_LazyModule):
 _moved_attributes = [
     MovedAttribute("cStringIO", "cStringIO", "io", "StringIO"),
     MovedAttribute("filter", "itertools", "builtins", "ifilter", "filter"),
-    MovedAttribute("filterfalse", "itertools", "itertools", "ifilterfalse", "filterfalse"),
+    MovedAttribute(
+        "filterfalse", "itertools", "itertools", "ifilterfalse", "filterfalse"
+    ),
     MovedAttribute("input", "__builtin__", "builtins", "raw_input", "input"),
     MovedAttribute("intern", "__builtin__", "sys"),
     MovedAttribute("map", "itertools", "builtins", "imap", "map"),
@@ -259,7 +257,12 @@ _moved_attributes = [
     MovedAttribute("getcwdb", "os", "os", "getcwd", "getcwdb"),
     MovedAttribute("getoutput", "commands", "subprocess"),
     MovedAttribute("range", "__builtin__", "builtins", "xrange", "range"),
-    MovedAttribute("reload_module", "__builtin__", "importlib" if PY34 else "imp", "reload"),
+    MovedAttribute(
+        "reload_module",
+        "__builtin__",
+        "importlib" if PY34 else "imp",
+        "reload",
+    ),
     MovedAttribute("reduce", "__builtin__", "functools"),
     MovedAttribute("shlex_quote", "pipes", "shlex", "quote"),
     MovedAttribute("StringIO", "StringIO", "io"),
@@ -268,14 +271,24 @@ _moved_attributes = [
     MovedAttribute("UserString", "UserString", "collections"),
     MovedAttribute("xrange", "__builtin__", "builtins", "xrange", "range"),
     MovedAttribute("zip", "itertools", "builtins", "izip", "zip"),
-    MovedAttribute("zip_longest", "itertools", "itertools", "izip_longest", "zip_longest"),
+    MovedAttribute(
+        "zip_longest", "itertools", "itertools", "izip_longest", "zip_longest"
+    ),
     MovedModule("builtins", "__builtin__"),
     MovedModule("configparser", "ConfigParser"),
-    MovedModule("collections_abc", "collections", "collections.abc" if sys.version_info >= (3, 3) else "collections"),
+    MovedModule(
+        "collections_abc",
+        "collections",
+        "collections.abc" if sys.version_info >= (3, 3) else "collections",
+    ),
     MovedModule("copyreg", "copy_reg"),
     MovedModule("dbm_gnu", "gdbm", "dbm.gnu"),
     MovedModule("dbm_ndbm", "dbm", "dbm.ndbm"),
-    MovedModule("_dummy_thread", "dummy_thread", "_dummy_thread" if sys.version_info < (3, 9) else "_thread"),
+    MovedModule(
+        "_dummy_thread",
+        "dummy_thread",
+        "_dummy_thread" if sys.version_info < (3, 9) else "_thread",
+    ),
     MovedModule("http_cookiejar", "cookielib", "http.cookiejar"),
     MovedModule("http_cookies", "Cookie", "http.cookies"),
     MovedModule("html_entities", "htmlentitydefs", "html.entities"),
@@ -283,8 +296,14 @@ _moved_attributes = [
     MovedModule("http_client", "httplib", "http.client"),
     MovedModule("email_mime_base", "email.MIMEBase", "email.mime.base"),
     MovedModule("email_mime_image", "email.MIMEImage", "email.mime.image"),
-    MovedModule("email_mime_multipart", "email.MIMEMultipart", "email.mime.multipart"),
-    MovedModule("email_mime_nonmultipart", "email.MIMENonMultipart", "email.mime.nonmultipart"),
+    MovedModule(
+        "email_mime_multipart", "email.MIMEMultipart", "email.mime.multipart"
+    ),
+    MovedModule(
+        "email_mime_nonmultipart",
+        "email.MIMENonMultipart",
+        "email.mime.nonmultipart",
+    ),
     MovedModule("email_mime_text", "email.MIMEText", "email.mime.text"),
     MovedModule("BaseHTTPServer", "BaseHTTPServer", "http.server"),
     MovedModule("CGIHTTPServer", "CGIHTTPServer", "http.server"),
@@ -297,24 +316,37 @@ _moved_attributes = [
     MovedModule("tkinter", "Tkinter"),
     MovedModule("tkinter_dialog", "Dialog", "tkinter.dialog"),
     MovedModule("tkinter_filedialog", "FileDialog", "tkinter.filedialog"),
-    MovedModule("tkinter_scrolledtext", "ScrolledText", "tkinter.scrolledtext"),
-    MovedModule("tkinter_simpledialog", "SimpleDialog", "tkinter.simpledialog"),
+    MovedModule(
+        "tkinter_scrolledtext", "ScrolledText", "tkinter.scrolledtext"
+    ),
+    MovedModule(
+        "tkinter_simpledialog", "SimpleDialog", "tkinter.simpledialog"
+    ),
     MovedModule("tkinter_tix", "Tix", "tkinter.tix"),
     MovedModule("tkinter_ttk", "ttk", "tkinter.ttk"),
     MovedModule("tkinter_constants", "Tkconstants", "tkinter.constants"),
     MovedModule("tkinter_dnd", "Tkdnd", "tkinter.dnd"),
-    MovedModule("tkinter_colorchooser", "tkColorChooser",
-                "tkinter.colorchooser"),
-    MovedModule("tkinter_commondialog", "tkCommonDialog",
-                "tkinter.commondialog"),
+    MovedModule(
+        "tkinter_colorchooser", "tkColorChooser", "tkinter.colorchooser"
+    ),
+    MovedModule(
+        "tkinter_commondialog", "tkCommonDialog", "tkinter.commondialog"
+    ),
     MovedModule("tkinter_tkfiledialog", "tkFileDialog", "tkinter.filedialog"),
     MovedModule("tkinter_font", "tkFont", "tkinter.font"),
     MovedModule("tkinter_messagebox", "tkMessageBox", "tkinter.messagebox"),
-    MovedModule("tkinter_tksimpledialog", "tkSimpleDialog",
-                "tkinter.simpledialog"),
-    MovedModule("urllib_parse", __name__ + ".moves.urllib_parse", "urllib.parse"),
-    MovedModule("urllib_error", __name__ + ".moves.urllib_error", "urllib.error"),
-    MovedModule("urllib", __name__ + ".moves.urllib", __name__ + ".moves.urllib"),
+    MovedModule(
+        "tkinter_tksimpledialog", "tkSimpleDialog", "tkinter.simpledialog"
+    ),
+    MovedModule(
+        "urllib_parse", f"{__name__}.moves.urllib_parse", "urllib.parse"
+    ),
+    MovedModule(
+        "urllib_error", f"{__name__}.moves.urllib_error", "urllib.error"
+    ),
+    MovedModule(
+        "urllib", f"{__name__}.moves.urllib", f"{__name__}.moves.urllib"
+    ),
     MovedModule("urllib_robotparser", "robotparser", "urllib.robotparser"),
     MovedModule("xmlrpc_client", "xmlrpclib", "xmlrpc.client"),
     MovedModule("xmlrpc_server", "SimpleXMLRPCServer", "xmlrpc.server"),
@@ -328,20 +360,18 @@ if sys.platform == "win32":
 for attr in _moved_attributes:
     setattr(_MovedItems, attr.name, attr)
     if isinstance(attr, MovedModule):
-        _importer._add_module(attr, "moves." + attr.name)
+        _importer._add_module(attr, f"moves.{attr.name}")
 del attr
 
 _MovedItems._moved_attributes = _moved_attributes
 
-moves = _MovedItems(__name__ + ".moves")
+moves = _MovedItems(f"{__name__}.moves")
 _importer._add_module(moves, "moves")
 
 
 class Module_six_moves_urllib_parse(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_parse"""
-
-
 _urllib_parse_moved_attributes = [
     MovedAttribute("ParseResult", "urlparse", "urllib.parse"),
     MovedAttribute("SplitResult", "urlparse", "urllib.parse"),
@@ -375,15 +405,16 @@ del attr
 
 Module_six_moves_urllib_parse._moved_attributes = _urllib_parse_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_parse(__name__ + ".moves.urllib_parse"),
-                      "moves.urllib_parse", "moves.urllib.parse")
+_importer._add_module(
+    Module_six_moves_urllib_parse(f"{__name__}.moves.urllib_parse"),
+    "moves.urllib_parse",
+    "moves.urllib.parse",
+)
 
 
 class Module_six_moves_urllib_error(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_error"""
-
-
 _urllib_error_moved_attributes = [
     MovedAttribute("URLError", "urllib2", "urllib.error"),
     MovedAttribute("HTTPError", "urllib2", "urllib.error"),
@@ -395,15 +426,16 @@ del attr
 
 Module_six_moves_urllib_error._moved_attributes = _urllib_error_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_error(__name__ + ".moves.urllib.error"),
-                      "moves.urllib_error", "moves.urllib.error")
+_importer._add_module(
+    Module_six_moves_urllib_error(f"{__name__}.moves.urllib.error"),
+    "moves.urllib_error",
+    "moves.urllib.error",
+)
 
 
 class Module_six_moves_urllib_request(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_request"""
-
-
 _urllib_request_moved_attributes = [
     MovedAttribute("urlopen", "urllib2", "urllib.request"),
     MovedAttribute("install_opener", "urllib2", "urllib.request"),
@@ -447,15 +479,16 @@ del attr
 
 Module_six_moves_urllib_request._moved_attributes = _urllib_request_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_request(__name__ + ".moves.urllib.request"),
-                      "moves.urllib_request", "moves.urllib.request")
+_importer._add_module(
+    Module_six_moves_urllib_request(f"{__name__}.moves.urllib.request"),
+    "moves.urllib_request",
+    "moves.urllib.request",
+)
 
 
 class Module_six_moves_urllib_response(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_response"""
-
-
 _urllib_response_moved_attributes = [
     MovedAttribute("addbase", "urllib", "urllib.response"),
     MovedAttribute("addclosehook", "urllib", "urllib.response"),
@@ -468,15 +501,16 @@ del attr
 
 Module_six_moves_urllib_response._moved_attributes = _urllib_response_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_response(__name__ + ".moves.urllib.response"),
-                      "moves.urllib_response", "moves.urllib.response")
+_importer._add_module(
+    Module_six_moves_urllib_response(f"{__name__}.moves.urllib.response"),
+    "moves.urllib_response",
+    "moves.urllib.response",
+)
 
 
 class Module_six_moves_urllib_robotparser(_LazyModule):
 
     """Lazy loading of moved objects in six.moves.urllib_robotparser"""
-
-
 _urllib_robotparser_moved_attributes = [
     MovedAttribute("RobotFileParser", "robotparser", "urllib.robotparser"),
 ]
@@ -486,8 +520,13 @@ del attr
 
 Module_six_moves_urllib_robotparser._moved_attributes = _urllib_robotparser_moved_attributes
 
-_importer._add_module(Module_six_moves_urllib_robotparser(__name__ + ".moves.urllib.robotparser"),
-                      "moves.urllib_robotparser", "moves.urllib.robotparser")
+_importer._add_module(
+    Module_six_moves_urllib_robotparser(
+        f"{__name__}.moves.urllib.robotparser"
+    ),
+    "moves.urllib_robotparser",
+    "moves.urllib.robotparser",
+)
 
 
 class Module_six_moves_urllib(types.ModuleType):
@@ -503,8 +542,9 @@ class Module_six_moves_urllib(types.ModuleType):
     def __dir__(self):
         return ['parse', 'error', 'request', 'response', 'robotparser']
 
-_importer._add_module(Module_six_moves_urllib(__name__ + ".moves.urllib"),
-                      "moves.urllib")
+_importer._add_module(
+    Module_six_moves_urllib(f"{__name__}.moves.urllib"), "moves.urllib"
+)
 
 
 def add_move(move):
@@ -910,7 +950,7 @@ def ensure_binary(s, encoding='utf-8', errors='strict'):
         return s
     if isinstance(s, text_type):
         return s.encode(encoding, errors)
-    raise TypeError("not expecting type '%s'" % type(s))
+    raise TypeError(f"not expecting type '{type(s)}'")
 
 
 def ensure_str(s, encoding='utf-8', errors='strict'):
@@ -932,7 +972,7 @@ def ensure_str(s, encoding='utf-8', errors='strict'):
     elif PY3 and isinstance(s, binary_type):
         return s.decode(encoding, errors)
     elif not isinstance(s, (text_type, binary_type)):
-        raise TypeError("not expecting type '%s'" % type(s))
+        raise TypeError(f"not expecting type '{type(s)}'")
     return s
 
 
@@ -952,7 +992,7 @@ def ensure_text(s, encoding='utf-8', errors='strict'):
     elif isinstance(s, text_type):
         return s
     else:
-        raise TypeError("not expecting type '%s'" % type(s))
+        raise TypeError(f"not expecting type '{type(s)}'")
 
 
 def python_2_unicode_compatible(klass):

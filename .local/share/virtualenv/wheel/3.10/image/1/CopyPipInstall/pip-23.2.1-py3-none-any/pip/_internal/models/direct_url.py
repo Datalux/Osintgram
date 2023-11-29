@@ -184,9 +184,7 @@ class DirectUrl:
             and user_pass == "git"
         ):
             return netloc
-        if ENV_VAR_RE.match(user_pass):
-            return netloc
-        return netloc_no_user_pass
+        return netloc if ENV_VAR_RE.match(user_pass) else netloc_no_user_pass
 
     @property
     def redacted_url(self) -> str:
@@ -196,10 +194,9 @@ class DirectUrl:
         """
         purl = urllib.parse.urlsplit(self.url)
         netloc = self._remove_auth_from_netloc(purl.netloc)
-        surl = urllib.parse.urlunsplit(
+        return urllib.parse.urlunsplit(
             (purl.scheme, netloc, purl.path, purl.query, purl.fragment)
         )
-        return surl
 
     def validate(self) -> None:
         self.from_dict(self.to_dict())

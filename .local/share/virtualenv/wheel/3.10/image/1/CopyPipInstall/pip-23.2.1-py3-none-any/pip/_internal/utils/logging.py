@@ -99,10 +99,7 @@ class IndentingFormatter(logging.Formatter):
             # Then the message already has a prefix.  We don't want it to
             # look like "WARNING: DEPRECATION: ...."
             return ""
-        if levelno < logging.ERROR:
-            return "WARNING: "
-
-        return "ERROR: "
+        return "WARNING: " if levelno < logging.ERROR else "ERROR: "
 
     def format(self, record: logging.LogRecord) -> str:
         """
@@ -113,9 +110,7 @@ class IndentingFormatter(logging.Formatter):
         message_start = self.get_message_start(formatted, record.levelno)
         formatted = message_start + formatted
 
-        prefix = ""
-        if self.add_timestamp:
-            prefix = f"{self.formatTime(record)} "
+        prefix = f"{self.formatTime(record)} " if self.add_timestamp else ""
         prefix += " " * get_indentation()
         formatted = "".join([prefix + line for line in formatted.splitlines(True)])
         return formatted

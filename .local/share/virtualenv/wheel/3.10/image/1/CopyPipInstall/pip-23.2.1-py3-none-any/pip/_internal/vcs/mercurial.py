@@ -93,13 +93,12 @@ class Mercurial(VersionControl):
         """
         Return the repository-local changeset revision number, as an integer.
         """
-        current_revision = cls.run_command(
+        return cls.run_command(
             ["parents", "--template={rev}"],
             show_stdout=False,
             stdout_only=True,
             cwd=location,
         ).strip()
-        return current_revision
 
     @classmethod
     def get_requirement_revision(cls, location: str) -> str:
@@ -107,13 +106,12 @@ class Mercurial(VersionControl):
         Return the changeset identification hash, as a 40-character
         hexadecimal string
         """
-        current_rev_hash = cls.run_command(
+        return cls.run_command(
             ["parents", "--template={node}"],
             show_stdout=False,
             stdout_only=True,
             cwd=location,
         ).strip()
-        return current_rev_hash
 
     @classmethod
     def is_commit_id_equal(cls, dest: str, name: Optional[str]) -> bool:
@@ -136,8 +134,7 @@ class Mercurial(VersionControl):
 
     @classmethod
     def get_repository_root(cls, location: str) -> Optional[str]:
-        loc = super().get_repository_root(location)
-        if loc:
+        if loc := super().get_repository_root(location):
             return loc
         try:
             r = cls.run_command(

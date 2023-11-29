@@ -192,10 +192,7 @@ def signal_handler(sig, frame):
 
 def completer(text, state):
     options = [i for i in commands if i.startswith(text)]
-    if state < len(options):
-        return options[state]
-    else:
-        return None
+    return options[state] if state < len(options) else None
 
 def _quit():
     pc.printout("Goodbye!\n", pc.RED)

@@ -57,14 +57,9 @@ class SearchCommand(Command, SessionCommandMixin):
         pypi_hits = self.search(query, options)
         hits = transform_hits(pypi_hits)
 
-        terminal_width = None
-        if sys.stdout.isatty():
-            terminal_width = shutil.get_terminal_size()[0]
-
+        terminal_width = shutil.get_terminal_size()[0] if sys.stdout.isatty() else None
         print_results(hits, terminal_width=terminal_width)
-        if pypi_hits:
-            return SUCCESS
-        return NO_MATCHES_FOUND
+        return SUCCESS if pypi_hits else NO_MATCHES_FOUND
 
     def search(self, query: List[str], options: Values) -> List[Dict[str, str]]:
         index_url = options.index
@@ -97,19 +92,19 @@ def transform_hits(hits: List[Dict[str, str]]) -> List["TransformedHit"]:
         summary = hit["summary"]
         version = hit["version"]
 
-        if name not in packages.keys():
-            packages[name] = {
-                "name": name,
-                "summary": summary,
-                "versions": [version],
-            }
-        else:
+        if name in packages:
             packages[name]["versions"].append(version)
 
             # if this is the highest version, replace summary and score
             if version == highest_version(packages[name]["versions"]):
                 packages[name]["summary"] = summary
 
+        else:
+            packages[name] = {
+                "name": name,
+                "summary": summary,
+                "versions": [version],
+            }
     return list(packages.values())
 
 
@@ -142,10 +137,9 @@ def print_results(
     if name_column_width is None:
         name_column_width = (
             max(
-                [
-                    len(hit["name"]) + len(highest_version(hit.get("versions", ["-"])))
-                    for hit in hits
-                ]
+                len(hit["name"])
+                + len(highest_version(hit.get("versions", ["-"])))
+                for hit in hits
             )
             + 4
         )

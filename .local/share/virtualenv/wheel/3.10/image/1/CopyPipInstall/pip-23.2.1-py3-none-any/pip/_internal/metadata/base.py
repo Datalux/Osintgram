@@ -172,19 +172,13 @@ class BaseDistribution(Protocol):
         This is the directory where pyproject.toml or setup.py is located.
         None if the distribution is not installed in editable mode.
         """
-        # TODO: this property is relatively costly to compute, memoize it ?
-        direct_url = self.direct_url
-        if direct_url:
+        if direct_url := self.direct_url:
             if direct_url.is_local_editable():
                 return url_to_path(direct_url.url)
-        else:
-            # Search for an .egg-link file by walking sys.path, as it was
-            # done before by dist_is_editable().
-            egg_link_path = egg_link_path_from_sys_path(self.raw_name)
-            if egg_link_path:
-                # TODO: get project location from second line of egg_link file
-                #       (https://github.com/pypa/pip/issues/10243)
-                return self.location
+        elif egg_link_path := egg_link_path_from_sys_path(self.raw_name):
+            # TODO: get project location from second line of egg_link file
+            #       (https://github.com/pypa/pip/issues/10243)
+            return self.location
         return None
 
     @property
@@ -225,9 +219,7 @@ class BaseDistribution(Protocol):
         treat this specially on uninstallation.
         """
         info_location = self.info_location
-        if not info_location:
-            return False
-        return pathlib.Path(info_location).is_file()
+        return False if not info_location else pathlib.Path(info_location).is_file()
 
     @property
     def installed_as_egg(self) -> bool:
@@ -237,9 +229,7 @@ class BaseDistribution(Protocol):
         of) easy_install.
         """
         location = self.location
-        if not location:
-            return False
-        return location.endswith(".egg")
+        return False if not location else location.endswith(".egg")
 
     @property
     def installed_with_setuptools_egg_info(self) -> bool:
@@ -252,12 +242,14 @@ class BaseDistribution(Protocol):
         also installs an ``.egg-info``, but as a file, not a directory. This
         property is *False* for that case. Also see ``installed_by_distutils``.
         """
-        info_location = self.info_location
-        if not info_location:
+        if info_location := self.info_location:
+            return (
+                False
+                if not info_location.endswith(".egg-info")
+                else pathlib.Path(info_location).is_dir()
+            )
+        else:
             return False
-        if not info_location.endswith(".egg-info"):
-            return False
-        return pathlib.Path(info_location).is_dir()
 
     @property
     def installed_with_dist_info(self) -> bool:
@@ -268,12 +260,14 @@ class BaseDistribution(Protocol):
         setuptools (but through pip, not directly), or anything using the
         standardized build backend interface (PEP 517).
         """
-        info_location = self.info_location
-        if not info_location:
+        if info_location := self.info_location:
+            return (
+                False
+                if not info_location.endswith(".dist-info")
+                else pathlib.Path(info_location).is_dir()
+            )
+        else:
             return False
-        if not info_location.endswith(".dist-info"):
-            return False
-        return pathlib.Path(info_location).is_dir()
 
     @property
     def canonical_name(self) -> NormalizedName:
@@ -324,8 +318,7 @@ class BaseDistribution(Protocol):
         except (OSError, ValueError, NoneMetadataError):
             return ""  # Fail silently if the installer file cannot be read.
         for line in installer_text.splitlines():
-            cleaned_line = line.strip()
-            if cleaned_line:
+            if cleaned_line := line.strip():
                 return cleaned_line
         return ""
 

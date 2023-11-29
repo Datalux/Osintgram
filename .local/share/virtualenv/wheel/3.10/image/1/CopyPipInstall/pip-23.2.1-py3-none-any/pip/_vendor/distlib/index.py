@@ -44,7 +44,7 @@ class PackageIndex(object):
         self.read_configuration()
         scheme, netloc, path, params, query, frag = urlparse(self.url)
         if params or query or frag or scheme not in ('http', 'https'):
-            raise DistlibException('invalid repository: %s' % self.url)
+            raise DistlibException(f'invalid repository: {self.url}')
         self.password_handler = None
         self.ssl_verifier = None
         self.gpg = None
@@ -139,10 +139,10 @@ class PackageIndex(object):
                 break
             s = s.decode('utf-8').rstrip()
             outbuf.append(s)
-            logger.debug('%s: %s' % (name, s))
+            logger.debug(f'{name}: {s}')
         stream.close()
 
-    def get_sign_command(self, filename, signer, sign_password, keystore=None):  # pragma: no cover
+    def get_sign_command(self, filename, signer, sign_password, keystore=None):    # pragma: no cover
         """
         Return a suitable command for signing a file.
 
@@ -164,7 +164,7 @@ class PackageIndex(object):
         if sign_password is not None:
             cmd.extend(['--batch', '--passphrase-fd', '0'])
         td = tempfile.mkdtemp()
-        sf = os.path.join(td, os.path.basename(filename) + '.asc')
+        sf = os.path.join(td, f'{os.path.basename(filename)}.asc')
         cmd.extend(['--detach-sign', '--armor', '--local-user',
                     signer, '--output', sf, filename])
         logger.debug('invoking: %s', ' '.join(cmd))
@@ -253,7 +253,7 @@ class PackageIndex(object):
         """
         self.check_credentials()
         if not os.path.exists(filename):
-            raise DistlibException('not found: %s' % filename)
+            raise DistlibException(f'not found: {filename}')
         metadata.validate()
         d = metadata.todict()
         sig_file = None
@@ -393,7 +393,7 @@ class PackageIndex(object):
             else:
                 hasher = 'md5'
             digester = getattr(hashlib, hasher)()
-            logger.debug('Digest specified: %s' % digest)
+            logger.debug(f'Digest specified: {digest}')
         # The following code is equivalent to urlretrieve.
         # We need to do it this way so that we can compute the
         # digest of the file as we go.
@@ -404,11 +404,9 @@ class PackageIndex(object):
             try:
                 headers = sfp.info()
                 blocksize = 8192
-                size = -1
                 read = 0
                 blocknum = 0
-                if "content-length" in headers:
-                    size = int(headers["Content-Length"])
+                size = int(headers["Content-Length"]) if "content-length" in headers else -1
                 if reporthook:
                     reporthook(blocknum, blocksize, size)
                 while True:
@@ -474,19 +472,27 @@ class PackageIndex(object):
                 values = [values]
 
             for v in values:
-                parts.extend((
-                    b'--' + boundary,
-                    ('Content-Disposition: form-data; name="%s"' %
-                     k).encode('utf-8'),
-                    b'',
-                    v.encode('utf-8')))
+                parts.extend(
+                    (
+                        b'--' + boundary,
+                        f'Content-Disposition: form-data; name="{k}"'.encode(
+                            'utf-8'
+                        ),
+                        b'',
+                        v.encode('utf-8'),
+                    )
+                )
         for key, filename, value in files:
-            parts.extend((
-                b'--' + boundary,
-                ('Content-Disposition: form-data; name="%s"; filename="%s"' %
-                 (key, filename)).encode('utf-8'),
-                b'',
-                value))
+            parts.extend(
+                (
+                    b'--' + boundary,
+                    f'Content-Disposition: form-data; name="{key}"; filename="{filename}"'.encode(
+                        'utf-8'
+                    ),
+                    b'',
+                    value,
+                )
+            )
 
         parts.extend((b'--' + boundary + b'--', b''))
 
