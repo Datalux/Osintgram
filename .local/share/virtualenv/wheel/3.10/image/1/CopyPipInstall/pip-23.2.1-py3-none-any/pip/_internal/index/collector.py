@@ -57,10 +57,14 @@ def _match_vcs_scheme(url: str) -> Optional[str]:
 
     Returns the matched VCS scheme, or None if there's no match.
     """
-    for scheme in vcs.schemes:
-        if url.lower().startswith(scheme) and url[len(scheme)] in "+:":
-            return scheme
-    return None
+    return next(
+        (
+            scheme
+            for scheme in vcs.schemes
+            if url.lower().startswith(scheme) and url[len(scheme)] in "+:"
+        ),
+        None,
+    )
 
 
 class _NotAPIContent(Exception):
@@ -182,8 +186,7 @@ def _get_encoding_from_headers(headers: ResponseHeaders) -> Optional[str]:
     if headers and "Content-Type" in headers:
         m = email.message.Message()
         m["content-type"] = headers["Content-Type"]
-        charset = m.get_param("charset")
-        if charset:
+        if charset := m.get_param("charset"):
             return str(charset)
     return None
 
@@ -304,10 +307,7 @@ class HTMLLinkParser(HTMLParser):
             self.anchors.append(dict(attrs))
 
     def get_href(self, attrs: List[Tuple[str, Optional[str]]]) -> Optional[str]:
-        for name, value in attrs:
-            if name == "href":
-                return value
-        return None
+        return next((value for name, value in attrs if name == "href"), None)
 
 
 def _handle_get_simple_fail(
@@ -336,9 +336,7 @@ def _make_index_content(
 def _get_index_content(link: Link, *, session: PipSession) -> Optional["IndexContent"]:
     url = link.url.split("#", 1)[0]
 
-    # Check for VCS schemes that do not support lookup as web pages.
-    vcs_scheme = _match_vcs_scheme(url)
-    if vcs_scheme:
+    if vcs_scheme := _match_vcs_scheme(url):
         logger.warning(
             "Cannot look at %s URL %s because it does not support lookup as web pages.",
             vcs_scheme,
@@ -382,8 +380,7 @@ def _get_index_content(link: Link, *, session: PipSession) -> Optional["IndexCon
     except RetryError as exc:
         _handle_get_simple_fail(link, exc)
     except SSLError as exc:
-        reason = "There was a problem confirming the ssl certificate: "
-        reason += str(exc)
+        reason = f"There was a problem confirming the ssl certificate: {str(exc)}"
         _handle_get_simple_fail(link, reason, meth=logger.info)
     except requests.ConnectionError as exc:
         _handle_get_simple_fail(link, f"connection error: {exc}")
@@ -444,11 +441,10 @@ class LinkCollector:
             index_urls=index_urls,
             no_index=options.no_index,
         )
-        link_collector = LinkCollector(
+        return LinkCollector(
             session=session,
             search_scope=search_scope,
         )
-        return link_collector
 
     @property
     def find_links(self) -> List[str]:

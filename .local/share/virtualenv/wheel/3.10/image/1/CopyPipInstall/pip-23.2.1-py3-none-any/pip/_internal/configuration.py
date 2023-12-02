@@ -50,17 +50,12 @@ logger = getLogger(__name__)
 def _normalize_name(name: str) -> str:
     """Make a name consistent regardless of source (environment or file)"""
     name = name.lower().replace("_", "-")
-    if name.startswith("--"):
-        name = name[2:]  # only prefer long opts
-    return name
+    return name.removeprefix("--")
 
 
 def _disassemble_key(name: str) -> List[str]:
     if "." not in name:
-        error_message = (
-            "Key does not contain dot separated section and key. "
-            "Perhaps you wanted to use 'global.{}' instead?"
-        ).format(name)
+        error_message = f"Key does not contain dot separated section and key. Perhaps you wanted to use 'global.{name}' instead?"
         raise ConfigurationError(error_message)
     return name.split(".", 1)
 
@@ -103,9 +98,7 @@ class Configuration:
 
         if load_only is not None and load_only not in VALID_LOAD_ONLY:
             raise ConfigurationError(
-                "Got invalid value for load_only - should be one of {}".format(
-                    ", ".join(map(repr, VALID_LOAD_ONLY))
-                )
+                f'Got invalid value for load_only - should be one of {", ".join(map(repr, VALID_LOAD_ONLY))}'
             )
         self.isolated = isolated
         self.load_only = load_only
@@ -244,7 +237,7 @@ class Configuration:
     def _load_config_files(self) -> None:
         """Loads configuration from configuration files"""
         config_files = dict(self.iter_config_files())
-        if config_files[kinds.ENV][0:1] == [os.devnull]:
+        if config_files[kinds.ENV][:1] == [os.devnull]:
             logger.debug(
                 "Skipping loading configuration files due to "
                 "environment's PIP_CONFIG_FILE being os.devnull"
@@ -311,7 +304,7 @@ class Configuration:
         """
         normalized = {}
         for name, val in items:
-            key = section + "." + _normalize_name(name)
+            key = f"{section}.{_normalize_name(name)}"
             normalized[key] = val
         return normalized
 
@@ -361,15 +354,14 @@ class Configuration:
     def _get_parser_to_modify(self) -> Tuple[str, RawConfigParser]:
         # Determine which parser to modify
         assert self.load_only
-        parsers = self._parsers[self.load_only]
-        if not parsers:
+        if parsers := self._parsers[self.load_only]:
+            # Use the highest priority parser.
+            return parsers[-1]
+        else:
             # This should not happen if everything works correctly.
             raise ConfigurationError(
                 "Fatal Internal error [id=2]. Please report as a bug."
             )
-
-        # Use the highest priority parser.
-        return parsers[-1]
 
     # XXX: This is patched in the tests.
     def _mark_as_modified(self, fname: str, parser: RawConfigParser) -> None:

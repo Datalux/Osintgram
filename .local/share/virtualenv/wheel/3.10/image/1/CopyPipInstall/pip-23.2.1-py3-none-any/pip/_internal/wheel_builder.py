@@ -68,11 +68,7 @@ def _should_build(
     if not req.source_dir:
         return False
 
-    if req.editable:
-        # we only build PEP 660 editable requirements
-        return req.supports_pyproject_editable()
-
-    return True
+    return req.supports_pyproject_editable() if req.editable else True
 
 
 def should_build_for_wheel_command(
@@ -106,17 +102,12 @@ def _should_cache(
         assert req.source_dir
         vcs_backend = vcs.get_backend_for_scheme(req.link.scheme)
         assert vcs_backend
-        if vcs_backend.is_immutable_rev_checkout(req.link.url, req.source_dir):
-            return True
-        return False
-
+        return bool(
+            vcs_backend.is_immutable_rev_checkout(req.link.url, req.source_dir)
+        )
     assert req.link
     base, ext = req.link.splitext()
-    if _contains_egg_info(base):
-        return True
-
-    # Otherwise, do not cache.
-    return False
+    return bool(_contains_egg_info(base))
 
 
 def _get_cache_dir(
@@ -317,15 +308,14 @@ def build(
         for req in requirements:
             assert req.name
             cache_dir = _get_cache_dir(req, wheel_cache)
-            wheel_file = _build_one(
+            if wheel_file := _build_one(
                 req,
                 cache_dir,
                 verify,
                 build_options,
                 global_options,
                 req.editable and req.permit_editable_wheels,
-            )
-            if wheel_file:
+            ):
                 # Record the download origin in the cache
                 if req.download_info is not None:
                     # download_info is guaranteed to be set because when we build an

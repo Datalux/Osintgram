@@ -55,42 +55,32 @@ class PrettyHelpFormatter(optparse.IndentedHelpFormatter):
         return "".join(opts)
 
     def format_heading(self, heading: str) -> str:
-        if heading == "Options":
-            return ""
-        return heading + ":\n"
+        return "" if heading == "Options" else heading + ":\n"
 
     def format_usage(self, usage: str) -> str:
         """
         Ensure there is only one newline between usage and the first heading
         if there is no description.
         """
-        msg = "\nUsage: {}\n".format(self.indent_lines(textwrap.dedent(usage), "  "))
-        return msg
+        return f'\nUsage: {self.indent_lines(textwrap.dedent(usage), "  ")}\n'
 
     def format_description(self, description: str) -> str:
         # leave full control over description to us
-        if description:
-            if hasattr(self.parser, "main"):
-                label = "Commands"
-            else:
-                label = "Description"
-            # some doc strings have initial newlines, some don't
-            description = description.lstrip("\n")
-            # some doc strings have final newlines and spaces, some don't
-            description = description.rstrip()
-            # dedent, then reindent
-            description = self.indent_lines(textwrap.dedent(description), "  ")
-            description = f"{label}:\n{description}\n"
-            return description
-        else:
+        if not description:
             return ""
+        label = "Commands" if hasattr(self.parser, "main") else "Description"
+        # some doc strings have initial newlines, some don't
+        description = description.lstrip("\n")
+        # some doc strings have final newlines and spaces, some don't
+        description = description.rstrip()
+        # dedent, then reindent
+        description = self.indent_lines(textwrap.dedent(description), "  ")
+        description = f"{label}:\n{description}\n"
+        return description
 
     def format_epilog(self, epilog: str) -> str:
         # leave full control over epilog to us
-        if epilog:
-            return epilog
-        else:
-            return ""
+        return epilog if epilog else ""
 
     def indent_lines(self, text: str, indent: str) -> str:
         new_lines = [indent + line for line in text.split("\n")]
@@ -200,8 +190,7 @@ class ConfigOptionParser(CustomOptionParser):
 
         # Yield each group in their override order
         for section in override_order:
-            for key, val in section_items[section]:
-                yield key, val
+            yield from section_items[section]
 
     def _update_defaults(self, defaults: Dict[str, Any]) -> Dict[str, Any]:
         """Updates the given defaults with values from the config files and
@@ -214,7 +203,7 @@ class ConfigOptionParser(CustomOptionParser):
         # Then set the options with those values
         for key, val in self._get_ordered_configuration_items():
             # '--' because configuration supports only long names
-            option = self.get_option("--" + key)
+            option = self.get_option(f"--{key}")
 
             # Ignore options not present in this parser. E.g. non-globals put
             # in [global] by users that want them to apply to all applicable
@@ -229,9 +218,7 @@ class ConfigOptionParser(CustomOptionParser):
                     val = strtobool(val)
                 except ValueError:
                     self.error(
-                        "{} is not a valid value for {} option, "  # noqa
-                        "please specify a boolean value like yes/no, "
-                        "true/false or 1/0 instead.".format(val, key)
+                        f"{val} is not a valid value for {key} option, please specify a boolean value like yes/no, true/false or 1/0 instead."
                     )
             elif option.action == "count":
                 with suppress(ValueError):
@@ -240,10 +227,7 @@ class ConfigOptionParser(CustomOptionParser):
                     val = int(val)
                 if not isinstance(val, int) or val < 0:
                     self.error(
-                        "{} is not a valid value for {} option, "  # noqa
-                        "please instead specify either a non-negative integer "
-                        "or a boolean value like yes/no or false/true "
-                        "which is equivalent to 1/0.".format(val, key)
+                        f"{val} is not a valid value for {key} option, please instead specify either a non-negative integer or a boolean value like yes/no or false/true which is equivalent to 1/0."
                     )
             elif option.action == "append":
                 val = val.split()

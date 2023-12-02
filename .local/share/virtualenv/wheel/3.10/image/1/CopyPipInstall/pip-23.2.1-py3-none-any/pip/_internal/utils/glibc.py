@@ -82,7 +82,4 @@ def libc_ver() -> Tuple[str, str]:
     in case the lookup fails.
     """
     glibc_version = glibc_version_string()
-    if glibc_version is None:
-        return ("", "")
-    else:
-        return ("glibc", glibc_version)
+    return ("", "") if glibc_version is None else ("glibc", glibc_version)

@@ -164,14 +164,14 @@ class SeparateBodyFileCache(_FileCacheMixin, SeparateBodyBaseCache):
     """
 
     def get_body(self, key):
-        name = self._fn(key) + ".body"
+        name = f"{self._fn(key)}.body"
         try:
             return open(name, "rb")
         except FileNotFoundError:
             return None
 
     def set_body(self, key, body):
-        name = self._fn(key) + ".body"
+        name = f"{self._fn(key)}.body"
         self._write(name, body)
 
     def delete(self, key):

@@ -110,11 +110,7 @@ def search_packages_info(query: List[str]) -> Generator[_PackageInfo, None, None
             entry_points = []
 
         files_iter = dist.iter_declared_entries()
-        if files_iter is None:
-            files: Optional[List[str]] = None
-        else:
-            files = sorted(files_iter)
-
+        files = None if files_iter is None else sorted(files_iter)
         metadata = dist.metadata
 
         yield _PackageInfo(

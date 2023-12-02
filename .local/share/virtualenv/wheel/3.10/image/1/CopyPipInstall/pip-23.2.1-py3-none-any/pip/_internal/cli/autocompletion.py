@@ -28,12 +28,9 @@ def autocomplete() -> None:
     subcommands = list(commands_dict)
     options = []
 
-    # subcommand
-    subcommand_name: Optional[str] = None
-    for word in cwords:
-        if word in subcommands:
-            subcommand_name = word
-            break
+    subcommand_name: Optional[str] = next(
+        (word for word in cwords if word in subcommands), None
+    )
     # subcommand options
     if subcommand_name is not None:
         # special case: 'help' subcommand has no options
@@ -47,14 +44,12 @@ def autocomplete() -> None:
         if should_list_installed:
             env = get_default_environment()
             lc = current.lower()
-            installed = [
+            if installed := [
                 dist.canonical_name
                 for dist in env.iter_installed_distributions(local_only=True)
                 if dist.canonical_name.startswith(lc)
                 and dist.canonical_name not in cwords[1:]
-            ]
-            # if there are no dists installed, fall back to option completion
-            if installed:
+            ]:
                 for dist in installed:
                     print(dist)
                 sys.exit(1)
@@ -71,29 +66,25 @@ def autocomplete() -> None:
 
         for opt in subcommand.parser.option_list_all:
             if opt.help != optparse.SUPPRESS_HELP:
-                for opt_str in opt._long_opts + opt._short_opts:
-                    options.append((opt_str, opt.nargs))
-
+                options.extend(
+                    (opt_str, opt.nargs)
+                    for opt_str in opt._long_opts + opt._short_opts
+                )
         # filter out previously specified options from available options
         prev_opts = [x.split("=")[0] for x in cwords[1 : cword - 1]]
         options = [(x, v) for (x, v) in options if x not in prev_opts]
         # filter options by current input
         options = [(k, v) for k, v in options if k.startswith(current)]
-        # get completion type given cwords and available subcommand options
-        completion_type = get_path_completion_type(
+        if completion_type := get_path_completion_type(
             cwords,
             cword,
             subcommand.parser.option_list_all,
-        )
-        # get completion files and directories if ``completion_type`` is
-        # ``<file>``, ``<dir>`` or ``<path>``
-        if completion_type:
+        ):
             paths = auto_complete_paths(current, completion_type)
             options = [(path, 0) for path in paths]
         for option in options:
             opt_label = option[0]
-            # append '=' to options which require args
-            if option[1] and option[0][:2] == "--":
+            if option[1] and opt_label[:2] == "--":
                 opt_label += "="
             print(opt_label)
     else:
@@ -106,11 +97,10 @@ def autocomplete() -> None:
             for opt in flattened_opts:
                 if opt.help != optparse.SUPPRESS_HELP:
                     subcommands += opt._long_opts + opt._short_opts
-        else:
-            # get completion type given cwords and all available options
-            completion_type = get_path_completion_type(cwords, cword, flattened_opts)
-            if completion_type:
-                subcommands = list(auto_complete_paths(current, completion_type))
+        elif completion_type := get_path_completion_type(
+            cwords, cword, flattened_opts
+        ):
+            subcommands = list(auto_complete_paths(current, completion_type))
 
         print(" ".join([x for x in subcommands if x.startswith(current)]))
     sys.exit(1)

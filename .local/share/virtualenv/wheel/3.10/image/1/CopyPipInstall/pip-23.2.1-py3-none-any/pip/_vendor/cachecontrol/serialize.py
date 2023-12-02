@@ -43,21 +43,20 @@ class Serializer(object):
         #       doesn't know the difference. Forcing these to unicode will be
         #       enough to have msgpack know the difference.
         data = {
-            u"response": {
-                u"body": body,  # Empty bytestring if body is stored separately
-                u"headers": dict(
-                    (text_type(k), text_type(v)) for k, v in response.headers.items()
-                ),
+            "response": {
+                u"body": body,
+                u"headers": {
+                    text_type(k): text_type(v) for k, v in response.headers.items()
+                },
                 u"status": response.status,
                 u"version": response.version,
                 u"reason": text_type(response.reason),
                 u"strict": response.strict,
                 u"decode_content": response.decode_content,
-            }
+            },
+            "vary": {},
         }
 
-        # Construct our vary headers
-        data[u"vary"] = {}
         if u"vary" in response_headers:
             varied_headers = response_headers[u"vary"].split(",")
             for header in varied_headers:
@@ -92,7 +91,7 @@ class Serializer(object):
 
         # Dispatch to the actual load method for the given version
         try:
-            return getattr(self, "_loads_v{}".format(ver))(request, data, body_file)
+            return getattr(self, f"_loads_v{ver}")(request, data, body_file)
 
         except AttributeError:
             # This is a version we don't have a loads function for, so we'll
@@ -125,10 +124,7 @@ class Serializer(object):
         cached["response"]["headers"] = headers
 
         try:
-            if body_file is None:
-                body = io.BytesIO(body_raw)
-            else:
-                body = body_file
+            body = io.BytesIO(body_raw) if body_file is None else body_file
         except TypeError:
             # This can happen if cachecontrol serialized to v1 format (pickle)
             # using Python 2. A Python 2 str(byte string) will be unpickled as
@@ -163,15 +159,15 @@ class Serializer(object):
 
         # We need to decode the items that we've base64 encoded
         cached["response"]["body"] = _b64_decode_bytes(cached["response"]["body"])
-        cached["response"]["headers"] = dict(
-            (_b64_decode_str(k), _b64_decode_str(v))
+        cached["response"]["headers"] = {
+            _b64_decode_str(k): _b64_decode_str(v)
             for k, v in cached["response"]["headers"].items()
-        )
+        }
         cached["response"]["reason"] = _b64_decode_str(cached["response"]["reason"])
-        cached["vary"] = dict(
-            (_b64_decode_str(k), _b64_decode_str(v) if v is not None else v)
+        cached["vary"] = {
+            _b64_decode_str(k): _b64_decode_str(v) if v is not None else v
             for k, v in cached["vary"].items()
-        )
+        }
 
         return self.prepare_response(request, cached, body_file)
 

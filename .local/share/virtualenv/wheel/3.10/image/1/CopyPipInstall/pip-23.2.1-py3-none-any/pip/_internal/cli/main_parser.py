@@ -52,16 +52,15 @@ def identify_python_interpreter(python: str) -> Optional[str]:
     # If it's a directory, assume it's a virtual environment and
     # look for the environment's Python executable.
     if os.path.exists(python):
-        if os.path.isdir(python):
-            # bin/python for Unix, Scripts/python.exe for Windows
-            # Try both in case of odd cases like cygwin.
-            for exe in ("bin/python", "Scripts/python.exe"):
-                py = os.path.join(python, exe)
-                if os.path.exists(py):
-                    return py
-        else:
+        if not os.path.isdir(python):
             return python
 
+        # bin/python for Unix, Scripts/python.exe for Windows
+        # Try both in case of odd cases like cygwin.
+        for exe in ("bin/python", "Scripts/python.exe"):
+            py = os.path.join(python, exe)
+            if os.path.exists(py):
+                return py
     # Could not find the interpreter specified
     return None
 

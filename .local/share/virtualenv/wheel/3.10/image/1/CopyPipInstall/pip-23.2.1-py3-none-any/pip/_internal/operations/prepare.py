@@ -326,11 +326,7 @@ class RequirementPreparer:
         # TODO: this check is now probably dead code
         if is_installable_dir(req.source_dir):
             raise PreviousBuildDirError(
-                "pip can't proceed with requirements '{}' due to a"
-                "pre-existing build directory ({}). This is likely "
-                "due to a previous installation that failed . pip is "
-                "being responsible and not assuming it can delete this. "
-                "Please delete it and try again.".format(req, req.source_dir)
+                f"pip can't proceed with requirements '{req}' due to apre-existing build directory ({req.source_dir}). This is likely due to a previous installation that failed . pip is being responsible and not assuming it can delete this. Please delete it and try again."
             )
 
     def _get_linked_req_hashes(self, req: InstallRequirement) -> Hashes:
@@ -616,8 +612,7 @@ class RequirementPreparer:
                 )
             except NetworkConnectionError as exc:
                 raise InstallationError(
-                    "Could not install requirement {} because of HTTP "
-                    "error {} for URL {}".format(req, exc, link)
+                    f"Could not install requirement {req} because of HTTP error {exc} for URL {link}"
                 )
         else:
             file_path = self._downloaded[link.url]
@@ -650,14 +645,13 @@ class RequirementPreparer:
         if local_file:
             req.local_file_path = local_file.path
 
-        dist = _get_prepared_distribution(
+        return _get_prepared_distribution(
             req,
             self.build_tracker,
             self.finder,
             self.build_isolation,
             self.check_build_deps,
         )
-        return dist
 
     def save_linked_requirement(self, req: InstallRequirement) -> None:
         assert self.download_dir is not None
@@ -697,9 +691,7 @@ class RequirementPreparer:
         with indent_log():
             if self.require_hashes:
                 raise InstallationError(
-                    "The editable requirement {} cannot be installed when "
-                    "requiring hashes, because there is no single file to "
-                    "hash.".format(req)
+                    f"The editable requirement {req} cannot be installed when requiring hashes, because there is no single file to hash."
                 )
             req.ensure_has_source_dir(self.src_dir)
             req.update_editable()
@@ -725,10 +717,9 @@ class RequirementPreparer:
     ) -> BaseDistribution:
         """Prepare an already-installed requirement."""
         assert req.satisfied_by, "req should have been satisfied but isn't"
-        assert skip_reason is not None, (
-            "did not get skip reason skipped but req.satisfied_by "
-            "is set to {}".format(req.satisfied_by)
-        )
+        assert (
+            skip_reason is not None
+        ), f"did not get skip reason skipped but req.satisfied_by is set to {req.satisfied_by}"
         logger.info(
             "Requirement %s: %s (%s)", skip_reason, req, req.satisfied_by.version
         )

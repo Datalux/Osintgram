@@ -54,7 +54,7 @@ def _strip_extras(path: str) -> Tuple[str, Optional[str]]:
 def convert_extras(extras: Optional[str]) -> Set[str]:
     if not extras:
         return set()
-    return get_requirement("placeholder" + extras.lower()).extras
+    return get_requirement(f"placeholder{extras.lower()}").extras
 
 
 def parse_editable(editable_req: str) -> Tuple[Optional[str], str, Set[str]]:
@@ -83,7 +83,7 @@ def parse_editable(editable_req: str) -> Tuple[Optional[str], str, Set[str]]:
             return (
                 package_name,
                 url_no_extras,
-                get_requirement("placeholder" + extras.lower()).extras,
+                get_requirement(f"placeholder{extras.lower()}").extras,
             )
         else:
             return package_name, url_no_extras, set()
@@ -103,13 +103,12 @@ def parse_editable(editable_req: str) -> Tuple[Optional[str], str, Set[str]]:
             f"(beginning with {backends})."
         )
 
-    package_name = link.egg_fragment
-    if not package_name:
+    if package_name := link.egg_fragment:
+        return package_name, url, set()
+    else:
         raise InstallationError(
-            "Could not detect requirement name for '{}', please specify one "
-            "with #egg=your_package_name".format(editable_req)
+            f"Could not detect requirement name for '{editable_req}', please specify one with #egg=your_package_name"
         )
-    return package_name, url, set()
 
 
 def check_first_requirement_in_file(filename: str) -> None:
@@ -244,9 +243,7 @@ def _looks_like_path(name: str) -> bool:
         return True
     if os.path.altsep is not None and os.path.altsep in name:
         return True
-    if name.startswith("."):
-        return True
-    return False
+    return bool(name.startswith("."))
 
 
 def _get_url_from_path(path: str, name: str) -> Optional[str]:
@@ -284,17 +281,11 @@ def _get_url_from_path(path: str, name: str) -> Optional[str]:
 
 
 def parse_req_from_line(name: str, line_source: Optional[str]) -> RequirementParts:
-    if is_url(name):
-        marker_sep = "; "
-    else:
-        marker_sep = ";"
+    marker_sep = "; " if is_url(name) else ";"
     if marker_sep in name:
         name, markers_as_string = name.split(marker_sep, 1)
         markers_as_string = markers_as_string.strip()
-        if not markers_as_string:
-            markers = None
-        else:
-            markers = Marker(markers_as_string)
+        markers = None if not markers_as_string else Marker(markers_as_string)
     else:
         markers = None
     name = name.strip()
@@ -332,9 +323,7 @@ def parse_req_from_line(name: str, line_source: Optional[str]) -> RequirementPar
     extras = convert_extras(extras_as_string)
 
     def with_source(text: str) -> str:
-        if not line_source:
-            return text
-        return f"{text} (from {line_source})"
+        return text if not line_source else f"{text} (from {line_source})"
 
     def _parse_req_string(req_as_string: str) -> Requirement:
         try:
@@ -343,8 +332,8 @@ def parse_req_from_line(name: str, line_source: Optional[str]) -> RequirementPar
             if os.path.sep in req_as_string:
                 add_msg = "It looks like a path."
                 add_msg += deduce_helpful_msg(req_as_string)
-            elif "=" in req_as_string and not any(
-                op in req_as_string for op in operators
+            elif "=" in req_as_string and all(
+                op not in req_as_string for op in operators
             ):
                 add_msg = "= is not a valid operator. Did you mean == ?"
             else:
@@ -365,11 +354,7 @@ def parse_req_from_line(name: str, line_source: Optional[str]) -> RequirementPar
                     raise InstallationError(msg)
         return req
 
-    if req_as_string is not None:
-        req: Optional[Requirement] = _parse_req_string(req_as_string)
-    else:
-        req = None
-
+    req = _parse_req_string(req_as_string) if req_as_string is not None else None
     return RequirementParts(req, link, markers, extras)
 
 
@@ -434,9 +419,7 @@ def install_req_from_req_string(
     ):
         # Explicitly disallow pypi packages that depend on external urls
         raise InstallationError(
-            "Packages installed from PyPI cannot depend on packages "
-            "which are not also hosted on PyPI.\n"
-            "{} depends on {} ".format(comes_from.name, req)
+            f"Packages installed from PyPI cannot depend on packages which are not also hosted on PyPI.\n{comes_from.name} depends on {req} "
         )
 
     return InstallRequirement(
@@ -455,8 +438,8 @@ def install_req_from_parsed_requirement(
     user_supplied: bool = False,
     config_settings: Optional[Dict[str, Union[str, List[str]]]] = None,
 ) -> InstallRequirement:
-    if parsed_req.is_editable:
-        req = install_req_from_editable(
+    return (
+        install_req_from_editable(
             parsed_req.requirement,
             comes_from=parsed_req.comes_from,
             use_pep517=use_pep517,
@@ -465,9 +448,8 @@ def install_req_from_parsed_requirement(
             user_supplied=user_supplied,
             config_settings=config_settings,
         )
-
-    else:
-        req = install_req_from_line(
+        if parsed_req.is_editable
+        else install_req_from_line(
             parsed_req.requirement,
             comes_from=parsed_req.comes_from,
             use_pep517=use_pep517,
@@ -478,14 +460,16 @@ def install_req_from_parsed_requirement(
                 else []
             ),
             hash_options=(
-                parsed_req.options.get("hashes", {}) if parsed_req.options else {}
+                parsed_req.options.get("hashes", {})
+                if parsed_req.options
+                else {}
             ),
             constraint=parsed_req.constraint,
             line_source=parsed_req.line_source,
             user_supplied=user_supplied,
             config_settings=config_settings,
         )
-    return req
+    )
 
 
 def install_req_from_link_and_ireq(

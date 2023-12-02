@@ -9,12 +9,10 @@ from pip._internal.vcs import vcs
 def direct_url_as_pep440_direct_reference(direct_url: DirectUrl, name: str) -> str:
     """Convert a DirectUrl to a pip requirement string."""
     direct_url.validate()  # if invalid, this is a pip bug
-    requirement = name + " @ "
+    requirement = f"{name} @ "
     fragments = []
     if isinstance(direct_url.info, VcsInfo):
-        requirement += "{}+{}@{}".format(
-            direct_url.info.vcs, direct_url.url, direct_url.info.commit_id
-        )
+        requirement += f"{direct_url.info.vcs}+{direct_url.url}@{direct_url.info.commit_id}"
     elif isinstance(direct_url.info, ArchiveInfo):
         requirement += direct_url.url
         if direct_url.info.hash:
@@ -23,7 +21,7 @@ def direct_url_as_pep440_direct_reference(direct_url: DirectUrl, name: str) -> s
         assert isinstance(direct_url.info, DirInfo)
         requirement += direct_url.url
     if direct_url.subdirectory:
-        fragments.append("subdirectory=" + direct_url.subdirectory)
+        fragments.append(f"subdirectory={direct_url.subdirectory}")
     if fragments:
         requirement += "#" + "&".join(fragments)
     return requirement
@@ -76,10 +74,7 @@ def direct_url_from_link(
             subdirectory=link.subdirectory_fragment,
         )
     else:
-        hash = None
-        hash_name = link.hash_name
-        if hash_name:
-            hash = f"{hash_name}={link.hash}"
+        hash = f"{hash_name}={link.hash}" if (hash_name := link.hash_name) else None
         return DirectUrl(
             url=link.url_without_fragment,
             info=ArchiveInfo(hash=hash),

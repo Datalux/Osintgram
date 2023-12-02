@@ -176,10 +176,10 @@ class DistributionPath(object):
                 else:
                     self._cache_egg.add(dist)
 
-            if gen_dist:
-                self._cache.generated = True
-            if gen_egg:
-                self._cache_egg.generated = True
+        if gen_dist:
+            self._cache.generated = True
+        if gen_egg:
+            self._cache_egg.generated = True
 
     @classmethod
     def distinfo_dirname(cls, name, version):
@@ -213,17 +213,13 @@ class DistributionPath(object):
                 :class:`EggInfoDistribution` instances
         """
         if not self._cache_enabled:
-            for dist in self._yield_distributions():
-                yield dist
+            yield from self._yield_distributions()
         else:
             self._generate_cache()
 
-            for dist in self._cache.path.values():
-                yield dist
-
+            yield from self._cache.path.values()
             if self._include_egg:
-                for dist in self._cache_egg.path.values():
-                    yield dist
+                yield from self._cache_egg.path.values()
 
     def get_distribution(self, name):
         """
@@ -268,7 +264,7 @@ class DistributionPath(object):
         matcher = None
         if version is not None:
             try:
-                matcher = self._scheme.matcher('%s (%s)' % (name, version))
+                matcher = self._scheme.matcher(f'{name} ({version})')
             except ValueError:
                 raise DistlibException('invalid name or version: %r, %r' %
                                       (name, version))
@@ -287,10 +283,9 @@ class DistributionPath(object):
                         if p_name == name:
                             yield dist
                             break
-                    else:
-                        if p_name == name and matcher.match(p_ver):
-                            yield dist
-                            break
+                    elif p_name == name and matcher.match(p_ver):
+                        yield dist
+                        break
 
     def get_file_path(self, name, relative_path):
         """
@@ -312,12 +307,10 @@ class DistributionPath(object):
             r = dist.exports
             if category in r:
                 d = r[category]
-                if name is not None:
-                    if name in d:
-                        yield d[name]
-                else:
-                    for v in d.values():
-                        yield v
+                if name is None:
+                    yield from d.values()
+                elif name in d:
+                    yield d[name]
 
 
 class Distribution(object):
@@ -369,7 +362,7 @@ class Distribution(object):
         """
         A utility property which displays the name and version in parentheses.
         """
-        return '%s (%s)' % (self.name, self.version)
+        return f'{self.name} ({self.version})'
 
     @property
     def provides(self):
@@ -378,7 +371,7 @@ class Distribution(object):
         :return: A set of "name (version)" strings.
         """
         plist = self.metadata.provides
-        s = '%s (%s)' % (self.name, self.version)
+        s = f'{self.name} ({self.version})'
         if s not in plist:
             plist.append(s)
         return plist
@@ -438,22 +431,17 @@ class Distribution(object):
             p_name, p_ver = parse_name_and_version(p)
             if p_name != name:
                 continue
-            try:
+            with contextlib.suppress(UnsupportedVersionError):
                 result = matcher.match(p_ver)
                 break
-            except UnsupportedVersionError:
-                pass
         return result
 
     def __repr__(self):
         """
         Return a textual representation of this instance,
         """
-        if self.source_url:
-            suffix = ' [%s]' % self.source_url
-        else:
-            suffix = ''
-        return '<Distribution %s (%s)%s>' % (self.name, self.version, suffix)
+        suffix = f' [{self.source_url}]' if self.source_url else ''
+        return f'<Distribution {self.name} ({self.version}){suffix}>'
 
     def __eq__(self, other):
         """
@@ -463,13 +451,15 @@ class Distribution(object):
                       version and source_url.
         :return: True if it is the same, else False.
         """
-        if type(other) is not type(self):
-            result = False
-        else:
-            result = (self.name == other.name and
-                      self.version == other.version and
-                      self.source_url == other.source_url)
-        return result
+        return (
+            False
+            if type(other) is not type(self)
+            else (
+                self.name == other.name
+                and self.version == other.version
+                and self.source_url == other.source_url
+            )
+        )
 
     def __hash__(self):
         """
@@ -527,10 +517,10 @@ class BaseInstalledDistribution(Distribution):
             prefix = ''
         else:
             hasher = getattr(hashlib, hasher)
-            prefix = '%s=' % self.hasher
+            prefix = f'{self.hasher}='
         digest = hasher(data).digest()
         digest = base64.urlsafe_b64encode(digest).rstrip(b'=').decode('ascii')
-        return '%s%s' % (prefix, digest)
+        return f'{prefix}{digest}'
 
 
 class InstalledDistribution(BaseInstalledDistribution):
@@ -547,7 +537,7 @@ class InstalledDistribution(BaseInstalledDistribution):
         self.modules = []
         self.finder = finder = resources.finder_for_path(path)
         if finder is None:
-            raise ValueError('finder unavailable for %s' % path)
+            raise ValueError(f'finder unavailable for {path}')
         if env and env._cache_enabled and path in env._cache.path:
             metadata = env._cache.path[path].metadata
         elif metadata is None:
@@ -559,8 +549,7 @@ class InstalledDistribution(BaseInstalledDistribution):
             if r is None:
                 r = finder.find(LEGACY_METADATA_FILENAME)
             if r is None:
-                raise ValueError('no %s found in %s' % (METADATA_FILENAME,
-                                                        path))
+                raise ValueError(f'no {METADATA_FILENAME} found in {path}')
             with contextlib.closing(r.as_stream()) as stream:
                 metadata = Metadata(fileobj=stream, scheme='legacy')
 
@@ -582,7 +571,7 @@ class InstalledDistribution(BaseInstalledDistribution):
             self.name, self.version, self.path)
 
     def __str__(self):
-        return "%s %s" % (self.name, self.version)
+        return f"{self.name} {self.version}"
 
     def _get_records(self):
         """
@@ -599,7 +588,7 @@ class InstalledDistribution(BaseInstalledDistribution):
                 #base_location = os.path.dirname(self.path)
                 #base_location = os.path.abspath(base_location)
                 for row in record_reader:
-                    missing = [None for i in range(len(row), 3)]
+                    missing = [None for _ in range(len(row), 3)]
                     path, checksum, size = row + missing
                     #if not os.path.isabs(path):
                     #    path = path.replace('/', os.sep)
@@ -615,11 +604,11 @@ class InstalledDistribution(BaseInstalledDistribution):
                  of :class:`ExportEntry` instances describing the individual
                  export entries, and keyed by name.
         """
-        result = {}
-        r = self.get_distinfo_resource(EXPORTS_FILENAME)
-        if r:
-            result = self.read_exports()
-        return result
+        return (
+            self.read_exports()
+            if (r := self.get_distinfo_resource(EXPORTS_FILENAME))
+            else {}
+        )
 
     def read_exports(self):
         """
@@ -630,8 +619,7 @@ class InstalledDistribution(BaseInstalledDistribution):
                  export entries.
         """
         result = {}
-        r = self.get_distinfo_resource(EXPORTS_FILENAME)
-        if r:
+        if r := self.get_distinfo_resource(EXPORTS_FILENAME):
             with contextlib.closing(r.as_stream()) as stream:
                 result = read_exports(stream)
         return result
@@ -674,8 +662,7 @@ class InstalledDistribution(BaseInstalledDistribution):
 
         :returns: iterator of (path, hash, size)
         """
-        for result in self._get_records():
-            yield result
+        yield from self._get_records()
 
     def write_installed_files(self, paths, prefix, dry_run=False):
         """
@@ -736,11 +723,7 @@ class InstalledDistribution(BaseInstalledDistribution):
                 if size and actual_size != size:
                     mismatches.append((path, 'size', size, actual_size))
                 elif hash_value:
-                    if '=' in hash_value:
-                        hasher = hash_value.split('=', 1)[0]
-                    else:
-                        hasher = None
-
+                    hasher = hash_value.split('=', 1)[0] if '=' in hash_value else None
                     with open(path, 'rb') as f:
                         actual_hash = self.get_hash(f.read(), hasher)
                         if actual_hash != hash_value:
@@ -791,10 +774,8 @@ class InstalledDistribution(BaseInstalledDistribution):
         for key in ('prefix', 'lib', 'headers', 'scripts', 'data'):
             path = paths[key]
             if os.path.isdir(paths[key]):
-                lines.append('%s=%s' % (key,  path))
-        for ns in paths.get('namespace', ()):
-            lines.append('namespace=%s' % ns)
-
+                lines.append(f'{key}={path}')
+        lines.extend(f'namespace={ns}' for ns in paths.get('namespace', ()))
         with codecs.open(shared_path, 'w', encoding='utf-8') as f:
             f.write('\n'.join(lines))
         return shared_path
@@ -805,7 +786,7 @@ class InstalledDistribution(BaseInstalledDistribution):
                                    '%r at %r' % (path, self.path))
         finder = resources.finder_for_path(self.path)
         if finder is None:
-            raise DistlibException('Unable to get a finder for %s' % self.path)
+            raise DistlibException(f'Unable to get a finder for {self.path}')
         return finder.find(path)
 
     def get_distinfo_file(self, path):
@@ -918,7 +899,7 @@ class EggInfoDistribution(BaseInstalledDistribution):
                     reqs.append(r.name)
                 else:
                     cons = ', '.join('%s%s' % c for c in r.constraints)
-                    reqs.append('%s (%s)' % (r.name, cons))
+                    reqs.append(f'{r.name} ({cons})')
             return reqs
 
         def parse_requires_path(req_path):
@@ -928,11 +909,9 @@ class EggInfoDistribution(BaseInstalledDistribution):
             """
 
             reqs = []
-            try:
+            with contextlib.suppress(IOError):
                 with codecs.open(req_path, 'r', 'utf-8') as fp:
                     reqs = parse_requires_data(fp.read())
-            except IOError:
-                pass
             return reqs
 
         tl_path = tl_data = None
@@ -974,10 +953,7 @@ class EggInfoDistribution(BaseInstalledDistribution):
             if tl_path is not None and os.path.exists(tl_path):
                 with open(tl_path, 'rb') as f:
                     tl_data = f.read().decode('utf-8')
-        if not tl_data:
-            tl_data = []
-        else:
-            tl_data = tl_data.splitlines()
+        tl_data = [] if not tl_data else tl_data.splitlines()
         self.modules = tl_data
         return metadata
 
@@ -986,7 +962,7 @@ class EggInfoDistribution(BaseInstalledDistribution):
             self.name, self.version, self.path)
 
     def __str__(self):
-        return "%s %s" % (self.name, self.version)
+        return f"{self.name} {self.version}"
 
     def check_installed_files(self):
         """
@@ -1143,7 +1119,7 @@ class DependencyGraph(object):
         self.missing.setdefault(distribution, []).append(requirement)
 
     def _repr_dist(self, dist):
-        return '%s %s' % (dist.name, dist.version)
+        return f'{dist.name} {dist.version}'
 
     def repr_node(self, dist, level=1):
         """Prints only a subgraph"""
@@ -1151,7 +1127,7 @@ class DependencyGraph(object):
         for other, label in self.adjacency_list[dist]:
             dist = self._repr_dist(other)
             if label is not None:
-                dist = '%s [%s]' % (dist, label)
+                dist = f'{dist} [{label}]'
             output.append('    ' * level + str(dist))
             suboutput = self.repr_node(other, level + 1)
             subs = suboutput.split('\n')
@@ -1174,18 +1150,18 @@ class DependencyGraph(object):
             if len(adjs) == 0 and not skip_disconnected:
                 disconnected.append(dist)
             for other, label in adjs:
-                if not label is None:
+                if label is not None:
                     f.write('"%s" -> "%s" [label="%s"]\n' %
                             (dist.name, other.name, label))
                 else:
                     f.write('"%s" -> "%s"\n' % (dist.name, other.name))
-        if not skip_disconnected and len(disconnected) > 0:
+        if not skip_disconnected and disconnected:
             f.write('subgraph disconnected {\n')
             f.write('label = "Disconnected"\n')
             f.write('bgcolor = red\n')
 
             for dist in disconnected:
-                f.write('"%s"' % dist.name)
+                f.write(f'"{dist.name}"')
                 f.write('\n')
             f.write('}\n')
         f.write('}\n')
@@ -1199,10 +1175,7 @@ class DependencyGraph(object):
                  circular dependencies and so form a cycle.
         """
         result = []
-        # Make a shallow copy of the adjacency list
-        alist = {}
-        for k, v in self.adjacency_list.items():
-            alist[k] = v[:]
+        alist = {k: v[:] for k, v in self.adjacency_list.items()}
         while True:
             # See what we can remove in this run
             to_remove = []
@@ -1216,16 +1189,16 @@ class DependencyGraph(object):
             # Remove from the adjacency list of others
             for k, v in alist.items():
                 alist[k] = [(d, r) for d, r in v if d not in to_remove]
-            logger.debug('Moving to result: %s',
-                         ['%s (%s)' % (d.name, d.version) for d in to_remove])
+            logger.debug(
+                'Moving to result: %s',
+                [f'{d.name} ({d.version})' for d in to_remove],
+            )
             result.extend(to_remove)
         return result, list(alist.keys())
 
     def __repr__(self):
         """Representation of the graph"""
-        output = []
-        for dist, adjs in self.adjacency_list.items():
-            output.append(self.repr_node(dist))
+        output = [self.repr_node(dist) for dist, adjs in self.adjacency_list.items()]
         return '\n'.join(output)
 
 
@@ -1324,7 +1297,7 @@ def get_required_dists(dists, dist):
 
     req = set()  # required distributions
     todo = graph.adjacency_list[dist]  # list of nodes we should inspect
-    seen = set(t[0] for t in todo) # already added to todo
+    seen = {t[0] for t in todo}
 
     while todo:
         d = todo.pop()[0]

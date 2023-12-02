@@ -245,10 +245,7 @@ class Locator(object):
             logger.debug('%s: version hint in fragment: %r',
                          project_name, frag)
         m = HASHER_HASH.match(frag)
-        if m:
-            algo, digest = m.groups()
-        else:
-            algo, digest = None, None
+        algo, digest = m.groups() if m else (None, None)
         origpath = path
         if path and path[-1] == '/':  # pragma: no cover
             path = path[:-1]
@@ -299,7 +296,7 @@ class Locator(object):
                                 result['python-version'] = pyver
                     break
         if result and algo:
-            result['%s_digest' % algo] = digest
+            result[f'{algo}_digest'] = digest
         return result
 
     def _get_digest(self, info):
@@ -319,7 +316,7 @@ class Locator(object):
                     break
         if not result:
             for algo in ('sha256', 'md5'):
-                key = '%s_digest' % algo
+                key = f'{algo}_digest'
                 if key in info:
                     result = (algo, info[key])
                     break
@@ -335,14 +332,13 @@ class Locator(object):
         version = info.pop('version')
         if version in result:
             dist = result[version]
-            md = dist.metadata
         else:
             dist = make_dist(name, version, scheme=self.scheme)
-            md = dist.metadata
+        md = dist.metadata
         dist.digest = digest = self._get_digest(info)
         url = info['url']
         result['digests'][url] = digest
-        if md.source_url != info['url']:
+        if md.source_url != url:
             md.source_url = self.prefer_url(md.source_url, url)
             result['urls'].setdefault(version, set()).add(url)
         dist.locator = self
@@ -377,17 +373,11 @@ class Locator(object):
                 if k in ('urls', 'digests'):
                     continue
                 try:
-                    if not matcher.match(k):
-                        pass  # logger.debug('%s did not match %r', matcher, k)
-                    else:
+                    if matcher.match(k):
                         if prereleases or not vcls(k).is_prerelease:
                             slist.append(k)
-                        # else:
-                            # logger.debug('skipping pre-release '
-                                         # 'version %s of %s', k, matcher.name)
                 except Exception:  # pragma: no cover
                     logger.warning('error matching %s with %r', matcher, k)
-                    pass # slist.append(k)
             if len(slist) > 1:
                 slist = sorted(slist, key=scheme.key)
             if slist:
@@ -398,11 +388,8 @@ class Locator(object):
             if r.extras:
                 result.extras = r.extras
             result.download_urls = versions.get('urls', {}).get(version, set())
-            d = {}
             sd = versions.get('digests', {})
-            for url in result.download_urls:
-                if url in sd:  # pragma: no cover
-                    d[url] = sd[url]
+            d = {url: sd[url] for url in result.download_urls if url in sd}
             result.digests = d
         self.matcher = None
         return result
@@ -473,7 +460,7 @@ class PyPIJSONLocator(Locator):
 
     def _get_project(self, name):
         result = {'urls': {}, 'digests': {}}
-        url = urljoin(self.base_url, '%s/json' % quote(name))
+        url = urljoin(self.base_url, f'{quote(name)}/json')
         try:
             resp = self.opener.open(url)
             data = resp.read().decode() # for now
@@ -489,7 +476,7 @@ class PyPIJSONLocator(Locator):
             dist.locator = self
             urls = d['urls']
             result[md.version] = dist
-            for info in d['urls']:
+            for info in urls:
                 url = info['url']
                 dist.download_urls.add(url)
                 dist.digests[url] = self._get_digest(info)
@@ -511,14 +498,6 @@ class PyPIJSONLocator(Locator):
                     odist.digests[url] = self._get_digest(info)
                     result['urls'].setdefault(version, set()).add(url)
                     result['digests'][url] = self._get_digest(info)
-#            for info in urls:
-#                md.source_url = info['url']
-#                dist.digest = self._get_digest(info)
-#                dist.locator = self
-#                for info in urls:
-#                    url = info['url']
-#                    result['urls'].setdefault(md.version, set()).add(url)
-#                    result['digests'][url] = self._get_digest(info)
         except Exception as e:
             self.errors.put(text_type(e))
             logger.exception('JSON fetch failed: %s', e)
@@ -548,8 +527,7 @@ href\\s*=\\s*(?:"(?P<url1>[^"]*)"|'(?P<url2>[^']*)'|(?P<url3>[^>\\s\n]*))
         """
         self.data = data
         self.base_url = self.url = url
-        m = self._base.search(self.data)
-        if m:
+        if m := self._base.search(self.data):
             self.base_url = m.group(1)
 
     _clean_re = re.compile(r'[^a-z0-9$&+,/:;=?@.#%_\\|-]', re.I)
@@ -631,7 +609,7 @@ class SimpleScrapingLocator(Locator):
         fetching web pages).
         """
         self._threads = []
-        for i in range(self.num_workers):
+        for _ in range(self.num_workers):
             t = threading.Thread(target=self._fetch)
             t.daemon = True
             t.start()
@@ -644,7 +622,7 @@ class SimpleScrapingLocator(Locator):
         """
         # Note that you need two loops, since you can't say which
         # thread will get each sentinel
-        for t in self._threads:
+        for _ in self._threads:
             self._to_fetch.put(None)    # sentinel
         for t in self._threads:
             t.join()
@@ -655,7 +633,7 @@ class SimpleScrapingLocator(Locator):
         with self._gplock:
             self.result = result
             self.project_name = name
-            url = urljoin(self.base_url, '%s/' % quote(name))
+            url = urljoin(self.base_url, f'{quote(name)}/')
             self._seen.clear()
             self._page_cache.clear()
             self._prepare_threads()
@@ -718,10 +696,7 @@ class SimpleScrapingLocator(Locator):
             result = False
         else:
             host = netloc.split(':', 1)[0]
-            if host.lower() == 'localhost':
-                result = False
-            else:
-                result = True
+            result = host.lower() != 'localhost'
         logger.debug('should_queue: %s (%s) from %s -> %s', link, rel,
                      referrer, result)
         return result
@@ -795,10 +770,7 @@ class SimpleScrapingLocator(Locator):
                         if encoding:
                             decoder = self.decoders[encoding]   # fail if not found
                             data = decoder(data)
-                        encoding = 'utf-8'
-                        m = CHARSET.search(content_type)
-                        if m:
-                            encoding = m.group(1)
+                        encoding = m.group(1) if (m := CHARSET.search(content_type)) else 'utf-8'
                         try:
                             data = data.decode(encoding)
                         except UnicodeError:  # pragma: no cover
@@ -824,13 +796,10 @@ class SimpleScrapingLocator(Locator):
         """
         Return all the distribution names known to this locator.
         """
-        result = set()
-        page = self.get_page(self.base_url)
-        if not page:
-            raise DistlibException('Unable to get %s' % self.base_url)
-        for match in self._distname_re.finditer(page.data):
-            result.add(match.group(1))
-        return result
+        if page := self.get_page(self.base_url):
+            return {match.group(1) for match in self._distname_re.finditer(page.data)}
+        else:
+            raise DistlibException(f'Unable to get {self.base_url}')
 
 class DirectoryLocator(Locator):
     """
@@ -871,8 +840,7 @@ class DirectoryLocator(Locator):
                     url = urlunparse(('file', '',
                                       pathname2url(os.path.abspath(fn)),
                                       '', '', ''))
-                    info = self.convert_url_to_download_info(url, name)
-                    if info:
+                    if info := self.convert_url_to_download_info(url, name):
                         self._update_version_data(result, info)
             if not self.recursive:
                 break
@@ -890,8 +858,7 @@ class DirectoryLocator(Locator):
                     url = urlunparse(('file', '',
                                       pathname2url(os.path.abspath(fn)),
                                       '', '', ''))
-                    info = self.convert_url_to_download_info(url, None)
-                    if info:
+                    if info := self.convert_url_to_download_info(url, None):
                         result.add(info['name'])
             if not self.recursive:
                 break
@@ -912,8 +879,7 @@ class JSONLocator(Locator):
 
     def _get_project(self, name):
         result = {'urls': {}, 'digests': {}}
-        data = get_project_data(name)
-        if data:
+        if data := get_project_data(name):
             for info in data.get('files', []):
                 if info['ptype'] != 'sdist' or info['pyversion'] != 'source':
                     continue
@@ -952,15 +918,15 @@ class DistPathLocator(Locator):
 
     def _get_project(self, name):
         dist = self.distpath.get_distribution(name)
-        if dist is None:
-            result = {'urls': {}, 'digests': {}}
-        else:
-            result = {
+        return (
+            {'urls': {}, 'digests': {}}
+            if dist is None
+            else {
                 dist.version: dist,
-                'urls': {dist.version: set([dist.source_url])},
-                'digests': {dist.version: set([None])}
+                'urls': {dist.version: {dist.source_url}},
+                'digests': {dist.version: {None}},
             }
-        return result
+        )
 
 
 class AggregatingLocator(Locator):
@@ -998,8 +964,7 @@ class AggregatingLocator(Locator):
     def _get_project(self, name):
         result = {}
         for locator in self.locators:
-            d = locator.get_project(name)
-            if d:
+            if d := locator.get_project(name):
                 if self.merge:
                     files = result.get('urls', {})
                     digests = result.get('digests', {})
@@ -1026,14 +991,7 @@ class AggregatingLocator(Locator):
                     # failure to find foo (>= 2.0), because other locators
                     # weren't searched. Note that this only matters when
                     # merge=False.
-                    if self.matcher is None:
-                        found = True
-                    else:
-                        found = False
-                        for k in d:
-                            if self.matcher.match(k):
-                                found = True
-                                break
+                    found = True if self.matcher is None else any(self.matcher.match(k) for k in d)
                     if found:
                         result = d
                         break
@@ -1178,7 +1136,7 @@ class DependencyFinder(object):
             # can't replace other with provider
             problems.add(('cantreplace', provider, other,
                           frozenset(unmatched)))
-            result = False
+            return False
         else:
             # can replace other with provider
             self.remove_distribution(other)
@@ -1186,8 +1144,7 @@ class DependencyFinder(object):
             for s in rlist:
                 self.reqts.setdefault(provider, set()).add(s)
             self.add_distribution(provider)
-            result = True
-        return result
+            return True
 
     def find(self, requirement, meta_extras=None, prereleases=False):
         """
@@ -1224,7 +1181,7 @@ class DependencyFinder(object):
         if ':*:' in meta_extras:
             meta_extras.remove(':*:')
             # :meta: and :run: are implicitly included
-            meta_extras |= set([':test:', ':build:', ':dev:'])
+            meta_extras |= {':test:', ':build:', ':dev:'}
 
         if isinstance(requirement, Distribution):
             dist = odist = requirement
@@ -1237,8 +1194,8 @@ class DependencyFinder(object):
             logger.debug('located %s', odist)
         dist.requested = True
         problems = set()
-        todo = set([dist])
-        install_dists = set([odist])
+        todo = {dist}
+        install_dists = {odist}
         while todo:
             dist = todo.pop()
             name = dist.key     # case-insensitive
@@ -1255,9 +1212,9 @@ class DependencyFinder(object):
             ereqts = set()
             if meta_extras and dist in install_dists:
                 for key in ('test', 'build', 'dev'):
-                    e = ':%s:' % key
+                    e = f':{key}:'
                     if e in meta_extras:
-                        ereqts |= getattr(dist, '%s_requires' % key)
+                        ereqts |= getattr(dist, f'{key}_requires')
             all_reqts = ireqts | sreqts | ereqts
             for r in all_reqts:
                 providers = self.find_providers(r)

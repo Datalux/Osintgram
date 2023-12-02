@@ -74,13 +74,10 @@ def uninstallation_paths(dist: BaseDistribution) -> Generator[str, None, None]:
         msg = "Cannot uninstall {dist}, RECORD file not found.".format(dist=dist)
         installer = dist.installer
         if not installer or installer == "pip":
-            dep = "{}=={}".format(dist.raw_name, dist.version)
-            msg += (
-                " You might be able to recover from this via: "
-                "'pip install --force-reinstall --no-deps {}'.".format(dep)
-            )
+            dep = f"{dist.raw_name}=={dist.version}"
+            msg += f" You might be able to recover from this via: 'pip install --force-reinstall --no-deps {dep}'."
         else:
-            msg += " Hint: The package was installed by {}.".format(installer)
+            msg += f" Hint: The package was installed by {installer}."
         raise UninstallationError(msg)
 
     for entry in entries:
@@ -89,10 +86,8 @@ def uninstallation_paths(dist: BaseDistribution) -> Generator[str, None, None]:
         if path.endswith(".py"):
             dn, fn = os.path.split(path)
             base = fn[:-3]
-            path = os.path.join(dn, base + ".pyc")
-            yield path
-            path = os.path.join(dn, base + ".pyo")
-            yield path
+            yield os.path.join(dn, f"{base}.pyc")
+            yield os.path.join(dn, f"{base}.pyo")
 
 
 def compact(paths: Iterable[str]) -> Set[str]:
@@ -528,7 +523,7 @@ class UninstallPathSet:
                 os.path.dirname(dist_location),
                 "easy-install.pth",
             )
-            paths_to_remove.add_pth(easy_install_pth, "./" + easy_install_egg)
+            paths_to_remove.add_pth(easy_install_pth, f"./{easy_install_egg}")
 
         elif dist.installed_with_dist_info:
             for path in uninstallation_paths(dist):
@@ -561,11 +556,7 @@ class UninstallPathSet:
                 dist_location,
             )
 
-        if dist.in_usersite:
-            bin_dir = get_bin_user()
-        else:
-            bin_dir = get_bin_prefix()
-
+        bin_dir = get_bin_user() if dist.in_usersite else get_bin_prefix()
         # find distutils scripts= scripts
         try:
             for script in dist.iter_distutils_script_names():
@@ -624,10 +615,7 @@ class UninstallPthEntries:
             # windows uses '\r\n' with py3k, but uses '\n' with py2.x
             lines = fh.readlines()
             self._saved_lines = lines
-        if any(b"\r\n" in line for line in lines):
-            endline = "\r\n"
-        else:
-            endline = "\n"
+        endline = "\r\n" if any(b"\r\n" in line for line in lines) else "\n"
         # handle missing trailing newline
         if lines and not lines[-1].endswith(endline.encode("utf-8")):
             lines[-1] = lines[-1] + endline.encode("utf-8")

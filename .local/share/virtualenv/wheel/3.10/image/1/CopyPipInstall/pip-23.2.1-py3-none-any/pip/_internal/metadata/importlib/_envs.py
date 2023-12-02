@@ -77,10 +77,7 @@ class _DistributionFinder:
         The path can be either a directory, or a ZIP archive.
         """
         for dist, info_location in self._find_impl(location):
-            if info_location is None:
-                installed_location: Optional[BasePath] = None
-            else:
-                installed_location = info_location.parent
+            installed_location = None if info_location is None else info_location.parent
             yield Distribution(dist, info_location, installed_location)
 
     def find_linked(self, location: str) -> Iterator[BaseDistribution]:
@@ -165,9 +162,7 @@ class Environment(BaseEnvironment):
 
     @classmethod
     def from_paths(cls, paths: Optional[List[str]]) -> BaseEnvironment:
-        if paths is None:
-            return cls(sys.path)
-        return cls(paths)
+        return cls(sys.path) if paths is None else cls(paths)
 
     def _iter_distributions(self) -> Iterator[BaseDistribution]:
         finder = _DistributionFinder()

@@ -170,11 +170,7 @@ def handle_requirement_line(
     options: Optional[optparse.Values] = None,
 ) -> ParsedRequirement:
     # preserve for the nested code path
-    line_comes_from = "{} {} (line {})".format(
-        "-c" if line.constraint else "-r",
-        line.filename,
-        line.lineno,
-    )
+    line_comes_from = f'{"-c" if line.constraint else "-r"} {line.filename} (line {line.lineno})'
 
     assert line.is_requirement
 
@@ -187,22 +183,20 @@ def handle_requirement_line(
             comes_from=line_comes_from,
             constraint=line.constraint,
         )
-    else:
-        # get the options that apply to requirements
-        req_options = {}
-        for dest in SUPPORTED_OPTIONS_REQ_DEST:
-            if dest in line.opts.__dict__ and line.opts.__dict__[dest]:
-                req_options[dest] = line.opts.__dict__[dest]
-
-        line_source = f"line {line.lineno} of {line.filename}"
-        return ParsedRequirement(
-            requirement=line.requirement,
-            is_editable=line.is_editable,
-            comes_from=line_comes_from,
-            constraint=line.constraint,
-            options=req_options,
-            line_source=line_source,
-        )
+    req_options = {
+        dest: line.opts.__dict__[dest]
+        for dest in SUPPORTED_OPTIONS_REQ_DEST
+        if dest in line.opts.__dict__ and line.opts.__dict__[dest]
+    }
+    line_source = f"line {line.lineno} of {line.filename}"
+    return ParsedRequirement(
+        requirement=line.requirement,
+        is_editable=line.is_editable,
+        comes_from=line_comes_from,
+        constraint=line.constraint,
+        options=req_options,
+        line_source=line_source,
+    )
 
 
 def handle_option_line(
@@ -305,18 +299,16 @@ def handle_line(
     """
 
     if line.is_requirement:
-        parsed_req = handle_requirement_line(line, options)
-        return parsed_req
-    else:
-        handle_option_line(
-            line.opts,
-            line.filename,
-            line.lineno,
-            finder,
-            options,
-            session,
-        )
-        return None
+        return handle_requirement_line(line, options)
+    handle_option_line(
+        line.opts,
+        line.filename,
+        line.lineno,
+        finder,
+        options,
+        session,
+    )
+    return None
 
 
 class RequirementsFileParser:
@@ -424,9 +416,8 @@ def break_args_options(line: str) -> Tuple[str, str]:
     for token in tokens:
         if token.startswith("-") or token.startswith("--"):
             break
-        else:
-            args.append(token)
-            options.pop(0)
+        args.append(token)
+        options.pop(0)
     return " ".join(args), " ".join(options)
 
 
@@ -468,7 +459,7 @@ def join_lines(lines_enum: ReqFileLines) -> ReqFileLines:
         if not line.endswith("\\") or COMMENT_RE.match(line):
             if COMMENT_RE.match(line):
                 # this ensures comments are always matched later
-                line = " " + line
+                line = f" {line}"
             if new_line:
                 new_line.append(line)
                 assert primary_line_number is not None
@@ -495,8 +486,7 @@ def ignore_comments(lines_enum: ReqFileLines) -> ReqFileLines:
     """
     for line_number, line in lines_enum:
         line = COMMENT_RE.sub("", line)
-        line = line.strip()
-        if line:
+        if line := line.strip():
             yield line_number, line
 
 
@@ -518,11 +508,8 @@ def expand_env_variables(lines_enum: ReqFileLines) -> ReqFileLines:
     """
     for line_number, line in lines_enum:
         for env_var, var_name in ENV_VAR_RE.findall(line):
-            value = os.getenv(var_name)
-            if not value:
-                continue
-
-            line = line.replace(env_var, value)
+            if value := os.getenv(var_name):
+                line = line.replace(env_var, value)
 
         yield line_number, line
 

@@ -115,7 +115,8 @@ except ImportError: # pragma: no cover
             # policy among SSL implementations showed it to be a
             # reasonable choice.
             raise CertificateError(
-                "too many wildcards in certificate DNS name: " + repr(dn))
+                f"too many wildcards in certificate DNS name: {repr(dn)}"
+            )
 
         # speed up common case w/o wildcards
         if not wildcards:
@@ -139,9 +140,7 @@ except ImportError: # pragma: no cover
             pats.append(re.escape(leftmost).replace(r'\*', '[^.]*'))
 
         # add the remaining fragments, ignore any wildcards
-        for frag in remainder:
-            pats.append(re.escape(frag))
-
+        pats.extend(re.escape(frag) for frag in remainder)
         pat = re.compile(r'\A' + r'\.'.join(pats) + r'\Z', re.IGNORECASE)
         return pat.match(hostname)
 
@@ -225,10 +224,7 @@ except ImportError:  # pragma: no cover
         # than referring to PATH directories. This includes checking relative to the
         # current directory, e.g. ./script
         if os.path.dirname(cmd):
-            if _access_check(cmd, mode):
-                return cmd
-            return None
-
+            return cmd if _access_check(cmd, mode) else None
         if path is None:
             path = os.environ.get("PATH", os.defpath)
         if not path:
@@ -237,7 +233,7 @@ except ImportError:  # pragma: no cover
 
         if sys.platform == "win32":
             # The current directory takes precedence on Windows.
-            if not os.curdir in path:
+            if os.curdir not in path:
                 path.insert(0, os.curdir)
 
             # PATHEXT is necessary to check on Windows.
@@ -258,7 +254,7 @@ except ImportError:  # pragma: no cover
         seen = set()
         for dir in path:
             normdir = os.path.normcase(dir)
-            if not normdir in seen:
+            if normdir not in seen:
                 seen.add(normdir)
                 for thefile in files:
                     name = os.path.join(dir, thefile)
@@ -308,9 +304,7 @@ except ImportError: # pragma: no cover
             return 'PyPy'
         if os.name == 'java':
             return 'Jython'
-        if sys.version.startswith('IronPython'):
-            return 'IronPython'
-        return 'CPython'
+        return 'IronPython' if sys.version.startswith('IronPython') else 'CPython'
 
 import shutil
 import sysconfig
@@ -346,8 +340,7 @@ except AttributeError:  # pragma: no cover
         elif isinstance(filename, text_type):
             return filename.encode(_fsencoding, _fserrors)
         else:
-            raise TypeError("expect bytes or str, not %s" %
-                            type(filename).__name__)
+            raise TypeError(f"expect bytes or str, not {type(filename).__name__}")
 
     def fsdecode(filename):
         if isinstance(filename, text_type):
@@ -355,8 +348,7 @@ except AttributeError:  # pragma: no cover
         elif isinstance(filename, bytes):
             return filename.decode(_fsencoding, _fserrors)
         else:
-            raise TypeError("expect bytes or str, not %s" %
-                            type(filename).__name__)
+            raise TypeError(f"expect bytes or str, not {type(filename).__name__}")
 
 try:
     from tokenize import detect_encoding
@@ -428,7 +420,7 @@ except ImportError: # pragma: no cover
             except LookupError:
                 # This behaviour mimics the Python interpreter
                 if filename is None:
-                    msg = "unknown encoding: " + encoding
+                    msg = f"unknown encoding: {encoding}"
                 else:
                     msg = "unknown encoding for {!r}: {}".format(filename,
                             encoding)
@@ -462,10 +454,7 @@ except ImportError: # pragma: no cover
             return default, [first]
 
         encoding = find_cookie(second)
-        if encoding:
-            return encoding, [first, second]
-
-        return default, [first, second]
+        return (encoding, [first, second]) if encoding else (default, [first, second])
 
 # For converting & <-> &amp; etc.
 try:
@@ -619,10 +608,7 @@ except ImportError:  # pragma: no cover
         assert path.endswith('.py')
         if debug_override is None:
             debug_override = __debug__
-        if debug_override:
-            suffix = 'c'
-        else:
-            suffix = 'o'
+        suffix = 'c' if debug_override else 'o'
         return path + suffix
 
 try:
@@ -783,10 +769,7 @@ except ImportError: # pragma: no cover
             elif not args:
                 raise TypeError('update() takes at least 1 argument (0 given)')
             self = args[0]
-            # Make progressively weaker assumptions about "other"
-            other = ()
-            if len(args) == 2:
-                other = args[1]
+            other = args[1] if len(args) == 2 else ()
             if isinstance(other, dict):
                 for key in other:
                     self[key] = other[key]
@@ -832,7 +815,7 @@ except ImportError: # pragma: no cover
             _repr_running[call_key] = 1
             try:
                 if not self:
-                    return '%s()' % (self.__class__.__name__,)
+                    return f'{self.__class__.__name__}()'
                 return '%s(%r)' % (self.__class__.__name__, self.items())
             finally:
                 del _repr_running[call_key]
@@ -895,10 +878,10 @@ except ImportError: # pragma: no cover
 
 
     def valid_ident(s):
-        m = IDENTIFIER.match(s)
-        if not m:
+        if m := IDENTIFIER.match(s):
+            return True
+        else:
             raise ValueError('Not a valid Python identifier: %r' % s)
-        return True
 
 
     # The ConvertingXXX classes are wrappers around standard Python containers,
@@ -1016,7 +999,7 @@ except ImportError: # pragma: no cover
             try:
                 found = self.importer(used)
                 for frag in name:
-                    used += '.' + frag
+                    used += f'.{frag}'
                     try:
                         found = getattr(found, frag)
                     except AttributeError:
@@ -1039,31 +1022,30 @@ except ImportError: # pragma: no cover
             m = self.WORD_PATTERN.match(rest)
             if m is None:
                 raise ValueError("Unable to convert %r" % value)
-            else:
-                rest = rest[m.end():]
-                d = self.config[m.groups()[0]]
+            rest = rest[m.end():]
+            d = self.config[m.groups()[0]]
                 #print d, rest
-                while rest:
-                    m = self.DOT_PATTERN.match(rest)
+            while rest:
+                m = self.DOT_PATTERN.match(rest)
+                if m:
+                    d = d[m.groups()[0]]
+                else:
+                    m = self.INDEX_PATTERN.match(rest)
                     if m:
-                        d = d[m.groups()[0]]
-                    else:
-                        m = self.INDEX_PATTERN.match(rest)
-                        if m:
-                            idx = m.groups()[0]
-                            if not self.DIGIT_PATTERN.match(idx):
+                        idx = m.groups()[0]
+                        if self.DIGIT_PATTERN.match(idx):
+                            try:
+                                n = int(idx) # try as number first (most likely)
+                                d = d[n]
+                            except TypeError:
                                 d = d[idx]
-                            else:
-                                try:
-                                    n = int(idx) # try as number first (most likely)
-                                    d = d[n]
-                                except TypeError:
-                                    d = d[idx]
-                    if m:
-                        rest = rest[m.end():]
-                    else:
-                        raise ValueError('Unable to convert '
-                                         '%r at %r' % (value, rest))
+                        else:
+                            d = d[idx]
+                if m:
+                    rest = rest[m.end():]
+                else:
+                    raise ValueError('Unable to convert '
+                                     '%r at %r' % (value, rest))
             #rest should be empty
             return d
 
@@ -1080,16 +1062,14 @@ except ImportError: # pragma: no cover
                 value = ConvertingList(value)
                 value.configurator = self
             elif not isinstance(value, ConvertingTuple) and\
-                     isinstance(value, tuple):
+                             isinstance(value, tuple):
                 value = ConvertingTuple(value)
                 value.configurator = self
             elif isinstance(value, string_types):
-                m = self.CONVERT_PATTERN.match(value)
-                if m:
+                if m := self.CONVERT_PATTERN.match(value):
                     d = m.groupdict()
                     prefix = d['prefix']
-                    converter = self.value_converters.get(prefix, None)
-                    if converter:
+                    if converter := self.value_converters.get(prefix, None):
                         suffix = d['suffix']
                         converter = getattr(self, converter)
                         value = converter(suffix)

@@ -8,6 +8,7 @@ absolutely need, and not "download the world" when we only need one version of
 something.
 """
 
+
 import functools
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Optional, Set, Tuple
@@ -18,20 +19,7 @@ from .base import Candidate
 
 IndexCandidateInfo = Tuple[_BaseVersion, Callable[[], Optional[Candidate]]]
 
-if TYPE_CHECKING:
-    SequenceCandidate = Sequence[Candidate]
-else:
-    # For compatibility: Python before 3.9 does not support using [] on the
-    # Sequence class.
-    #
-    # >>> from collections.abc import Sequence
-    # >>> Sequence[str]
-    # Traceback (most recent call last):
-    #   File "<stdin>", line 1, in <module>
-    # TypeError: 'ABCMeta' object is not subscriptable
-    #
-    # TODO: Remove this block after dropping Python 3.8 support.
-    SequenceCandidate = Sequence
+SequenceCandidate = Sequence[Candidate] if TYPE_CHECKING else Sequence
 
 
 def _iter_built(infos: Iterator[IndexCandidateInfo]) -> Iterator[Candidate]:
@@ -150,6 +138,4 @@ class FoundCandidates(SequenceCandidate):
 
     @functools.lru_cache(maxsize=1)
     def __bool__(self) -> bool:
-        if self._prefers_installed and self._installed:
-            return True
-        return any(self)
+        return True if self._prefers_installed and self._installed else any(self)

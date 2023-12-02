@@ -72,32 +72,25 @@ def load_pyproject_toml(
     # opposed to False can occur when the value is provided via an
     # environment variable or config file option (due to the quirk of
     # strtobool() returning an integer in pip's configuration code).
-    if has_pyproject and not has_setup:
-        if use_pep517 is not None and not use_pep517:
-            raise InstallationError(
-                "Disabling PEP 517 processing is invalid: "
-                "project does not have a setup.py"
-            )
+    if (
+        has_pyproject
+        and not has_setup
+        and (use_pep517 is None or use_pep517)
+        or (not has_pyproject or has_setup)
+        and build_system
+        and "build-backend" in build_system
+        and (use_pep517 is None or use_pep517)
+    ):
         use_pep517 = True
+    elif has_pyproject and not has_setup:
+        raise InstallationError(
+            "Disabling PEP 517 processing is invalid: "
+            "project does not have a setup.py"
+        )
     elif build_system and "build-backend" in build_system:
-        if use_pep517 is not None and not use_pep517:
-            raise InstallationError(
-                "Disabling PEP 517 processing is invalid: "
-                "project specifies a build backend of {} "
-                "in pyproject.toml".format(build_system["build-backend"])
-            )
-        use_pep517 = True
-
-    # If we haven't worked out whether to use PEP 517 yet,
-    # and the user hasn't explicitly stated a preference,
-    # we do so if the project has a pyproject.toml file
-    # or if we cannot import setuptools or wheels.
-
-    # We fallback to PEP 517 when without setuptools or without the wheel package,
-    # so setuptools can be installed as a default build backend.
-    # For more info see:
-    # https://discuss.python.org/t/pip-without-setuptools-could-the-experience-be-improved/11810/9
-    # https://github.com/pypa/pip/issues/8559
+        raise InstallationError(
+            f'Disabling PEP 517 processing is invalid: project specifies a build backend of {build_system["build-backend"]} in pyproject.toml'
+        )
     elif use_pep517 is None:
         use_pep517 = (
             has_pyproject

@@ -123,10 +123,7 @@ class Git(VersionControl):
         )
         ref = output.strip()
 
-        if ref.startswith("refs/heads/"):
-            return ref[len("refs/heads/") :]
-
-        return None
+        return ref[len("refs/heads/") :] if ref.startswith("refs/heads/") else None
 
     @classmethod
     def get_revision_sha(cls, dest: str, rev: str) -> Tuple[Optional[str], bool]:
@@ -187,15 +184,7 @@ class Git(VersionControl):
             # Always fetch remote refs.
             return True
 
-        if not looks_like_hash(rev):
-            # Git fetch would fail with abbreviated commits.
-            return False
-
-        if cls.has_commit(dest, rev):
-            # Don't fetch if we have the commit locally.
-            return False
-
-        return True
+        return False if not looks_like_hash(rev) else not cls.has_commit(dest, rev)
 
     @classmethod
     def resolve_revision(
@@ -252,11 +241,7 @@ class Git(VersionControl):
           dest: the repository directory.
           name: a string name.
         """
-        if not name:
-            # Then avoid an unnecessary subprocess call.
-            return False
-
-        return cls.get_revision(dest) == name
+        return False if not name else cls.get_revision(dest) == name
 
     def fetch_new(
         self, dest: str, url: HiddenText, rev_options: RevOptions, verbosity: int
@@ -399,8 +384,7 @@ class Git(VersionControl):
             # A local bare remote (git clone --mirror).
             # Needs a file:// prefix.
             return pathlib.PurePath(url).as_uri()
-        scp_match = SCP_REGEX.match(url)
-        if scp_match:
+        if scp_match := SCP_REGEX.match(url):
             # Add an ssh:// prefix and replace the ':' with a '/'.
             return scp_match.expand(r"ssh://\1\2/\3")
         # Otherwise, bail out.
@@ -413,7 +397,7 @@ class Git(VersionControl):
         """
         try:
             cls.run_command(
-                ["rev-parse", "-q", "--verify", "sha^" + rev],
+                ["rev-parse", "-q", "--verify", f"sha^{rev}"],
                 cwd=location,
                 log_failed_cmd=False,
             )
@@ -494,8 +478,7 @@ class Git(VersionControl):
 
     @classmethod
     def get_repository_root(cls, location: str) -> Optional[str]:
-        loc = super().get_repository_root(location)
-        if loc:
+        if loc := super().get_repository_root(location):
             return loc
         try:
             r = cls.run_command(

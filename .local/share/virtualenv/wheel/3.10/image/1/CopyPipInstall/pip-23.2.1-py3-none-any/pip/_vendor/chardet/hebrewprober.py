@@ -252,15 +252,13 @@ class HebrewProber(CharSetProber):
                         # case (2) [-2:not space][-1:Non-Final letter][
                         #  cur:space]
                         self._final_char_visual_score += 1
-            else:
-                # Not standing on a space
-                if (
+            elif (
                     (self._before_prev == self.SPACE)
                     and (self.is_final(self._prev))
                     and (cur != self.SPACE)
                 ):
-                    # case (3) [-2:space][-1:final letter][cur:not space]
-                    self._final_char_visual_score += 1
+                # case (3) [-2:space][-1:final letter][cur:not space]
+                self._final_char_visual_score += 1
             self._before_prev = self._prev
             self._prev = cur
 
@@ -292,12 +290,7 @@ class HebrewProber(CharSetProber):
 
         # Still no good, back to final letter distance, maybe it'll save the
         # day.
-        if finalsub < 0.0:
-            return self.VISUAL_HEBREW_NAME
-
-        # (finalsub > 0 - Logical) or (don't know what to do) default to
-        # Logical.
-        return self.LOGICAL_HEBREW_NAME
+        return self.VISUAL_HEBREW_NAME if finalsub < 0.0 else self.LOGICAL_HEBREW_NAME
 
     @property
     def language(self) -> str:

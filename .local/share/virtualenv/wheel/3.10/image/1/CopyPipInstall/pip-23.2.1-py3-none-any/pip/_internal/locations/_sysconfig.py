@@ -78,9 +78,7 @@ def _infer_prefix() -> str:
     suffixed = f"{os.name}_prefix"
     if suffixed in _AVAILABLE_SCHEMES:
         return suffixed
-    if os.name in _AVAILABLE_SCHEMES:  # On Windows, prefx is just called "nt".
-        return os.name
-    return "posix_prefix"
+    return os.name if os.name in _AVAILABLE_SCHEMES else "posix_prefix"
 
 
 def _infer_user() -> str:
@@ -103,9 +101,7 @@ def _infer_home() -> str:
     if _PREFERRED_SCHEME_API:
         return _PREFERRED_SCHEME_API("home")
     suffixed = f"{os.name}_home"
-    if suffixed in _AVAILABLE_SCHEMES:
-        return suffixed
-    return "posix_home"
+    return suffixed if suffixed in _AVAILABLE_SCHEMES else "posix_home"
 
 
 # Update these keys if the user sets a custom home.

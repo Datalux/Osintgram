@@ -60,7 +60,7 @@ def response_chunks(
     """Given a requests Response, provide the data chunks."""
     try:
         # Special case for urllib3.
-        for chunk in response.raw.stream(
+        yield from response.raw.stream(
             chunk_size,
             # We use decode_content=False here because we don't
             # want urllib3 to mess with the raw bytes we get
@@ -85,12 +85,11 @@ def response_chunks(
             # By setting this not to decode automatically we
             # hope to eliminate problems with the second case.
             decode_content=False,
-        ):
-            yield chunk
+        )
     except AttributeError:
         # Standard file-like object.
         while True:
-            chunk = response.raw.read(chunk_size)
-            if not chunk:
+            if chunk := response.raw.read(chunk_size):
+                yield chunk
+            else:
                 break
-            yield chunk

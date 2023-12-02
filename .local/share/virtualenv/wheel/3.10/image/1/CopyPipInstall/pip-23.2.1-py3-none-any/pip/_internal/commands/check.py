@@ -49,6 +49,5 @@ class CheckCommand(Command):
 
         if missing or conflicting or parsing_probs:
             return ERROR
-        else:
-            write_output("No broken requirements found.")
-            return SUCCESS
+        write_output("No broken requirements found.")
+        return SUCCESS

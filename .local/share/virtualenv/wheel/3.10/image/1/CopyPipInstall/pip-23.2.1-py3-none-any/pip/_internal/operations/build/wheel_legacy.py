@@ -92,11 +92,10 @@ def build_wheel_legacy(
             return None
 
         names = os.listdir(tempd)
-        wheel_path = get_legacy_build_wheel_path(
+        return get_legacy_build_wheel_path(
             names=names,
             temp_dir=tempd,
             name=name,
             command_args=wheel_args,
             command_output=output,
         )
-        return wheel_path

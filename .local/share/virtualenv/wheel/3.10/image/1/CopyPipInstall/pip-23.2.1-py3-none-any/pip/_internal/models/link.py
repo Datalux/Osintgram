@@ -112,9 +112,7 @@ def supported_hashes(hashes: Optional[Dict[str, str]]) -> Optional[Dict[str, str
     if hashes is None:
         return None
     hashes = {n: v for n, v in hashes.items() if n in _SUPPORTED_HASHES}
-    if not hashes:
-        return None
-    return hashes
+    return None if not hashes else hashes
 
 
 def _clean_url_path_part(part: str) -> str:
@@ -146,21 +144,14 @@ def _clean_url_path(path: str, is_local_path: bool) -> str:
     """
     Clean the path portion of a URL.
     """
-    if is_local_path:
-        clean_func = _clean_file_url_path
-    else:
-        clean_func = _clean_url_path_part
-
+    clean_func = _clean_file_url_path if is_local_path else _clean_url_path_part
     # Split on the reserved characters prior to cleaning so that
     # revision strings in VCS URLs are properly preserved.
     parts = _reserved_chars_re.split(path)
 
     cleaned_parts = []
     for to_clean, reserved in pairwise(itertools.chain(parts, [""])):
-        cleaned_parts.append(clean_func(to_clean))
-        # Normalize %xx escapes (e.g. %2f -> %2F)
-        cleaned_parts.append(reserved.upper())
-
+        cleaned_parts.extend((clean_func(to_clean), reserved.upper()))
     return "".join(cleaned_parts)
 
 
@@ -363,16 +354,14 @@ class Link(KeyBasedCompareMixin):
         )
 
     def __str__(self) -> str:
-        if self.requires_python:
-            rp = f" (requires-python:{self.requires_python})"
-        else:
-            rp = ""
-        if self.comes_from:
-            return "{} (from {}){}".format(
-                redact_auth_from_url(self._url), self.comes_from, rp
-            )
-        else:
+        if not self.comes_from:
             return redact_auth_from_url(str(self._url))
+        rp = (
+            f" (requires-python:{self.requires_python})"
+            if self.requires_python
+            else ""
+        )
+        return f"{redact_auth_from_url(self._url)} (from {self.comes_from}){rp}"
 
     def __repr__(self) -> str:
         return f"<Link {self}>"
@@ -456,9 +445,7 @@ class Link(KeyBasedCompareMixin):
     @property
     def subdirectory_fragment(self) -> Optional[str]:
         match = self._subdirectory_fragment_re.search(self._url)
-        if not match:
-            return None
-        return match.group(1)
+        return None if not match else match.group(1)
 
     def metadata_link(self) -> Optional["Link"]:
         """Return a link to the associated core metadata file (if any)."""

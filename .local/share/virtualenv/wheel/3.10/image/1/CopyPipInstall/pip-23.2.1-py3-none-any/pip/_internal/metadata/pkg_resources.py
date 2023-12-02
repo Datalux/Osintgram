@@ -136,8 +136,7 @@ class Distribution(BaseDistribution):
 
     @property
     def installed_location(self) -> Optional[str]:
-        egg_link = egg_link_path_from_location(self.raw_name)
-        if egg_link:
+        if egg_link := egg_link_path_from_location(self.raw_name):
             location = egg_link
         elif self.location:
             location = self.location
@@ -242,15 +241,17 @@ class Environment(BaseEnvironment):
         match the behavior of ``pkg_resources.get_distribution()``.
         """
         canonical_name = canonicalize_name(name)
-        for dist in self.iter_all_distributions():
-            if dist.canonical_name == canonical_name:
-                return dist
-        return None
+        return next(
+            (
+                dist
+                for dist in self.iter_all_distributions()
+                if dist.canonical_name == canonical_name
+            ),
+            None,
+        )
 
     def get_distribution(self, name: str) -> Optional[BaseDistribution]:
-        # Search the distribution by looking through the working set.
-        dist = self._search_distribution(name)
-        if dist:
+        if dist := self._search_distribution(name):
             return dist
 
         # If distribution could not be found, call working_set.require to

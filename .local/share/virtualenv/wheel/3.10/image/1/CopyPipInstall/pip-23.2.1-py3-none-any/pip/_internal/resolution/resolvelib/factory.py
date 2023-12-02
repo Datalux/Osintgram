@@ -159,9 +159,7 @@ class Factory:
         except KeyError:
             base = AlreadyInstalledCandidate(dist, template, factory=self)
             self._installed_candidate_cache[dist.canonical_name] = base
-        if not extras:
-            return base
-        return self._make_extras_candidate(base, extras)
+        return base if not extras else self._make_extras_candidate(base, extras)
 
     def _make_candidate_from_link(
         self,
@@ -221,9 +219,7 @@ class Factory:
                     return None
             base = self._link_candidate_cache[link]
 
-        if not extras:
-            return base
-        return self._make_extras_candidate(base, extras)
+        return base if not extras else self._make_extras_candidate(base, extras)
 
     def _iter_found_candidates(
         self,
@@ -271,9 +267,7 @@ class Factory:
                 template=template,
             )
             # The candidate is a known incompatibility. Don't use it.
-            if id(candidate) in incompatible_ids:
-                return None
-            return candidate
+            return None if id(candidate) in incompatible_ids else candidate
 
         def iter_index_candidate_infos() -> Iterator[IndexCandidateInfo]:
             result = self._finder.find_best_candidate(
@@ -303,7 +297,7 @@ class Factory:
 
             # PackageFinder returns earlier versions first, so we reverse.
             for ican in reversed(icans):
-                if not (all_yanked and pinned) and ican.link.is_yanked:
+                if (not all_yanked or not pinned) and ican.link.is_yanked:
                     continue
                 func = functools.partial(
                     self._make_candidate_from_link,
@@ -357,14 +351,13 @@ class Factory:
         """
         for link in constraint.links:
             self._fail_if_link_is_unsupported_wheel(link)
-            candidate = self._make_candidate_from_link(
+            if candidate := self._make_candidate_from_link(
                 link,
                 extras=frozenset(),
                 template=install_req_from_link_and_ireq(link, template),
                 name=canonicalize_name(identifier),
                 version=None,
-            )
-            if candidate:
+            ):
                 yield candidate
 
     def find_candidates(
@@ -475,9 +468,7 @@ class Factory:
         collected = CollectedRootRequirements([], {}, {})
         for i, ireq in enumerate(root_ireqs):
             if ireq.constraint:
-                # Ensure we only accept valid constraints
-                problem = check_invalid_constraint_type(ireq)
-                if problem:
+                if problem := check_invalid_constraint_type(ireq):
                     raise InstallationError(problem)
                 if not ireq.match_markers():
                     continue
@@ -596,11 +587,7 @@ class Factory:
     def _report_single_requirement_conflict(
         self, req: Requirement, parent: Optional[Candidate]
     ) -> DistributionNotFound:
-        if parent is None:
-            req_disp = str(req)
-        else:
-            req_disp = f"{req} (from {parent.name})"
-
+        req_disp = str(req) if parent is None else f"{req} (from {parent.name})"
         cands = self._finder.find_all_candidates(req.project_name)
         skipped_by_requires_python = self._finder.requires_python_skipped_reasons()
         versions = [str(v) for v in sorted({c.version for c in cands})]
@@ -686,11 +673,7 @@ class Factory:
                 trigger = describe_trigger(parent)
             triggers.add(trigger)
 
-        if triggers:
-            info = text_join(sorted(triggers))
-        else:
-            info = "the requested packages"
-
+        info = text_join(sorted(triggers)) if triggers else "the requested packages"
         msg = (
             "Cannot install {} because these package versions "
             "have conflicting dependencies.".format(info)
@@ -704,9 +687,9 @@ class Factory:
                 relevant_constraints.add(req.name)
             msg = msg + "\n    "
             if parent:
-                msg = msg + f"{parent.name} {parent.version} depends on "
+                msg = f"{msg}{parent.name} {parent.version} depends on "
             else:
-                msg = msg + "The user requested "
+                msg = f"{msg}The user requested "
             msg = msg + req.format_for_error()
         for key in relevant_constraints:
             spec = constraints[key].specifier

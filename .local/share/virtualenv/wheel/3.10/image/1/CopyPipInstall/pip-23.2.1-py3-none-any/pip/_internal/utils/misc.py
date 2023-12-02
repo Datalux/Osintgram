@@ -72,11 +72,7 @@ def get_pip_version() -> str:
     pip_pkg_dir = os.path.join(os.path.dirname(__file__), "..", "..")
     pip_pkg_dir = os.path.abspath(pip_pkg_dir)
 
-    return "pip {} from {} (python {})".format(
-        __version__,
-        pip_pkg_dir,
-        get_major_minor_version(),
-    )
+    return f"pip {__version__} from {pip_pkg_dir} (python {get_major_minor_version()})"
 
 
 def normalize_version_info(py_version_info: Tuple[int, ...]) -> Tuple[int, int, int]:
@@ -104,19 +100,14 @@ def ensure_dir(path: str) -> None:
         os.makedirs(path)
     except OSError as e:
         # Windows can raise spurious ENOTEMPTY errors. See #6426.
-        if e.errno != errno.EEXIST and e.errno != errno.ENOTEMPTY:
+        if e.errno not in [errno.EEXIST, errno.ENOTEMPTY]:
             raise
 
 
 def get_prog() -> str:
-    try:
+    with contextlib.suppress(AttributeError, TypeError, IndexError):
         prog = os.path.basename(sys.argv[0])
-        if prog in ("__main__.py", "-c"):
-            return f"{sys.executable} -m pip"
-        else:
-            return prog
-    except (AttributeError, TypeError, IndexError):
-        pass
+        return f"{sys.executable} -m pip" if prog in ("__main__.py", "-c") else prog
     return "pip"
 
 
@@ -157,7 +148,7 @@ def display_path(path: str) -> str:
     if possible."""
     path = os.path.normcase(os.path.abspath(path))
     if path.startswith(os.getcwd() + os.path.sep):
-        path = "." + path[len(os.getcwd()) :]
+        path = f".{path[len(os.getcwd()):]}"
     return path
 
 
@@ -222,9 +213,9 @@ def strtobool(val: str) -> int:
     'val' is anything else.
     """
     val = val.lower()
-    if val in ("y", "yes", "t", "true", "on", "1"):
+    if val in {"y", "yes", "t", "true", "on", "1"}:
         return 1
-    elif val in ("n", "no", "f", "false", "off", "0"):
+    elif val in {"n", "no", "f", "false", "off", "0"}:
         return 0
     else:
         raise ValueError(f"invalid truth value {val!r}")
@@ -234,11 +225,11 @@ def format_size(bytes: float) -> str:
     if bytes > 1000 * 1000:
         return "{:.1f} MB".format(bytes / 1000.0 / 1000)
     elif bytes > 10 * 1000:
-        return "{} kB".format(int(bytes / 1000))
+        return f"{int(bytes / 1000)} kB"
     elif bytes > 1000:
         return "{:.1f} kB".format(bytes / 1000.0)
     else:
-        return "{} bytes".format(int(bytes))
+        return f"{int(bytes)} bytes"
 
 
 def tabulate(rows: Iterable[Iterable[Any]]) -> Tuple[List[str], List[int]]:
@@ -267,9 +258,7 @@ def is_installable_dir(path: str) -> bool:
         return False
     if os.path.isfile(os.path.join(path, "pyproject.toml")):
         return True
-    if os.path.isfile(os.path.join(path, "setup.py")):
-        return True
-    return False
+    return bool(os.path.isfile(os.path.join(path, "setup.py")))
 
 
 def read_chunks(
@@ -277,10 +266,10 @@ def read_chunks(
 ) -> Generator[bytes, None, None]:
     """Yield pieces of data from a file-like object until EOF."""
     while True:
-        chunk = file.read(size)
-        if not chunk:
+        if chunk := file.read(size):
+            yield chunk
+        else:
             break
-        yield chunk
 
 
 def normalize_path(path: str, resolve_symlinks: bool = True) -> str:
@@ -289,10 +278,7 @@ def normalize_path(path: str, resolve_symlinks: bool = True) -> str:
 
     """
     path = os.path.expanduser(path)
-    if resolve_symlinks:
-        path = os.path.realpath(path)
-    else:
-        path = os.path.abspath(path)
+    path = os.path.realpath(path) if resolve_symlinks else os.path.abspath(path)
     return os.path.normcase(path)
 
 
@@ -316,10 +302,8 @@ def renames(old: str, new: str) -> None:
 
     head, tail = os.path.split(old)
     if head and tail:
-        try:
+        with contextlib.suppress(OSError):
             os.removedirs(head)
-        except OSError:
-            pass
 
 
 def is_local(path: str) -> bool:
@@ -443,14 +427,7 @@ def split_auth_from_netloc(netloc: str) -> NetlocTuple:
     # the password attribute of urlsplit()'s return value).
     auth, netloc = netloc.rsplit("@", 1)
     pw: Optional[str] = None
-    if ":" in auth:
-        # Split from the left because that's how urllib.parse.urlsplit()
-        # behaves if more than one : is present (which again can be checked
-        # using the password attribute of the return value)
-        user, pw = auth.split(":", 1)
-    else:
-        user, pw = auth, None
-
+    user, pw = auth.split(":", 1) if ":" in auth else (auth, None)
     user = urllib.parse.unquote(user)
     if pw is not None:
         pw = urllib.parse.unquote(pw)
@@ -545,12 +522,7 @@ class HiddenText:
 
     # This is useful for testing.
     def __eq__(self, other: Any) -> bool:
-        if type(self) != type(other):
-            return False
-
-        # The string being used for redaction doesn't also have to match,
-        # just the raw, original string.
-        return self.secret == other.secret
+        return False if type(self) != type(other) else self.secret == other.secret
 
 
 def hide_value(value: str) -> HiddenText:
@@ -574,17 +546,14 @@ def protect_pip_from_modification_on_windows(modifying_pip: bool) -> None:
         f"pip{sys.version_info.major}.{sys.version_info.minor}",
     ]
 
-    # See https://github.com/pypa/pip/issues/1299 for more discussion
-    should_show_use_python_msg = (
-        modifying_pip and WINDOWS and os.path.basename(sys.argv[0]) in pip_names
-    )
-
-    if should_show_use_python_msg:
+    if should_show_use_python_msg := (
+        modifying_pip
+        and WINDOWS
+        and os.path.basename(sys.argv[0]) in pip_names
+    ):
         new_command = [sys.executable, "-m", "pip"] + sys.argv[1:]
         raise CommandError(
-            "To modify pip, please run the following command:\n{}".format(
-                " ".join(new_command)
-            )
+            f'To modify pip, please run the following command:\n{" ".join(new_command)}'
         )
 
 

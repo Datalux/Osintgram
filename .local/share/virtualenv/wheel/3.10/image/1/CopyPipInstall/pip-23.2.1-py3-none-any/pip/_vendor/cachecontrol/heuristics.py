@@ -44,9 +44,7 @@ class BaseHeuristic(object):
         return {}
 
     def apply(self, response):
-        updated_headers = self.update_headers(response)
-
-        if updated_headers:
+        if updated_headers := self.update_headers(response):
             response.headers.update(updated_headers)
             warning_header_value = self.warning(response)
             if warning_header_value is not None:

@@ -33,9 +33,7 @@ class FormatControl:
         return all(getattr(self, k) == getattr(other, k) for k in self.__slots__)
 
     def __repr__(self) -> str:
-        return "{}({}, {})".format(
-            self.__class__.__name__, self.no_binary, self.only_binary
-        )
+        return f"{self.__class__.__name__}({self.no_binary}, {self.only_binary})"
 
     @staticmethod
     def handle_mutual_excludes(value: str, target: Set[str], other: Set[str]) -> None:
@@ -62,13 +60,13 @@ class FormatControl:
 
     def get_allowed_formats(self, canonical_name: str) -> FrozenSet[str]:
         result = {"binary", "source"}
-        if canonical_name in self.only_binary:
+        if (
+            canonical_name in self.only_binary
+            or canonical_name not in self.no_binary
+            and ":all:" in self.only_binary
+        ):
             result.discard("source")
-        elif canonical_name in self.no_binary:
-            result.discard("binary")
-        elif ":all:" in self.only_binary:
-            result.discard("source")
-        elif ":all:" in self.no_binary:
+        elif canonical_name in self.no_binary or ":all:" in self.no_binary:
             result.discard("binary")
         return frozenset(result)
 

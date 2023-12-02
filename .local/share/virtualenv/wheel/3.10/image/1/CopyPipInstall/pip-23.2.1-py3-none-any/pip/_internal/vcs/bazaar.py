@@ -75,7 +75,7 @@ class Bazaar(VersionControl):
         # hotfix the URL scheme after removing bzr+ from bzr+ssh:// re-add it
         url, rev, user_pass = super().get_url_rev_and_auth(url)
         if url.startswith("ssh://"):
-            url = "bzr+" + url
+            url = f"bzr+{url}"
         return url, rev, user_pass
 
     @classmethod
@@ -88,9 +88,7 @@ class Bazaar(VersionControl):
             for x in ("checkout of branch: ", "parent branch: "):
                 if line.startswith(x):
                     repo = line.split(x)[1]
-                    if cls._is_local_repository(repo):
-                        return path_to_url(repo)
-                    return repo
+                    return path_to_url(repo) if cls._is_local_repository(repo) else repo
         raise RemoteNotFoundError
 
     @classmethod

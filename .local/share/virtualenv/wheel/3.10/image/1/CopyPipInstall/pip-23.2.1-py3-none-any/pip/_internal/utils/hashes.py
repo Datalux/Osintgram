@@ -51,12 +51,11 @@ class Hashes:
         if not self:
             return other
 
-        # Otherwise only hashes that present in both objects are allowed.
-        new = {}
-        for alg, values in other._allowed.items():
-            if alg not in self._allowed:
-                continue
-            new[alg] = [v for v in values if v in self._allowed[alg]]
+        new = {
+            alg: [v for v in values if v in self._allowed[alg]]
+            for alg, values in other._allowed.items()
+            if alg in self._allowed
+        }
         return Hashes(new)
 
     @property
@@ -107,10 +106,10 @@ class Hashes:
 
     def has_one_of(self, hashes: Dict[str, str]) -> bool:
         """Return whether any of the given hashes are allowed."""
-        for hash_name, hex_digest in hashes.items():
-            if self.is_hash_allowed(hash_name, hex_digest):
-                return True
-        return False
+        return any(
+            self.is_hash_allowed(hash_name, hex_digest)
+            for hash_name, hex_digest in hashes.items()
+        )
 
     def __bool__(self) -> bool:
         """Return whether I know any known-good hashes."""

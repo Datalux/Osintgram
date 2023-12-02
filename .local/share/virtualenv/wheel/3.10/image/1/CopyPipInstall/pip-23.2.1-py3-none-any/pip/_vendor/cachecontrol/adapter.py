@@ -54,9 +54,7 @@ class CacheControlAdapter(HTTPAdapter):
             # check for etags and add headers if appropriate
             request.headers.update(self.controller.conditional_headers(request))
 
-        resp = super(CacheControlAdapter, self).send(request, **kw)
-
-        return resp
+        return super(CacheControlAdapter, self).send(request, **kw)
 
     def build_response(
         self, request, response, from_cache=False, cacheable_methods=None

@@ -44,11 +44,7 @@ def _prefix_with_indent(
     prefix: str,
     indent: str,
 ) -> Text:
-    if isinstance(s, Text):
-        text = s
-    else:
-        text = console.render_str(s)
-
+    text = s if isinstance(s, Text) else console.render_str(s)
     return console.render_str(prefix, overflow="ignore") + console.render_str(
         f"\n{indent}", overflow="ignore"
     ).join(text.split(allow_blank=True))
@@ -122,34 +118,32 @@ class DiagnosticPipError(PipError):
         yield f"[{colour} bold]{self.kind}[/]: [bold]{self.reference}[/]"
         yield ""
 
-        if not options.ascii_only:
-            # Present the main message, with relevant context indented.
-            if self.context is not None:
-                yield _prefix_with_indent(
-                    self.message,
-                    console,
-                    prefix=f"[{colour}]×[/] ",
-                    indent=f"[{colour}]│[/] ",
-                )
-                yield _prefix_with_indent(
-                    self.context,
-                    console,
-                    prefix=f"[{colour}]╰─>[/] ",
-                    indent=f"[{colour}]   [/] ",
-                )
-            else:
-                yield _prefix_with_indent(
-                    self.message,
-                    console,
-                    prefix="[red]×[/] ",
-                    indent="  ",
-                )
-        else:
+        if options.ascii_only:
             yield self.message
             if self.context is not None:
                 yield ""
                 yield self.context
 
+        elif self.context is not None:
+            yield _prefix_with_indent(
+                self.message,
+                console,
+                prefix=f"[{colour}]×[/] ",
+                indent=f"[{colour}]│[/] ",
+            )
+            yield _prefix_with_indent(
+                self.context,
+                console,
+                prefix=f"[{colour}]╰─>[/] ",
+                indent=f"[{colour}]   [/] ",
+            )
+        else:
+            yield _prefix_with_indent(
+                self.message,
+                console,
+                prefix="[red]×[/] ",
+                indent="  ",
+            )
         if self.note_stmt is not None or self.hint_stmt is not None:
             yield ""
 
@@ -247,10 +241,7 @@ class NoneMetadataError(PipError):
     def __str__(self) -> str:
         # Use `dist` in the error message because its stringification
         # includes more information, like the version and location.
-        return "None {} metadata found for distribution: {}".format(
-            self.metadata_name,
-            self.dist,
-        )
+        return f"None {self.metadata_name} metadata found for distribution: {self.dist}"
 
 
 class UserInstallationInvalid(InstallationError):
@@ -436,9 +427,7 @@ class HashErrors(InstallationError):
         for cls, errors_of_cls in groupby(self.errors, lambda e: e.__class__):
             lines.append(cls.head)
             lines.extend(e.body() for e in errors_of_cls)
-        if lines:
-            return "\n".join(lines)
-        return ""
+        return "\n".join(lines) if lines else ""
 
     def __bool__(self) -> bool:
         return bool(self.errors)
@@ -549,9 +538,7 @@ class HashMissing(HashError):
                 # to InstallRequirement's constructor.
                 else getattr(self.req, "req", None)
             )
-        return "    {} --hash={}:{}".format(
-            package or "unknown package", FAVORITE_HASH, self.gotten_hash
-        )
+        return f'    {package or "unknown package"} --hash={FAVORITE_HASH}:{self.gotten_hash}'
 
 
 class HashUnpinned(HashError):
@@ -594,7 +581,7 @@ class HashMismatch(HashError):
         self.gots = gots
 
     def body(self) -> str:
-        return "    {}:\n{}".format(self._requirement_name(), self._hash_comparison())
+        return f"    {self._requirement_name()}:\n{self._hash_comparison()}"
 
     def _hash_comparison(self) -> str:
         """

@@ -110,15 +110,7 @@ class TempDirectory:
         super().__init__()
 
         if delete is _default:
-            if path is not None:
-                # If we were given an explicit directory, resolve delete option
-                # now.
-                delete = False
-            else:
-                # Otherwise, we wait until cleanup and see what
-                # tempdir_registry says.
-                delete = None
-
+            delete = False if path is not None else None
         # The only time we specify path is in for editables where it
         # is the value of the --src option.
         if path is None:

@@ -8,9 +8,7 @@ from .winterm import enable_vt_processing, WinTerm, WinColor, WinStyle
 from .win32 import windll, winapi_test
 
 
-winterm = None
-if windll is not None:
-    winterm = WinTerm()
+winterm = WinTerm() if windll is not None else None
 
 
 class StreamWrapper(object):
@@ -225,7 +223,7 @@ class AnsiToWin32(object):
                 params = params + (1,)
         else:
             params = tuple(int(p) for p in paramstring.split(';') if len(p) != 0)
-            if len(params) == 0:
+            if not params:
                 # defaults:
                 if command in 'JKm':
                     params = (0,)

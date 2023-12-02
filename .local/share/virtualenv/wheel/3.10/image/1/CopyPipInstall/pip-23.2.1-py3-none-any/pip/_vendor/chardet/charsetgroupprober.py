@@ -51,17 +51,15 @@ class CharSetGroupProber(CharSetProber):
     def charset_name(self) -> Optional[str]:
         if not self._best_guess_prober:
             self.get_confidence()
-            if not self._best_guess_prober:
-                return None
+        if not self._best_guess_prober:
+            return None
         return self._best_guess_prober.charset_name
 
     @property
     def language(self) -> Optional[str]:
         if not self._best_guess_prober:
             self.get_confidence()
-            if not self._best_guess_prober:
-                return None
-        return self._best_guess_prober.language
+        return self._best_guess_prober.language if self._best_guess_prober else None
 
     def feed(self, byte_str: Union[bytes, bytearray]) -> ProbingState:
         for prober in self.probers:
@@ -101,6 +99,4 @@ class CharSetGroupProber(CharSetProber):
             if best_conf < conf:
                 best_conf = conf
                 self._best_guess_prober = prober
-        if not self._best_guess_prober:
-            return 0.0
-        return best_conf
+        return 0.0 if not self._best_guess_prober else best_conf

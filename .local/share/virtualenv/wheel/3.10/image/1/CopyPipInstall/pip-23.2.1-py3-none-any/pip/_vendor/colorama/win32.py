@@ -169,10 +169,10 @@ else:
 
     def GetConsoleMode(handle):
         mode = wintypes.DWORD()
-        success = _GetConsoleMode(handle, byref(mode))
-        if not success:
+        if success := _GetConsoleMode(handle, byref(mode)):
+            return mode.value
+        else:
             raise ctypes.WinError()
-        return mode.value
 
     def SetConsoleMode(handle, mode):
         success = _SetConsoleMode(handle, mode)
