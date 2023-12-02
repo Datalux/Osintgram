@@ -1,3 +1,18 @@
+import argparse
+import signal
+import sys
+
+from src.Osintgram import Osintgram
+from src import artwork
+from src import printcolors as pc
+
+is_windows = False
+
+try:
+    import gnureadline
+except ImportError:
+    is_windows = True
+    import pyreadline
 SHELL := /bin/bash
 
 setup:
