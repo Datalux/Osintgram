@@ -7,6 +7,8 @@ from src import artwork
 import sys
 import signal
 
+
+
 is_windows = False
 
 try:
@@ -26,6 +28,7 @@ def printlogo():
                 "disabled)'\n")
     pc.printout("Type 'JSON=n' to disable exporting to files'\n")
 
+printlogo()
 
 def cmdlist():
     pc.printout("FILE=y/n\t")
