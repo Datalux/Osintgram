@@ -1,7 +1,7 @@
-config/
 __pycache__/
 output/
 *.pyc
 *.json
 venv/
 credentials.ini
+config/
