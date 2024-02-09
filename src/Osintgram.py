@@ -58,7 +58,7 @@ class Osintgram:
         user = self.get_user(target)
         self.target_id = user['id']
         self.is_private = user['is_private']
-        self.following = self.check_following()
+        # self.following = self.check_following()
         self.__printTargetBanner__()
 
     def __get_feed__(self):
