@@ -1,6 +1,6 @@
 requests==2.24.0
 requests-toolbelt==0.9.1
-geopy>=2.0.0
+geopy>=2.1.0
 prettytable==0.7.2
 instagram-private-api==1.6.0
 gnureadline>=8.0.0; platform_system != "Windows"
