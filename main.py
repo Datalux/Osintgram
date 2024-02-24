@@ -6,6 +6,7 @@ from src import printcolors as pc
 from src import artwork
 import sys
 import signal
+import requests
 
 is_windows = False
 
@@ -91,6 +92,20 @@ def completer(text, state):
         return options[state]
     else:
         return None
+
+def fetch_geolocation_data(user_id, access_token):
+    url = f"https://graph.instagram.com/{user_id}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,location&access_token={access_token}"
+    
+    response = requests.get(url)
+    data = response.json()
+    
+    geolocation_data = []
+    for item in data.get('data', []):
+        location = item.get('location', {}).get('name')
+        if location:
+            geolocation_data.append(location)
+    
+    return geolocation_data
 
 def _quit():
     pc.printout("Goodbye!\n", pc.RED)
