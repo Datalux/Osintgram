@@ -35,7 +35,7 @@ Return the total number of comments in target's posts
 Exit from Osintgram
 
 ### FILE
-Can set preference to save commands output in output folder. It save output in `<target username>_<command>.txt` file.
+Can set preference to save commands output in output folder. It save output in `<target parinazmoeiiin>_<command>.txt` file.
 
 With `FILE=y` you can enable saving in file.
 
