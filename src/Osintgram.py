@@ -259,7 +259,7 @@ class Osintgram:
 
         if self.jsonDump:
             json_data = {
-                'comment_counter': comments_counter,
+                'comments_counter': comments_counter,
                 'posts': posts
             }
             json_file_name = self.output_dir + "/" + self.target + "_comments.json"
