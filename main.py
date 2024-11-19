@@ -13,7 +13,7 @@ try:
     import gnureadline  
 except: 
     is_windows = True
-    import pyreadline
+    import pyreadline3 as pyreadline
 
 
 def printlogo():
