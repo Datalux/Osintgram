@@ -1,4 +1,4 @@
-FROM python:3.9.2-alpine3.13 as build
+FROM python:3.9.2-alpine3.13 AS build
 WORKDIR /wheels
 RUN apk add --no-cache \
     ncurses-dev \
