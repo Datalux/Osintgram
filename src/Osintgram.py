@@ -1154,10 +1154,8 @@ class Osintgram:
             # print('SAVED: {0!s}'.format(new_settings_file))
 
     def check_following(self):
-        if str(self.target_id) == self.api.authenticated_user_id:
-            return True
-        endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
-        return self.api._call_api(endpoint)['user_detail']['user']['friendship_status']['following']
+        detail = self.api.friendships_show(self.target_id)
+        return detail.get('following', False)
 
     def check_private_profile(self):
         if self.is_private and not self.following:
