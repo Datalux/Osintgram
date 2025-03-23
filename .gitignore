@@ -5,3 +5,5 @@ output/
 venv/
 credentials.ini
 settings.json
+config/
+config/credentials.ini

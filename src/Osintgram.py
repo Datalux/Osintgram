@@ -54,13 +54,21 @@ class Osintgram:
 
     def setTarget(self, target):
         self.target = target
-        user = self.get_user(target)
-        self.target_id = user['id']
-        self.is_private = user['is_private']
-        self.following = self.check_following()
-        self.__printTargetBanner__()
-        self.output_dir = self.output_dir + "/" + str(self.target)
-        Path(self.output_dir).mkdir(parents=True, exist_ok=True)
+        try:
+            user = self.get_user(target)
+            if not user:
+                pc.printout(f"Error: Cannot find user with username '{target}'\n", pc.RED)
+                sys.exit(2)
+                
+            self.target_id = user['id']
+            self.is_private = user['is_private']
+            self.following = self.check_following()
+            self.__printTargetBanner__()
+            self.output_dir = self.output_dir + "/" + str(self.target)
+            Path(self.output_dir).mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            pc.printout(f"Error setting target '{target}': {str(e)}\n", pc.RED)
+            sys.exit(2)
 
     def __get_feed__(self):
         data = []
@@ -509,11 +517,28 @@ class Osintgram:
 
     def get_user_info(self):
         try:
-            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
-            content = self.api._call_api(endpoint)
+            # Redirect stderr temporarily to suppress error messages
+            import os
+            import sys
+            stderr = sys.stderr
+            sys.stderr = open(os.devnull, 'w')
+            
+            try:
+                endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
+                try:
+                    content = self.api._call_api(endpoint)
+                    data = content['user_detail']['user']
+                except Exception as e:
+                    # Try alternative endpoint if the first one fails
+                    pc.printout(f"Trying alternative endpoint...\n", pc.YELLOW)
+                    endpoint = 'users/{user_id!s}/info/'.format(**{'user_id': self.target_id})
+                    content = self.api._call_api(endpoint)
+                    data = content['user']
+            finally:
+                # Restore stderr
+                sys.stderr.close()
+                sys.stderr = stderr
            
-            data = content['user_detail']['user']
-
             pc.printout("[ID] ", pc.GREEN)
             pc.printout(str(data['pk']) + '\n')
             pc.printout("[FULL NAME] ", pc.RED)
@@ -582,10 +607,16 @@ class Osintgram:
                     json.dump(user, f)
 
         except ClientError as e:
-            print(e)
-            pc.printout("Oops... " + str(self.target) + " non exist, please enter a valid username.", pc.RED)
-            pc.printout("\n")
-            exit(2)
+            pc.printout("ClientError: " + str(e) + "\n", pc.RED)
+            try:
+                error = json.loads(e.error_response)
+                pc.printout(error.get('message', 'Unknown error'), pc.RED)
+            except (ValueError, json.JSONDecodeError):
+                # Handle case where error_response is not valid JSON
+                # Silently ignore this error
+                pass
+        except Exception as e:
+            pc.printout("Unexpected error: " + str(e) + "\n", pc.RED)
 
     def get_total_likes(self):
         if self.check_private_profile():
@@ -915,12 +946,28 @@ class Osintgram:
         pc.printout("\nWoohoo! We downloaded " + str(counter) + " photos (saved in " + self.output_dir + " folder) \n", pc.GREEN)
 
     def get_user_propic(self):
-
         try:
-            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
-            content = self.api._call_api(endpoint)
-
-            data = content['user_detail']['user']
+            # Redirect stderr temporarily to suppress error messages
+            import os
+            import sys
+            stderr = sys.stderr
+            sys.stderr = open(os.devnull, 'w')
+            
+            try:
+                endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
+                try:
+                    content = self.api._call_api(endpoint)
+                    data = content['user_detail']['user']
+                except Exception as e:
+                    # Try alternative endpoint if the first one fails
+                    pc.printout(f"Trying alternative endpoint...\n", pc.YELLOW)
+                    endpoint = 'users/{user_id!s}/info/'.format(**{'user_id': self.target_id})
+                    content = self.api._call_api(endpoint)
+                    data = content['user']
+            finally:
+                # Restore stderr
+                sys.stderr.close()
+                sys.stderr = stderr
 
             if "hd_profile_pic_url_info" in data:
                 URL = data["hd_profile_pic_url_info"]['url']
@@ -933,15 +980,20 @@ class Osintgram:
                 end = self.output_dir + "/" + self.target + "_propic.jpg"
                 urllib.request.urlretrieve(URL, end)
                 pc.printout("Target propic saved in output folder\n", pc.GREEN)
-
             else:
                 pc.printout("Sorry! No results found :-(\n", pc.RED)
         
         except ClientError as e:
-            error = json.loads(e.error_response)
-            print(error['message'])
-            print(error['error_title'])
-            exit(2)
+            pc.printout("ClientError: " + str(e) + "\n", pc.RED)
+            try:
+                error = json.loads(e.error_response)
+                pc.printout(error.get('message', 'Unknown error'), pc.RED)
+            except (ValueError, json.JSONDecodeError):
+                # Handle case where error_response is not valid JSON
+                # Silently ignore this error
+                pass
+        except Exception as e:
+            pc.printout("Unexpected error: " + str(e) + "\n", pc.RED)
 
     def get_user_stories(self):
         if self.check_private_profile():
@@ -1060,104 +1112,31 @@ class Osintgram:
 
             return user
         except ClientError as e:
-            pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
-            error = json.loads(e.error_response)
-            if 'message' in error:
-                print(error['message'])
-            if 'error_title' in error:
-                print(error['error_title'])
-            if 'challenge' in error:
-                print("Please follow this link to complete the challenge: " + error['challenge']['url'])    
-            sys.exit(2)
-        
-
-    def set_write_file(self, flag):
-        if flag:
-            pc.printout("Write to file: ")
-            pc.printout("enabled", pc.GREEN)
-            pc.printout("\n")
-        else:
-            pc.printout("Write to file: ")
-            pc.printout("disabled", pc.RED)
-            pc.printout("\n")
-
-        self.writeFile = flag
-
-    def set_json_dump(self, flag):
-        if flag:
-            pc.printout("Export to JSON: ")
-            pc.printout("enabled", pc.GREEN)
-            pc.printout("\n")
-        else:
-            pc.printout("Export to JSON: ")
-            pc.printout("disabled", pc.RED)
-            pc.printout("\n")
-
-        self.jsonDump = flag
-
-    def login(self, u, p):
-        try:
-            settings_file = "config/settings.json"
-            if not os.path.isfile(settings_file):
-                # settings file does not exist
-                print(f'Unable to find file: {settings_file!s}')
-
-                # login new
-                self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
-                                     on_login=lambda x: self.onlogin_callback(x, settings_file))
-
-            else:
-                with open(settings_file) as file_data:
-                    cached_settings = json.load(file_data, object_hook=self.from_json)
-                # print('Reusing settings: {0!s}'.format(settings_file))
-
-                # reuse auth settings
-                self.api = AppClient(
-                    username=u, password=p,
-                    settings=cached_settings,
-                    on_login=lambda x: self.onlogin_callback(x, settings_file))
-
-        except (ClientCookieExpiredError, ClientLoginRequiredError) as e:
-            print(f'ClientCookieExpiredError/ClientLoginRequiredError: {e!s}')
-
-            # Login expired
-            # Do relogin but use default ua, keys and such
-            self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
-                                 on_login=lambda x: self.onlogin_callback(x, settings_file))
-
-        except ClientError as e:
-            pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
-            error = json.loads(e.error_response)
-            pc.printout(error['message'], pc.RED)
-            pc.printout(": ", pc.RED)
-            pc.printout(e.msg, pc.RED)
-            pc.printout("\n")
-            if 'challenge' in error:
-                print("Please follow this link to complete the challenge: " + error['challenge']['url'])
+            pc.printout('ClientError {0!s} (Code: {1:d})\n'.format(e.msg, e.code), pc.RED)
+            try:
+                error = json.loads(e.error_response)
+                if 'message' in error:
+                    pc.printout(error['message'], pc.RED)
+                if 'error_title' in error:
+                    pc.printout(": " + error['error_title'], pc.RED)
+                if 'challenge' in error:
+                    pc.printout("\nPlease follow this link to complete the challenge: " + error['challenge']['url'], pc.YELLOW)
+            except (ValueError, json.JSONDecodeError):
+                # Handle case where error_response is not valid JSON
+                # Silently ignore this error, no output needed
+                pass
+            pc.printout("\n", pc.RED)
             exit(9)
-
-    def to_json(self, python_object):
-        if isinstance(python_object, bytes):
-            return {'__class__': 'bytes',
-                    '__value__': codecs.encode(python_object, 'base64').decode()}
-        raise TypeError(repr(python_object) + ' is not JSON serializable')
-
-    def from_json(self, json_object):
-        if '__class__' in json_object and json_object['__class__'] == 'bytes':
-            return codecs.decode(json_object['__value__'].encode(), 'base64')
-        return json_object
-
-    def onlogin_callback(self, api, new_settings_file):
-        cache_settings = api.settings
-        with open(new_settings_file, 'w') as outfile:
-            json.dump(cache_settings, outfile, default=self.to_json)
-            # print('SAVED: {0!s}'.format(new_settings_file))
-
-    def check_following(self):
-        if str(self.target_id) == self.api.authenticated_user_id:
-            return True
-        endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
-        return self.api._call_api(endpoint)['user_detail']['user']['friendship_status']['following']
+        except Exception as e:
+            # If the endpoint fails, try alternative method
+            try:
+                # Fallback to friendship_status endpoint
+                endpoint = 'friendships/show/{user_id!s}/'.format(**{'user_id': self.target_id})
+                return self.api._call_api(endpoint)['following']
+            except Exception as e2:
+                # If all methods fail, assume not following
+                pc.printout("Could not determine following status (assuming not following): " + str(e2) + "\n", pc.YELLOW)
+                return False
 
     def check_private_profile(self):
         if self.is_private and not self.following:
@@ -1664,3 +1643,110 @@ class Osintgram:
             pc.printout("Settings.json don't exist.\n",pc.RED)
         finally:
             f.close()
+
+    def set_write_file(self, flag):
+        if flag:
+            pc.printout("Write to file: ")
+            pc.printout("enabled", pc.GREEN)
+            pc.printout("\n")
+        else:
+            pc.printout("Write to file: ")
+            pc.printout("disabled", pc.RED)
+            pc.printout("\n")
+
+        self.writeFile = flag
+
+    def set_json_dump(self, flag):
+        if flag:
+            pc.printout("Export to JSON: ")
+            pc.printout("enabled", pc.GREEN)
+            pc.printout("\n")
+        else:
+            pc.printout("Export to JSON: ")
+            pc.printout("disabled", pc.RED)
+            pc.printout("\n")
+
+        self.jsonDump = flag
+
+    def login(self, u, p):
+        try:
+            settings_file = "config/settings.json"
+            if not os.path.isfile(settings_file):
+                # settings file does not exist
+                print(f'Unable to find file: {settings_file!s}')
+
+                # login new
+                self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
+                                     on_login=lambda x: self.onlogin_callback(x, settings_file))
+
+            else:
+                with open(settings_file) as file_data:
+                    cached_settings = json.load(file_data, object_hook=self.from_json)
+                # print('Reusing settings: {0!s}'.format(settings_file))
+
+                # reuse auth settings
+                self.api = AppClient(
+                    username=u, password=p,
+                    settings=cached_settings,
+                    on_login=lambda x: self.onlogin_callback(x, settings_file))
+
+        except (ClientCookieExpiredError, ClientLoginRequiredError) as e:
+            print(f'ClientCookieExpiredError/ClientLoginRequiredError: {e!s}')
+
+            # Login expired
+            # Do relogin but use default ua, keys and such
+            self.api = AppClient(auto_patch=True, authenticate=True, username=u, password=p,
+                                 on_login=lambda x: self.onlogin_callback(x, settings_file))
+
+        except ClientError as e:
+            try:
+                error = json.loads(e.error_response)
+                pc.printout('ClientError {0!s} (Code: {1:d})\n'.format(e.msg, e.code), pc.RED)
+                if 'message' in error:
+                    pc.printout(error['message'], pc.RED)
+                if 'error_title' in error:
+                    pc.printout(": " + error['error_title'], pc.RED)
+                if 'challenge' in error:
+                    pc.printout("\nPlease follow this link to complete the challenge: " + error['challenge']['url'], pc.YELLOW)
+            except (ValueError, json.JSONDecodeError):
+                # Handle case where error_response is not valid JSON
+                # Silently ignore this error, no output needed
+                pass
+            pc.printout("\n", pc.RED)
+            exit(9)
+
+    def to_json(self, python_object):
+        if isinstance(python_object, bytes):
+            return {'__class__': 'bytes',
+                    '__value__': codecs.encode(python_object, 'base64').decode()}
+        raise TypeError(repr(python_object) + ' is not JSON serializable')
+
+    def from_json(self, json_object):
+        if '__class__' in json_object and json_object['__class__'] == 'bytes':
+            return codecs.decode(json_object['__value__'].encode(), 'base64')
+        return json_object
+
+    def onlogin_callback(self, api, new_settings_file):
+        cache_settings = api.settings
+        with open(new_settings_file, 'w') as outfile:
+            json.dump(cache_settings, outfile, default=self.to_json)
+            # print('SAVED: {0!s}'.format(new_settings_file))
+
+    def check_following(self):
+        if str(self.target_id) == self.api.authenticated_user_id:
+            return True
+        
+        try:
+            # Try the original endpoint first
+            endpoint = 'users/{user_id!s}/full_detail_info/'.format(**{'user_id': self.target_id})
+            return self.api._call_api(endpoint)['user_detail']['user']['friendship_status']['following']
+        except Exception as e:
+            # If the endpoint fails, try alternative method
+            try:
+                # Fallback to friendship_status endpoint
+                endpoint = 'friendships/show/{user_id!s}/'.format(**{'user_id': self.target_id})
+                return self.api._call_api(endpoint)['following']
+            except Exception as e2:
+                # If all methods fail, assume not following
+                pc.printout("Could not determine following status (assuming not following): " + str(e2) + "\n", pc.YELLOW)
+                return False
