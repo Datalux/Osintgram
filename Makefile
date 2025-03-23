@@ -38,3 +38,16 @@ cleanup-testing:
 	@echo -e "\e[34m######## Cleanup Build-run-testing Container ########\e[0m"
 	@docker-compose down
 	@echo -e "\e[32m[#] osintgram-test container has been removed\e[0m"
+
+# Test commands
+test:
+	@echo -e "\e[34m######## Running Tests ########\e[0m"
+	@python run_tests.py -v
+
+test-cov:
+	@echo -e "\e[34m######## Running Tests with Coverage ########\e[0m"
+	@pytest --cov=src tests/ --cov-report=term-missing
+
+test-docker:
+	@echo -e "\e[34m######## Running Tests in Docker ########\e[0m"
+	@docker-compose run --rm --entrypoint "python run_tests.py -v" osintgram
