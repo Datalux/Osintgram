@@ -184,3 +184,38 @@ Here is a list of Osintgram's contributors:
 ## External library 🔗
 
 [Instagram API](https://github.com/ping/instagram_private_api)
+
+## Development and Testing 🧪
+
+Osintgram has a test suite to ensure functionality works as expected. To run the tests:
+
+```bash
+# Run all tests
+python run_tests.py
+
+# Run tests with verbose output
+python run_tests.py -v
+
+# Run a specific test file
+python run_tests.py tests/test_osintgram.py
+
+# Run a specific test case
+python run_tests.py tests/test_osintgram.py::TestOsintgram::test_get_user_info
+```
+
+To contribute to the project, please ensure all tests pass before submitting a pull request.
+
+### Running tests with pytest directly
+
+You can also use pytest directly:
+
+```bash
+# Install pytest
+pip install pytest
+
+# Run all tests
+pytest
+
+# Run tests with verbose output
+pytest -v
+```

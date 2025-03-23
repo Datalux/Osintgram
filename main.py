@@ -6,6 +6,7 @@ from src import printcolors as pc
 from src import artwork
 import sys
 import signal
+import os
 
 is_windows = False
 
@@ -117,10 +118,22 @@ parser.add_argument('-o', '--output', help='where to store photos', action='stor
 
 args = parser.parse_args()
 
-
-api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.cookies)
-
-
+try:
+    # Redirect stderr temporarily to suppress error messages
+    stderr = sys.stderr
+    sys.stderr = open(os.devnull, 'w')
+    
+    try:
+        api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.cookies)
+    finally:
+        # Restore stderr
+        sys.stderr.close()
+        sys.stderr = stderr
+except Exception as e:
+    print(f"Error initializing Osintgram: {str(e)}")
+    print("This could be due to API changes in Instagram or network issues.")
+    print("Try clearing cookies with the -C option or check your internet connection.")
+    sys.exit(1)
 
 commands = {
     'list':             cmdlist,
