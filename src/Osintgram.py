@@ -57,7 +57,7 @@ class Osintgram:
         user = self.get_user(target)
         self.target_id = user['id']
         self.is_private = user['is_private']
-        self.following = self.check_following()
+        #self.following = self.check_following()
         self.__printTargetBanner__()
         self.output_dir = self.output_dir + "/" + str(self.target)
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)
