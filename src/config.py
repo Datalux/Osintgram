@@ -1,3 +1,4 @@
+import os
 import configparser
 import sys
 
@@ -40,3 +41,7 @@ def getPassword():
     except KeyError:
         pc.printout('Error: missing "password" field in "config/credentials.ini"\n', pc.RED)
         sys.exit(0)
+
+
+def getHikerToken():
+    return config["Credentials"].get("hikerapi_token") or os.getenv("HIKERAPI_TOKEN")
