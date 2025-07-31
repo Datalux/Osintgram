@@ -65,7 +65,6 @@ class HikerCLI:
                 break
             if not next_page_id:
                 break
-            break  # FIXME
         return data
 
     def __get_comments__(self, media_id, limit=-1):
@@ -87,7 +86,6 @@ class HikerCLI:
                 break
             if not next_page_id:
                 break
-            break  # FIXME
         return data
 
     def __printTargetBanner__(self):
@@ -327,7 +325,6 @@ class HikerCLI:
             next_page_id = result.get("next_page_id")
             if not next_page_id:
                 break
-            break  # FIXME
 
         print("\n")
 
@@ -380,7 +377,6 @@ class HikerCLI:
             next_page_id = result.get("next_page_id")
             if not next_page_id:
                 break
-            break  # FIXME
 
         print("\n")
 
@@ -718,7 +714,6 @@ class HikerCLI:
             next_page_id = resp.get("next_page_id")
             if not next_page_id:
                 break
-            break  # FIXME
 
         if len(posts) > 0:
             pc.printout(f"\nWoohoo! We found {len(posts)} medias\n", pc.GREEN)
