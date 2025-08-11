@@ -74,14 +74,15 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
   
 5. Run `pip install -r requirements.txt`
 
-6. Open the `credentials.ini` file in the `config` folder and write your Instagram account username and password in the corresponding fields
-    
+6. Open the `credentials.ini` file in the `config` folder and write your Instagram account username and password in the corresponding fields. Or use `hikerapi_token` from https://hikerapi.com/tokens (first 100 requests are free after registration and confirmation of your tg)
+
     Alternatively, you can run the `make setup` command to populate this file for you.
 
-7. Run the main.py script in one of two ways
+7. Run the main.py script in one of three ways
 
     * As an interactive prompt `python3 main.py <target username>`
     * Or execute your command straight away `python3 main.py <target username> --command <command>`
+    * Or execute using HikerAPI token via env `HIKERAPI_TOKEN=<hikerapi token> python3 main.py <target username> -c <command>`
     
 ### Use Osintgram v2 (beta)
 You can use Osintgram2 beta just switching to `v2` [branch](https://github.com/Datalux/Osintgram/tree/v2).

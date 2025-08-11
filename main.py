@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-
-from src.Osintgram import Osintgram
-import argparse
-from src import printcolors as pc
-from src import artwork
+import os
 import sys
 import signal
+import argparse
+
+from src import artwork, config
+from src import printcolors as pc
+from src.hikercli import HikerCLI, hk
+from src.Osintgram import Osintgram
 
 is_windows = False
 
@@ -18,7 +20,10 @@ except:
 
 def printlogo():
     pc.printout(artwork.ascii_art, pc.YELLOW)
-    pc.printout("\nVersion 1.1 - Developed by Giuseppe Criscione\n\n", pc.YELLOW)
+    pc.printout("\nVersion 1.1 - Developed by Giuseppe Criscione", pc.YELLOW)
+    pc.printout(
+        f"\nHikerAPI {hk.__version__} https://hikerapi.com/help/about\n\n", pc.YELLOW
+    )
     pc.printout("Type 'list' to show all allowed commands\n")
     pc.printout("Type 'FILE=y' to save results to files like '<target username>_<command>.txt (default is disabled)'\n")
     pc.printout("Type 'FILE=n' to disable saving to files'\n")
@@ -92,6 +97,7 @@ def completer(text, state):
     else:
         return None
 
+
 def _quit():
     pc.printout("Goodbye!\n", pc.RED)
     sys.exit(0)
@@ -118,8 +124,10 @@ parser.add_argument('-o', '--output', help='where to store photos', action='stor
 args = parser.parse_args()
 
 
-api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.cookies)
-
+if config.getHikerToken():
+    api = HikerCLI(args.id, args.file, args.json, args.command, args.output, args.cookies)
+else:
+    api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.cookies)
 
 
 commands = {

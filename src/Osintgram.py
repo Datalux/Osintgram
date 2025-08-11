@@ -6,7 +6,7 @@ import os
 import codecs
 from pathlib import Path
 
-import requests
+import httpx
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -598,27 +598,34 @@ class Osintgram:
 
         data = self.__get_feed__()
 
-        for post in data:
-            like_counter += post['like_count']
-            posts += 1
+        likes = [int(p["like_count"]) for p in data]
+        posts = len(likes)
+        like_counter = sum(likes)
+        min_ = min(likes)
+        max_ = max(likes)
+        avg = int(like_counter / posts)
+        result = f" likes in {posts} posts (min: {min_}, max: {max_}, avg: {avg})\n"
 
         if self.writeFile:
             file_name = self.output_dir + "/" + self.target + "_likes.txt"
             file = open(file_name, "w")
-            file.write(str(like_counter) + " likes in " + str(like_counter) + " posts\n")
+            file.write(str(like_counter) + result)
             file.close()
 
         if self.jsonDump:
             json_data = {
-                'like_counter': like_counter,
-                'posts': like_counter
+                "like_counter": like_counter,
+                "posts": posts,
+                "min": min_,
+                "max": max_,
+                "avg": avg,
             }
             json_file_name = self.output_dir + "/" + self.target + "_likes.json"
-            with open(json_file_name, 'w') as f:
+            with open(json_file_name, "w") as f:
                 json.dump(json_data, f)
 
         pc.printout(str(like_counter), pc.MAGENTA)
-        pc.printout(" likes in " + str(posts) + " posts\n")
+        pc.printout(result)
 
     def get_media_type(self):
         if self.check_private_profile():
@@ -798,7 +805,7 @@ class Osintgram:
         if self.check_private_profile():
             return
 
-        content = requests.get("https://www.instagram.com/" + str(self.target) + "/?__a=1")
+        content = httpx.get("https://www.instagram.com/" + str(self.target) + "/?__a=1")
         data = content.json()
 
         dd = data['graphql']['user']['edge_owner_to_timeline_media']['edges']

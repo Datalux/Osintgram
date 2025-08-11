@@ -8,6 +8,7 @@ def has_colours(stream):
         return False
     try:
         import curses
+
         curses.setupterm()
         return curses.tigetnum("colors") > 2
     except:
@@ -23,3 +24,4 @@ def printout(text, colour=WHITE):
         sys.stdout.write(seq)
     else:
         sys.stdout.write(text)
+    sys.stdout.flush()
