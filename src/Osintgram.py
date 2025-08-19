@@ -1221,12 +1221,12 @@ class Osintgram:
             pc.printout("Do you want to get all emails? y/n: ", pc.YELLOW)
             value = input()
             
-            if value == str("y") or value == str("yes") or value == str("Yes") or value == str("YES"):
+            if value == str("y") or value == str("yes") or value == str("Y") or value == str("Yes") or value == str("YES"):
                 value = len(followers)
             elif value == str(""):
                 print("\n")
                 return
-            elif value == str("n") or value == str("no") or value == str("No") or value == str("NO"):
+            elif value == str("n") or value == str("no") or value == str("N") or value == str("No") or value == str("NO"):
                 while True:
                     try:
                         pc.printout("How many emails do you want to get? ", pc.YELLOW)
