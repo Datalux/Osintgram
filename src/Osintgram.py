@@ -224,7 +224,7 @@ class Osintgram:
 
             if self.jsonDump:
                 json_data['captions'] = captions
-                json_file_name = self.output_dir + "/" + self.target + "_followings.json"
+                json_file_name = self.output_dir + "/" + self.target + "_captions.json"
                 with open(json_file_name, 'w') as f:
                     json.dump(json_data, f)
 
