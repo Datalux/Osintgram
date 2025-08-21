@@ -14,7 +14,10 @@ Osintgram is an **OSINT** tool on Instagram to collect, analyze, and run reconna
 
 Disclaimer: **FOR EDUCATIONAL PURPOSE ONLY! The contributors do not assume any responsibility for the use of this tool.**
 
-Warning: It is advisable to **not** use your own/primary account when using this tool.
+$${\color{red}Warning:}$$ It is advisable to **not** use your own/primary account when using this tool.
+
+$${\color{red}Warning:}$$ If you fork the project and add your instagram credentials to you home repository do not upload them to github.
+You can disable uploading a certain file by adding it to ignore list.
 
 ## Tools and Commands 🧰
 
