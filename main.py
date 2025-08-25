@@ -12,10 +12,12 @@ from src.Osintgram import Osintgram
 is_windows = False
 
 try:
-    import gnureadline  
-except: 
-    is_windows = True
-    import pyreadline
+    import gnureadline
+except ImportError:
+    if sys.version_info < (3, 10):
+        import pyreadline
+    else:
+        import pyreadline3 as pyreadline
 
 
 def printlogo():
