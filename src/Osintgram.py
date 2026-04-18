@@ -19,6 +19,8 @@ from prettytable import PrettyTable
 from src import printcolors as pc
 from src import config
 
+SETTINGS_PATH = Path(__file__).resolve().parent.parent / "config" / "settings.json"
+
 
 class Osintgram:
     api = None
@@ -1104,8 +1106,8 @@ class Osintgram:
 
     def login(self, u, p):
         try:
-            settings_file = "config/settings.json"
-            if not os.path.isfile(settings_file):
+            settings_file = str(SETTINGS_PATH)
+            if not SETTINGS_PATH.is_file():
                 # settings file does not exist
                 print(f'Unable to find file: {settings_file!s}')
 
@@ -1664,10 +1666,9 @@ class Osintgram:
 
     def clear_cache(self):
         try:
-            f = open("config/settings.json",'w')
-            f.write("{}")
+            SETTINGS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(SETTINGS_PATH, 'w') as f:
+                f.write("{}")
             pc.printout("Cache Cleared.\n",pc.GREEN)
         except FileNotFoundError:
             pc.printout("Settings.json don't exist.\n",pc.RED)
-        finally:
-            f.close()

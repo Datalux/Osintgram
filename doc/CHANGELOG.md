@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+**Enhancements**
+- Added an explicit `--no-hikerapi` CLI switch to force `credentials.ini` authentication when a HikerAPI token is configured
+
+**Bug fixes**
+- Improved Windows readline compatibility on modern Python versions by preferring `pyreadline3`
+- Resolved `config/credentials.ini` and `config/settings.json` using project-relative paths so the CLI works when launched outside the repository root
+
 ## [1.3](https://github.com/Datalux/Osintgram/releases/tag/1.3)
 **Enhancements**
 - Artwork refactoring (#149) 

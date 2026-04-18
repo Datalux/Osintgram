@@ -3,6 +3,8 @@ import os
 import sys
 import signal
 import argparse
+import collections
+import collections.abc
 
 from src import artwork, config
 from src import printcolors as pc
@@ -10,12 +12,22 @@ from src.hikercli import HikerCLI, hk
 from src.Osintgram import Osintgram
 
 is_windows = False
+readline_backend = None
+windows_readline = None
 
 try:
-    import gnureadline  
-except: 
+    import gnureadline as readline_backend
+except ImportError:
     is_windows = True
-    import pyreadline
+    try:
+        import pyreadline3 as readline_backend
+    except ImportError:
+        if not hasattr(collections, "Callable"):
+            collections.Callable = collections.abc.Callable
+        try:
+            import pyreadline as readline_backend
+        except ImportError:
+            readline_backend = None
 
 
 def printlogo():
@@ -103,13 +115,47 @@ def _quit():
     sys.exit(0)
 
 
+def setup_readline():
+    global windows_readline
+
+    if readline_backend is None:
+        return
+
+    try:
+        if is_windows:
+            if windows_readline is None:
+                windows_readline = readline_backend.Readline()
+            windows_readline.parse_and_bind("tab: complete")
+            windows_readline.set_completer(completer)
+        else:
+            readline_backend.parse_and_bind("tab: complete")
+            readline_backend.set_completer(completer)
+    except Exception:
+        # Autocomplete is optional, so keep the CLI usable if readline breaks.
+        pass
+
+
+def build_api(args):
+    if args.no_hikerapi or not config.getHikerToken():
+        return Osintgram(
+            args.id, args.file, args.json, args.command, args.output, args.cookies
+        )
+
+    try:
+        return HikerCLI(
+            args.id, args.file, args.json, args.command, args.output, args.cookies
+        )
+    except SystemExit as exc:
+        if exc.code not in (0, None):
+            pc.printout(
+                "HikerAPI startup failed. Re-run with --no-hikerapi to use credentials.ini login instead.\n",
+                pc.YELLOW,
+            )
+        raise
+
+
 signal.signal(signal.SIGINT, signal_handler)
-if is_windows:
-    pyreadline.Readline().parse_and_bind("tab: complete")
-    pyreadline.Readline().set_completer(completer)
-else:
-    gnureadline.parse_and_bind("tab: complete")
-    gnureadline.set_completer(completer)
+setup_readline()
 
 parser = argparse.ArgumentParser(description='Osintgram is a OSINT tool on Instagram. It offers an interactive shell '
                                              'to perform analysis on Instagram account of any users by its nickname ')
@@ -120,14 +166,11 @@ parser.add_argument('-j', '--json', help='save commands output as JSON file', ac
 parser.add_argument('-f', '--file', help='save output in a file', action='store_true')
 parser.add_argument('-c', '--command', help='run in single command mode & execute provided command', action='store')
 parser.add_argument('-o', '--output', help='where to store photos', action='store')
+parser.add_argument('--no-hikerapi', help='disable HikerAPI and use Instagram credentials from config/credentials.ini', action='store_true')
 
 args = parser.parse_args()
 
-
-if config.getHikerToken():
-    api = HikerCLI(args.id, args.file, args.json, args.command, args.output, args.cookies)
-else:
-    api = Osintgram(args.id, args.file, args.json, args.command, args.output, args.cookies)
+api = build_api(args)
 
 
 commands = {
@@ -162,12 +205,7 @@ commands = {
 
 
 signal.signal(signal.SIGINT, signal_handler)
-if is_windows:
-    pyreadline.Readline().parse_and_bind("tab: complete")
-    pyreadline.Readline().set_completer(completer)
-else:
-    gnureadline.parse_and_bind("tab: complete")
-    gnureadline.set_completer(completer)
+setup_readline()
 
 if not args.command:
     printlogo()
@@ -179,12 +217,7 @@ while True:
         _cmd = commands.get(args.command)
     else:
         signal.signal(signal.SIGINT, signal_handler)
-        if is_windows:
-            pyreadline.Readline().parse_and_bind("tab: complete")
-            pyreadline.Readline().set_completer(completer)
-        else:
-            gnureadline.parse_and_bind("tab: complete")
-            gnureadline.set_completer(completer)
+        setup_readline()
         pc.printout("Run a command: ", pc.YELLOW)
         cmd = input()
 

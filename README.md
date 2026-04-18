@@ -86,6 +86,7 @@ You can find detailed commands usage [here](doc/COMMANDS.md).
     * As an interactive prompt `python3 main.py <target username>`
     * Or execute your command straight away `python3 main.py <target username> --command <command>`
     * Or execute using HikerAPI token via env `HIKERAPI_TOKEN=<hikerapi token> python3 main.py <target username> -c <command>`
+    * Or bypass HikerAPI explicitly and use `config/credentials.ini` login `python3 main.py <target username> --no-hikerapi`
     
 ### Use Osintgram v2 (beta)
 You can use Osintgram2 beta just switching to `v2` [branch](https://github.com/Datalux/Osintgram/tree/v2).
