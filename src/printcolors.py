@@ -11,7 +11,7 @@ def has_colours(stream):
 
         curses.setupterm()
         return curses.tigetnum("colors") > 2
-    except:
+    except Exception:
         return False
 
 
