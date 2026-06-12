@@ -1133,8 +1133,19 @@ class Osintgram:
                                  on_login=lambda x: self.onlogin_callback(x, settings_file))
 
         except ClientError as e:
-            pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
+            # NEW: Detect bad_password and give helpful message
             error = json.loads(e.error_response)
+            if error.get('error_type') == 'bad_password' or 'bad_password' in str(e):
+                pc.printout("\n[!] Instagram blocked this login attempt.\n", pc.RED)
+                pc.printout("[!] The old 'instagram-private-api' is no longer reliable.\n", pc.RED)
+                pc.printout("[!] Please use HikerAPI instead:\n", pc.YELLOW)
+                pc.printout("    1. Sign up at https://hikerapi.com/tokens (free 100 requests)\n", pc.CYAN)
+                pc.printout("    2. Add 'hikerapi_token = YOUR_TOKEN' to config/credentials.ini\n", pc.CYAN)
+                pc.printout("    3. Run the tool again.\n", pc.CYAN)
+                sys.exit(1)
+
+            
+            pc.printout('ClientError {0!s} (Code: {1:d}, Response: {2!s})'.format(e.msg, e.code, e.error_response), pc.RED)
             pc.printout(error['message'], pc.RED)
             pc.printout(": ", pc.RED)
             pc.printout(e.msg, pc.RED)
