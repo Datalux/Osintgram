@@ -1050,8 +1050,13 @@ class HikerCLI:
         results = []
         for follow in items:
             pc.printout("@", pc.CYAN)
-            user = self.api.user_by_id_v2(follow["pk"])
-            if item := user["user"].get(from_key):
+            user_id = follow.get("pk") or follow.get("id")
+            if not user_id:
+                continue
+
+            user = self.api.user_by_id_v2(user_id)
+            user_info = user.get("user") or user
+            if item := user_info.get(from_key):
                 follow[to_key] = item
                 results.append(follow)
                 if len(results) > value:
@@ -1066,7 +1071,12 @@ class HikerCLI:
 
             for node in results:
                 t.add_row(
-                    [str(node["id"]), node["username"], node["full_name"], node[to_key]]
+                    [
+                        str(node.get("id") or node.get("pk")),
+                        node["username"],
+                        node["full_name"],
+                        node[to_key],
+                    ]
                 )
 
             if self.writeFile:
