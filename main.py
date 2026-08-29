@@ -74,7 +74,7 @@ def cmdlist():
     pc.printout("propic\t\t")
     print("Download target's profile picture")
     pc.printout("stories\t\t")
-    print("Download target's stories")
+    print("Download target's sories")
     pc.printout("tagged\t\t")
     print("Get list of users tagged by target")
     pc.printout("target\t\t")
