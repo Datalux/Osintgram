@@ -14,4 +14,4 @@ docker-build:
 
 docker:
 	@echo -e "\e[34m######## Osintgram Web UI in Docker — http://127.0.0.1:8000 ########\e[0m"
-	@docker compose up
+	@docker compose up --build

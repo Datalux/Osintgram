@@ -126,6 +126,28 @@ Pick a different one with `export OLLAMA_MODEL=qwen2.5:7b`. The model must
 support tool calling — one that doesn't will answer from thin air instead of
 running commands.
 
+**Give it enough context.** Ollama loads every model with a 4096-token window
+unless told otherwise, however large a context the model itself advertises.
+That is too small here: the 28 tool schemas plus the system prompt come to
+roughly 2,000 tokens before a single result arrives, so the second or third
+tool call overflows the window — and Ollama discards the *oldest* tokens, which
+are precisely the system prompt and the tool definitions. The model then looks
+incompetent (forgets its instructions, stops calling tools, starts making
+answers up) when it simply can't see them any more.
+
+The app therefore asks for `OLLAMA_NUM_CTX=16384`. That costs roughly 2 GB of
+KV cache on an 8B model. If you're short on memory, lower it — but not below
+about 8192, or you're back to truncation. If you have room, raising it lets the
+model hold more results at once.
+
+**Bigger models are noticeably better at choosing tools.** `llama3.1:8b` is the
+default because it is small and widely available, not because it is the best
+here: with 28 tools to choose from, an 8B model picks the wrong one more often
+and is likelier to mangle an argument. If you can run one, a 14B–24B
+tool-calling model is a clear step up. Ollama's library marks models that
+support tools; anything without that capability will not work in AI mode at
+all.
+
 ### 2.4 Start it
 
 ```bash
@@ -138,10 +160,15 @@ instance you intend to leave running.
 ### 2.5 Or run it in Docker
 
 ```bash
-docker compose up      # or: make docker
+docker compose up --build      # or: make docker
 ```
 
-Same address and same behaviour. Three things are deliberate about the setup:
+Same address and same behaviour. **After pulling a newer version, run this
+same command again** — `docker compose up` alone reuses whatever image was
+last built even when the source has changed; only `--build` picks up new
+code. `make docker` always includes it.
+
+Three things are deliberate about the setup:
 
 - The port is published as `127.0.0.1:8000:8000`, not `8000:8000` — the app
   has no authentication, so the container must not be reachable from your
@@ -170,8 +197,8 @@ docker compose run --rm --entrypoint python osintgram scripts/instagrapi_login.p
 3. Press **Run**.
 
 The page shows a summary bar (requests spent, successes, failures, cache hits,
-elapsed time), the model's written answer, and one result card per command it
-ran. If you'd rather watch it work, tick **"Verbose mode"** before running:
+elapsed time), the model's written answer — which fills in word by word as the
+model writes it — and one result card per command it ran. If you'd rather watch it work, tick **"Verbose mode"** before running:
 you then see each command start and finish, and every single backend request as
 it happens.
 
@@ -505,6 +532,8 @@ instagrapi when a saved session exists.
 |---|---|---|
 | `OLLAMA_MODEL` | `llama3.1:8b` | Any tool-calling capable model you've pulled |
 | `OLLAMA_MAX_TOKENS` | `1024` | Cap on the model's reply length |
+| `OLLAMA_NUM_CTX` | `16384` | Context window. Ollama defaults to 4096 regardless of what the model supports, which is not enough here — see below |
+| `OLLAMA_TEMPERATURE` | `0.1` | Low on purpose: picking a tool is a decision, not a creative act |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Where Ollama is listening. Read by the Ollama client itself; the Docker setup points it at your host |
 
 ---

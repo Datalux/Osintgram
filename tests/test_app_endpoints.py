@@ -1,5 +1,6 @@
 """Tests for the FastAPI web layer, driven through a fake service so no
 network, HikerAPI token, or Ollama is needed."""
+import json
 import time
 import types
 
@@ -8,6 +9,21 @@ from fastapi.testclient import TestClient
 
 import src.web.app as appmod
 import src.web.history as history
+
+
+def stream(content="", tool_calls=None):
+    """What ollama.chat(stream=True) yields: chunks carrying text pieces, and
+    tool calls arriving whole. The app accumulates them - see _run_agent_events."""
+    # Split so the pieces still concatenate back to the original, spaces and
+    # all - a helper that quietly dropped them would hide a real joining bug.
+    import re
+    parts = re.findall(r"\S+\s*", content) if content else []
+    chunks = [types.SimpleNamespace(message=types.SimpleNamespace(content=part, tool_calls=None))
+              for part in parts]
+    if tool_calls:
+        chunks.append(types.SimpleNamespace(
+            message=types.SimpleNamespace(content="", tool_calls=tool_calls)))
+    return chunks
 
 
 @pytest.fixture
@@ -32,8 +48,7 @@ def client(tmp_path, monkeypatch):
         )
 
     monkeypatch.setattr(appmod, "build_service", fake_build)
-    monkeypatch.setattr(appmod.ollama, "chat", lambda **kw: types.SimpleNamespace(
-        message=types.SimpleNamespace(content="fatto", tool_calls=None)))
+    monkeypatch.setattr(appmod.ollama, "chat", lambda **kw: stream("fatto"))
     return TestClient(appmod.app)
 
 
@@ -90,7 +105,7 @@ def test_ai_mode_runs_without_a_target_on_the_search_tools(client, monkeypatch):
     def fake_chat(**kw):
         offered["tools"] = [fn.__name__ for fn in kw["tools"]]
         offered["system"] = kw["messages"][0]["content"]
-        return types.SimpleNamespace(message=types.SimpleNamespace(content="ecco", tool_calls=None))
+        return stream("ecco")
 
     monkeypatch.setattr(appmod.ollama, "chat", fake_chat)
     r = client.post("/api/query", json={"message": "post con #milano"})
@@ -283,3 +298,86 @@ def test_account_about_is_exposed_as_its_own_command(client):
     from src.web import cost
     assert cost.estimate_command("get_account_about", {}, {}) == (1, 1)
     assert cost.estimate_command("get_user_info", {}, {}) == (0, 0)  # still free
+
+
+def test_the_prompt_carries_what_we_already_paid_for(client, monkeypatch):
+    """The profile lookup happens before the agent runs, so the model should be
+    told the counters instead of spending a turn on get_user_info."""
+    seen = {}
+
+    def fake_build(target):
+        class FakeApi:
+            cache_store = cache_ttl_seconds = max_calls = on_call = cancelled = None
+        return types.SimpleNamespace(
+            api=FakeApi(), target=target, target_id=1, backend_name="fake", api_call_count=1,
+            user={"username": target, "follower_count": 12480, "following_count": 312,
+                  "media_count": 168, "is_private": False},
+            get_user_info=lambda **k: {})
+
+    monkeypatch.setattr(appmod, "build_service", fake_build)
+    monkeypatch.setattr(appmod.ollama, "chat", lambda **kw: (
+        seen.update(system=kw["messages"][0]["content"]),
+        stream("ok"))[1])
+
+    assert client.post("/api/query", json={"target": "bob", "message": "how many followers?"}).status_code == 200
+    assert "12480 followers" in seen["system"]
+    assert "312 following" in seen["system"]
+    assert "the profile is public" in seen["system"]
+
+
+def test_a_private_profile_is_flagged_to_the_model(client, monkeypatch):
+    seen = {}
+
+    def fake_build(target):
+        class FakeApi:
+            cache_store = cache_ttl_seconds = max_calls = on_call = cancelled = None
+        return types.SimpleNamespace(
+            api=FakeApi(), target=target, target_id=1, backend_name="fake", api_call_count=1,
+            user={"username": target, "is_private": True})
+
+    monkeypatch.setattr(appmod, "build_service", fake_build)
+    monkeypatch.setattr(appmod.ollama, "chat", lambda **kw: (
+        seen.update(system=kw["messages"][0]["content"]),
+        stream("ok"))[1])
+
+    client.post("/api/query", json={"target": "bob", "message": "their followers?"})
+    assert "PRIVATE" in seen["system"]
+
+
+def test_the_model_is_warned_which_tools_cost_money(client, monkeypatch):
+    """The contact scans spend one paid request per account examined - the
+    model must not reach for them to answer a general question."""
+    seen = {}
+    monkeypatch.setattr(appmod.ollama, "chat", lambda **kw: (
+        seen.update(system=kw["messages"][0]["content"]),
+        stream("ok"))[1])
+
+    client.post("/api/query", json={"target": "bob", "message": "tell me about them"})
+    for tool in ("get_followers_email", "get_followings_email",
+                 "get_followers_phone", "get_followings_phone"):
+        assert tool in seen["system"]
+    assert "expensive" in seen["system"]
+
+
+def test_profile_facts_is_empty_without_a_target():
+    import types as t
+    assert appmod._profile_facts(t.SimpleNamespace(target=None, user={})) == ""
+
+
+def test_the_answer_is_streamed_piece_by_piece(client, monkeypatch):
+    """A local model writing a paragraph takes seconds; the page should fill in
+    as it goes rather than sit silent and then paste the whole thing."""
+    monkeypatch.setattr(appmod.ollama, "chat",
+                        lambda **kw: stream("they post mostly at night"))
+
+    with client.stream("POST", "/api/query",
+                       json={"target": "bob", "message": "when do they post?", "verbose": True}) as r:
+        body = "".join(chunk for chunk in r.iter_text())
+
+    events = [json.loads(line[6:]) for line in body.splitlines() if line.startswith("data: ")]
+    deltas = [e["text"] for e in events if e["type"] == "answer_delta"]
+    final = [e["text"] for e in events if e["type"] == "answer"]
+
+    assert len(deltas) > 1, "the answer arrived in one lump"
+    # Whatever the split, the pieces must rebuild the answer exactly.
+    assert "".join(deltas) == final[-1] == "they post mostly at night"

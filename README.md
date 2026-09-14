@@ -109,7 +109,7 @@ Base mode works without it.
 Prefer containers?
 
 ```bash
-docker compose up      # or: make docker
+docker compose up --build      # or: make docker
 ```
 
 Same address, same behaviour — published on `127.0.0.1` only. Your key, cache

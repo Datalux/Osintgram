@@ -3741,6 +3741,11 @@
             // whole multi-step query finishes.
             if (tc) appendCard(tc, toolCalls.indexOf(tc));
             setSummary(liveStats, performance.now() - queryStart, apiCallsTotal, backend, true);
+          } else if (evt.type === "answer_delta") {
+            // The model is still writing: show the text as it lands, so a
+            // slow local model fills the card instead of leaving it blank.
+            answer += evt.text || "";
+            setAnswer(answer, false);
           } else if (evt.type === "answer") {
             answer = evt.text || "";
             exportState.answer = answer;

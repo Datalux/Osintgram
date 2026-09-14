@@ -47,6 +47,19 @@ from src.web.tools import TARGET_FREE_TOOLS, build_tools, resolve_call_args, too
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 OLLAMA_MAX_TOKENS = int(os.getenv("OLLAMA_MAX_TOKENS", "1024"))
+# Ollama loads a model with a 4096-token window unless told otherwise, however
+# large a context the model itself supports. That is not enough here: the 28
+# tool schemas plus the system prompt are already ~2k tokens before a single
+# result comes back, so two tool calls overflow the window - and Ollama drops
+# the *oldest* tokens, which are exactly the system prompt and the tool
+# definitions. The model then looks incompetent (forgets its instructions,
+# stops calling tools) when it simply can no longer see them. Raise it, at the
+# cost of some KV-cache memory: ~2 GB for an 8B model at 16k.
+OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "16384"))
+# Picking the right tool is a decision, not a creative act. Ollama's default
+# (0.8) makes an 8B model wander between plausible-looking tools and invent
+# argument values; near-zero makes the choice repeatable.
+OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.1"))
 MAX_TOOL_TURNS = 8
 # Every ollama.chat() call re-sends and reprocesses the full message history
 # (no server-side prompt caching like the Anthropic API) - a large tool
@@ -296,7 +309,8 @@ def _run_agent_events(
       "retry" is a spent-but-not-final attempt, another one follows;
       "limit" is a request skipped because the query budget ran out)
     - {"type": "tool_result", "name": ..., "result": ..., "elapsed_ms": ...} - after it returns
-    - {"type": "answer", "text": ...}                                       - the final answer
+    - {"type": "answer_delta", "text": ...}   - a piece of the answer, as the model writes it
+    - {"type": "answer", "text": ...}         - the whole answer, once complete
 
     A generator so both the plain (blocking) and verbose (streamed) response
     modes share one implementation instead of duplicating the agent loop.
@@ -351,8 +365,10 @@ def _run_agent_events(
         "user asks about a specific account, say that they have to type the "
         "username in the target field first"
     )
+    known = _profile_facts(service)
     system_prompt = (
         f"You are an OSINT assistant {subject}. "
+        f"{known}"
         "Use the available tools to answer the user's "
         "request. Respond in the same language the user wrote in. If a tool "
         "result contains an \"error\" field, quote that error message to the "
@@ -367,9 +383,16 @@ def _run_agent_events(
         "following_count and media_count, so use it for questions about "
         "those numbers instead of fetching the full list with "
         "get_followers/get_followings, which is slower and only needed when "
-        "the user wants the actual accounts, not a count. Keep your final "
-        "answer concise - summarize, don't repeat raw data verbatim the user "
-        "can already see."
+        "the user wants the actual accounts, not a count. "
+        # Money, not just latency: these spend one request per account they
+        # look at, so the model must not reach for them casually.
+        "get_followers_email, get_followings_email, get_followers_phone and "
+        "get_followings_phone are far more expensive than every other tool - "
+        "each one spends a paid request per account it checks, hundreds in "
+        "total. Call them only when the user explicitly asks for emails or "
+        "phone numbers, never to satisfy a general question. "
+        "Keep your final answer concise - summarize, don't repeat raw data "
+        "verbatim the user can already see."
     )
     messages = [
         {"role": "system", "content": system_prompt},
@@ -377,20 +400,43 @@ def _run_agent_events(
     ]
 
     for _ in range(MAX_TOOL_TURNS):
-        response = ollama.chat(
+        # Streamed so the final answer appears word by word instead of after a
+        # silence: on a local 8B model writing a paragraph takes seconds, and
+        # a frozen page reads as a hung tool. Tool calls arrive whole in their
+        # own chunks, so they are simply collected until the turn ends.
+        content_parts: list = []
+        tool_calls: list = []
+        for chunk in ollama.chat(
             model=OLLAMA_MODEL,
             messages=messages,
             tools=tools,
-            options={"num_predict": OLLAMA_MAX_TOKENS},
-        )
-        msg = response.message
+            stream=True,
+            options={
+                "num_predict": OLLAMA_MAX_TOKENS,
+                "num_ctx": OLLAMA_NUM_CTX,
+                "temperature": OLLAMA_TEMPERATURE,
+            },
+        ):
+            piece = chunk.message
+            if piece.content:
+                content_parts.append(piece.content)
+                yield {"type": "answer_delta", "text": piece.content}
+            if piece.tool_calls:
+                tool_calls.extend(piece.tool_calls)
+
+        content = "".join(content_parts)
+        msg = {"role": "assistant", "content": content}
+        if tool_calls:
+            msg["tool_calls"] = tool_calls
         messages.append(msg)
 
-        if not msg.tool_calls:
-            yield {"type": "answer", "text": msg.content or ""}
+        if not tool_calls:
+            # Already streamed above; this carries the whole text for the
+            # non-streaming response and for the export.
+            yield {"type": "answer", "text": content}
             return
 
-        for call in msg.tool_calls:
+        for call in tool_calls:
             name = call.function.name
             result, parsed_result, is_error = yield from _execute_tool_events(
                 service, name, dispatch.get(name), dict(call.function.arguments or {}), max_items, emit_live
@@ -398,13 +444,50 @@ def _run_agent_events(
             model_facing_result = result if is_error else _truncate_for_model(parsed_result)
             messages.append({"role": "tool", "tool_name": name, "content": model_facing_result})
 
+    # The loop ran out of turns with the model still asking for tools. Say so
+    # plainly: the results it did collect are on screen either way.
     yield {
         "type": "answer",
         "text": (
-            "I could not finish the request within the maximum of "
-            "passaggi consentiti - prova a essere più specifico."
+            f"I ran out of steps ({MAX_TOOL_TURNS}) before finishing the request. "
+            "The results collected so far are below — try asking something more "
+            "specific, or pick the commands yourself in Base mode."
         ),
     }
+
+
+def _profile_facts(service: OsintgramService) -> str:
+    """What we already know about the target, for the system prompt.
+
+    build_service resolves the profile before the agent ever runs, so these
+    numbers are already paid for. Handing them to the model saves it a
+    get_user_info round-trip for the questions people ask most ("how many
+    followers?"), and stops it reaching for public-only tools on a private
+    account. Returns "" when there is no target.
+    """
+    user = getattr(service, "user", None) or {}
+    if not user:
+        return ""
+    bits = []
+    for key, label in (("follower_count", "followers"), ("following_count", "following"),
+                       ("media_count", "posts")):
+        if isinstance(user.get(key), int):
+            bits.append(f"{user[key]} {label}")
+    if user.get("is_private"):
+        bits.append("the profile is PRIVATE, so any tool needing a public one will refuse")
+    else:
+        bits.append("the profile is public")
+    for key in ("is_verified", "is_business"):
+        if user.get(key):
+            bits.append(key.replace("is_", "").replace("_", " "))
+    if user.get("category_name") or user.get("category"):
+        bits.append(f"category: {user.get('category_name') or user['category']}")
+    if not bits:
+        return ""
+    return (
+        "Already known about this account, at no further cost - use these "
+        f"instead of calling a tool to get them: {'; '.join(bits)}. "
+    )
 
 
 def _run_direct_events(
