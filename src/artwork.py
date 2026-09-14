@@ -1,3 +1,7 @@
+# Shown under the logo in the web UI's header (see /api/about).
+version = "2.0"
+author = "Giuseppe Criscione"
+
 ascii_art = r"""
 ________         .__        __                               
 \_____  \   _____|__| _____/  |_  ________________    _____  

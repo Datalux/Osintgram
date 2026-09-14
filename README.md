@@ -1,190 +1,183 @@
 # Osintgram 🔎📸
 
-[![version-1.3](https://img.shields.io/badge/version-1.3-green)](https://github.com/Datalux/Osintgram/releases/tag/1.3)
-[![GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](https://img.shields.io/badge/license-GPLv3-blue)
-[![Python3](https://img.shields.io/badge/language-Python3-red)](https://img.shields.io/badge/language-Python3-red)
-[![Telegram](https://img.shields.io/badge/Telegram-Channel-blue.svg)](https://t.me/osintgram)
-[![Docker](https://img.shields.io/badge/Docker-Supported-blue)](https://img.shields.io/badge/Docker-Supported-blue)
+[![version](https://img.shields.io/badge/version-2.0-green)](doc/CHANGELOG.md)
+[![GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](LICENSE)
+[![Python3](https://img.shields.io/badge/python-3.10%2B-red)](https://www.python.org/)
+[![tests](https://github.com/Datalux/Osintgram/actions/workflows/tests.yml/badge.svg)](.github/workflows/tests.yml)
+[![local-first](https://img.shields.io/badge/runs-100%25%20locally-8b5cf6)](#quick-start)
 
-Osintgram is an **OSINT** tool on Instagram to collect, analyze, and run reconnaissance.
+**Point it at an Instagram account and find out who's behind it.** Osintgram
+collects, cross-references and lays out everything a public profile gives away
+— followers, captions, hashtags, geotagged locations, posting habits, public
+contact details — in a web interface you run on your own machine.
+
+Ask in plain language and a **local AI model** figures out which lookups to
+run. Or don't: pick the commands yourself and skip the model entirely.
 
 <p align="center">
-<img align="center" src=".img/carbon.png" width="900">
+<img src=".img/web-app.png" width="900" alt="The Osintgram web interface: a terminal-style header, the command picker, and result cards showing profile details and hashtags">
 </p>
 
-Disclaimer: **FOR EDUCATIONAL PURPOSE ONLY! The contributors do not assume any responsibility for the use of this tool.**
+---
 
-$${\color{red}Warning:}$$ It is advisable to **not** use your own/primary account when using this tool.
+## Why you might like it
 
-$${\color{red}Warning:}$$ If you fork the project and add your instagram credentials to you home repository do not upload them to github.
-You can disable uploading a certain file by adding it to ignore list.
+**It answers questions, not just commands.** *"How many followers do they have and which
+hashtags do they use most?"* runs three lookups and comes back with a written answer —
+and the raw results underneath, so you can check the work instead of trusting
+the prose.
 
-## Tools and Commands 🧰
+**Nothing leaves your machine except the lookups themselves.** The AI runs
+locally through [Ollama](https://ollama.com): no OpenAI key, no subscription, no
+prompt of yours sent to anyone. The interface is served from `127.0.0.1`.
 
-Osintgram offers an interactive shell to perform analysis on Instagram account of any users by its nickname. You can get:
+**It tells you what a search will cost before you run it.** Instagram data
+isn't free, and most tools let you find out the expensive way. This one prices
+your selection up front, shows your remaining credit, caches every request so
+you never pay twice for the same lookup, and lets you cap or stop a run —
+server-side, not just in the browser.
 
-```text
-- addrs           Get all registered addressed by target photos
-- captions        Get user's photos captions
-- comments        Get total comments of target's posts
-- followers       Get target followers
-- followings      Get users followed by target
-- fwersemail      Get email of target followers
-- fwingsemail     Get email of users followed by target
-- fwersnumber     Get phone number of target followers
-- fwingsnumber    Get phone number of users followed by target
-- hashtags        Get hashtags used by target
-- info            Get target info
-- likes           Get total likes of target's posts
-- mediatype       Get user's posts type (photo or video)
-- photodes        Get description of target's photos
-- photos          Download user's photos in output folder
-- propic          Download user's profile picture
-- stories         Download user's stories  
-- tagged          Get list of users tagged by target
-- wcommented      Get a list of user who commented target's photos
-- wtagged         Get a list of user who tagged target
-```
+**It shows you what it found, properly.** Post thumbnails in a filterable grid,
+geotagged locations on a map, a weekday × hour heatmap of when someone posts,
+comparison between two accounts. Not a wall of JSON — though the JSON is one
+click away on every card.
 
-You can find detailed commands usage [here](doc/COMMANDS.md).
+**You can hand the result to someone else.** One button turns a finished search
+into a standalone HTML report that opens in any browser, with no server and no
+Osintgram.
 
-[**Latest version**](https://github.com/Datalux/Osintgram/releases/tag/1.3) |
-[Commands](doc/COMMANDS.md) |
-[CHANGELOG](doc/CHANGELOG.md)
+---
 
-## FAQ
-1. **Can I access the contents of a private profile?** No, you cannot get information on private profiles. You can only get information from a public profile or a profile you follow. The tools that claim to be successful are scams!
-2. **What is and how I can bypass the `challenge_required` error?** The `challenge_required` error means that Instagram notice a suspicious behavior on your profile, so needs to check if you are a real person or a bot. To avoid this you should follow the suggested link and complete the required operation (insert a code, confirm email, etc)
+## Two ways to drive it
 
+<p align="center">
+<img src=".img/web-commands.png" width="860" alt="Base mode: 28 commands in three columns, grouped and collapsible, with a search box">
+</p>
 
-## Installation ⚙️
+**AI mode** — describe what you want. A local model picks the commands, runs
+them and summarizes. It can only choose from the same list below; it can't
+invent lookups or make up data.
 
-1. Fork/Clone/Download this repo
+**Base mode** — no model, no Ollama needed. All 28 commands, one line each,
+grouped and searchable. Tick what you want, set the parameters, run them in
+order.
 
-    `git clone https://github.com/Datalux/Osintgram.git`
+You can also leave the username empty in AI mode and just ask about a hashtag
+or a place — those searches belong to no account.
 
-2. Navigate to the directory
+---
 
-    `cd Osintgram`
+## What you can find out
 
-3. Create a virtual environment for this project
+| | |
+|---|---|
+| **Profile** | Bio and every link in it, follower/following/post counts, category, public email, phone and business address down to the coordinates, linked Facebook id — plus Instagram's own *About this account*: country of registration, creation date, how many times the username changed |
+| **Network** | Followers and followings, accounts Instagram suggests as related, who tagged them, who they tagged, who comments most — and **mutual connections** between two accounts |
+| **Content** | Hashtags ranked by use, captions, every comment, like and comment statistics, photo/video/carousel breakdown with views and paid partnerships, **posting-times heatmap**, geotagged locations **on a map**, photo alt text |
+| **Contacts** | Public emails and phone numbers among a target's followers or followings |
+| **No target needed** | Posts published with a **hashtag** (top or recent) or from a **place**, and who published them |
 
-    `python3 -m venv venv`
+Stories, highlights and profile pictures come back as direct CDN links — and
+any card with media in it offers a one-click zip of the originals.
 
-4. Load the virtual environment
-   - On Windows Powershell: `.\venv\Scripts\activate.ps1`
-   - On Linux and Git Bash: `source venv/bin/activate`
-  
-5. Run `pip install -r requirements.txt`
+---
 
-6. Open the `credentials.ini` file in the `config` folder and write your Instagram account username and password in the corresponding fields. Or use `hikerapi_token` from https://hikerapi.com/tokens (first 100 requests are free after registration and confirmation of your tg)
-
-    Alternatively, you can run the `make setup` command to populate this file for you.
-
-7. Run the main.py script in one of three ways
-
-    * As an interactive prompt `python3 main.py <target username>`
-    * Or execute your command straight away `python3 main.py <target username> --command <command>`
-    * Or execute using HikerAPI token via env `HIKERAPI_TOKEN=<hikerapi token> python3 main.py <target username> -c <command>`
-    
-### Use Osintgram v2 (beta)
-You can use Osintgram2 beta just switching to `v2` [branch](https://github.com/Datalux/Osintgram/tree/v2).
-The v2 has some improvements and is faster with a new command execution interface. Try it just running `git checkout v2`.
-
-## Docker Quick Start 🐳
-
-This section will explain how you can quickly use this image with `Docker` or `Docker-compose`.
-
-### Prerequisites
-
-Before you can use either `Docker` or `Docker-compose`, please ensure you do have the following prerequisites met.
-
-1. **Docker** installed - [link](https://docs.docker.com/get-docker/)
-2. **Docker-composed** installed (if using Docker-compose) - [link](https://docs.docker.com/compose/install/)
-3. **Credentials** configured - This can be done manually or by running the `make setup` command from the root of this repo
-
-**Important**: Your container will fail if you do not do step #3 and configure your credentials
-
-### Docker
-
-If docker is installed you can build an image and run this as a container.
-
-Build:
+## Quick start
 
 ```bash
-docker build -t osintgram .
+pip install -r requirements.txt
+uvicorn src.web.app:app --host 127.0.0.1 --port 8000 --reload   # or: make run
 ```
 
-Run:
+Open **<http://127.0.0.1:8000>**.
+
+You need a data backend. The page opens on a panel where you can paste a
+[HikerAPI](https://hikerapi.com) key directly — it's verified before it's
+accepted, and can be saved for next time. (A free
+[instagrapi](https://github.com/subzeroid/instagrapi) login works too, using an
+Instagram account of your own — see the guide for the trade-offs.)
+
+For AI mode, install [Ollama](https://ollama.com/download) and pull a
+tool-calling capable model:
 
 ```bash
-docker run --rm -it -v "$PWD/output:/home/osintgram/output" osintgram <target>
+ollama pull llama3.1:8b     # ~4.7 GB, the default
 ```
 
-- The `<target>` is the Instagram account you wish to use as your target for recon.
-- The required `-i` flag enables an interactive terminal to use commands within the container. [docs](https://docs.docker.com/engine/reference/commandline/run/#assign-name-and-allocate-pseudo-tty---name--it)
-- The required `-v` flag mounts a volume between your local filesystem and the container to save to the `./output/` folder. [docs](https://docs.docker.com/engine/reference/commandline/run/#mount-volume--v---read-only)
-- The optional `--rm` flag removes the container filesystem on completion to prevent cruft build-up. [docs](https://docs.docker.com/engine/reference/run/#clean-up---rm)
-- The optional `-t` flag allocates a pseudo-TTY which allows colored output. [docs](https://docs.docker.com/engine/reference/run/#foreground)
+Base mode works without it.
 
-### Using `docker-compose`
-
-You can use the `docker-compose.yml` file this single command:
+Prefer containers?
 
 ```bash
-docker-compose run osintgram <target>
+docker compose up      # or: make docker
 ```
 
-Where `target` is the Instagram target for recon.
+Same address, same behaviour — published on `127.0.0.1` only. Your key, cache
+and saved searches stay on the host in `config/`, `cache/` and `dossier/`,
+never inside the image. AI mode reaches an Ollama running on your host.
 
-Alternatively, you may run `docker-compose` with the `Makefile`:
+> $${\color{red}Warning:}$$ This runs on `127.0.0.1` with **no authentication**. It's built to run on your own machine — don't expose it beyond localhost without putting an auth layer in front of it first.
 
-`make run` - Builds and Runs with compose. Prompts for a `target` before running.
+### 📖 [Read the full guide → `doc/web-ui.md`](doc/web-ui.md)
 
-### Makefile (easy mode)
+Setup for both backends, every command with its parameters and cost, how to
+keep spending down, exporting and sharing results, all configuration options,
+and troubleshooting.
 
-For ease of use with Docker-compose, a `Makefile` has been provided.
+---
 
-Here is a sample work flow to spin up a container and run `osintgram` with just two commands!
+## Before you use it
 
-1. `make setup`   - Sets up your Instagram credentials
-2. `make run`     - Builds and Runs a osintgram container and prompts for a target
+**FOR EDUCATIONAL PURPOSE ONLY.** The contributors do not assume any
+responsibility for the use of this tool.
 
-Sample workflow for development:
+- **Don't use your own or primary Instagram account** with it.
+- **Never commit `config/credentials.ini`** — API keys and Instagram
+  credentials live there. It's git-ignored; keep it that way. If a key has ever
+  been pushed, rotate it: deleting the file doesn't remove it from history.
+- Results contain other people's personal data. Handle them in line with
+  data-protection law (GDPR and equivalents) and Instagram's Terms of Use.
+- You cannot see private profiles. Nothing can. Tools claiming otherwise are
+  scams.
 
-1. `make setup`          - Sets up your Instagram credentials
-2. `make build-run-testing`   - Builds an Runs a container without invoking the `main.py` script. Useful for an `it` Docker session for development
-3. `make cleanup-testing`     - Cleans up the testing container created from `build-run-testing`
+---
 
-## Development version 💻
+## Development
 
-To use the development version with the latest feature and fixes just switch to `development` branch using Git:
+```bash
+pip install -r requirements-dev.txt
+python -m pytest
+```
 
-`git checkout development`
+The test suite runs entirely against synthetic fixtures — no API key, no quota,
+no network. It also checks that the documentation hasn't drifted away from the
+code.
 
-and update to last version using:
+Feature requests and pull requests are welcome — open an issue. Found a
+security problem? Please report it privately instead: see [SECURITY.md](SECURITY.md).
 
-`git pull origin development`
+---
 
+## Credits
 
-## Updating ⬇️
+Osintgram is written by **Giuseppe Criscione**
+([Datalux](https://github.com/Datalux)). Version 2.0 rebuilds it around a web
+interface and a reusable service layer, and adds the AI mode, the cost controls
+and the newer analyses — see the [changelog](doc/CHANGELOG.md).
 
-To update Osintgram with the stable release just pull the latest commit using Git.
-
-1. Make sure you are in the master branch running: `git checkout master`
-2. Download the latest version: `git pull origin master`
-
-
-## Contributing 💡
-
-You can propose a feature request opening an issue or a pull request.
-
-Here is a list of Osintgram's contributors:
+It owes a great deal to everyone who has contributed since the first release:
 
 <a href="https://github.com/Datalux/Osintgram/graphs/contributors">
-  <img src="https://contributors-img.web.app/image?repo=Datalux/Osintgram" />
+  <img src="https://contributors-img.web.app/image?repo=Datalux/Osintgram" alt="Osintgram contributors">
 </a>
 
-## External library 🔗
+Instagram data comes from [HikerAPI](https://hikerapi.com) or
+[instagrapi](https://github.com/subzeroid/instagrapi). Geocoding by
+[Nominatim](https://nominatim.org) / [OpenStreetMap](https://www.openstreetmap.org/copyright).
+Maps by [Leaflet](https://leafletjs.com). Local models via
+[Ollama](https://ollama.com).
 
-[Instagram API](https://github.com/ping/instagram_private_api)
+Released under the [GPL-3.0](LICENSE) licence.
+
+Instagram is a trademark of Meta Platforms, Inc. This project is not affiliated
+with, endorsed by, or approved by Meta.

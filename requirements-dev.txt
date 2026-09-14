@@ -1,0 +1,5 @@
+# Development / test dependencies (not needed to run the tool).
+# Run the suite with:  python -m pytest
+-r requirements.txt
+pytest>=8.0
+httpx>=0.23.0

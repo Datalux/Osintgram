@@ -1,5 +1,100 @@
 # Changelog
 
+## 2.0
+
+The tool is now a **local web application**. The interactive shell is no longer
+the documented way to use Osintgram - see [`doc/web-ui.md`](web-ui.md).
+
+**New: the web interface**
+- Web UI (FastAPI + a single-page frontend) served on `127.0.0.1`, with a
+  terminal-style header, light/dark support and a print stylesheet.
+- **AI mode**: describe a request in plain language and a local model (via
+  [Ollama](https://ollama.com)) picks which lookups to run and summarizes the
+  answer. No external LLM key - the model runs on your machine. Works with no
+  target set, restricted to the searches that belong to no account.
+- **Base mode**: all 28 commands listed, grouped, searchable and collapsible,
+  with their parameters set directly. No model required.
+- Live progress ("Verbose mode"): every command and every single backend
+  request reported as it happens.
+
+**New: analyses**
+- "Account info" - Instagram's *About this account*: country of
+  registration, creation date, number of username changes.
+- "Posting times" - weekday x hour posting heatmap and frequency.
+- "Compare profiles" - mutual connections between two accounts, on followers,
+  followings or both.
+- "Story highlights" and "Suggested profiles".
+- "Hashtag search" and "Place search" - searches that need no target.
+- "Profile info" now returns everything the profile object carries: bio links,
+  pronouns, category, public phone with country code, full business address
+  with coordinates, linked Facebook id, reel/tag counters.
+- Post previews (filterable grid, direct CDN links, carousel slides, views,
+  collaborations, paid partnerships, audio) on every post summary.
+- Geotagged locations plotted on a map.
+
+**New: cost control**
+- Per-request cache, shared across commands and targets, persisted to
+  `cache/requests.sqlite3`; errors are never cached.
+- "Estimate requests" - prices a selection before running it.
+- Remaining HikerAPI credit in the header (free lookup).
+- "Request limit" - a hard cap on real requests for a whole run; commands
+  return partial results instead of failing when it's reached.
+- "Stop" - cancels a run on the server, not just in the browser.
+- Automatic retry with backoff on transient failures (timeouts, 429, 5xx).
+
+**New: saving and sharing**
+- Dossier: save a finished search, reopen it without spending a request, and
+  diff it against a later run of the same target.
+- Export per card (JSON, CSV with Excel-safe escaping) or the whole search.
+- Media zip of the original photos and videos.
+- Standalone HTML report of an entire search.
+- Search history for targets and AI requests, persisted across restarts.
+
+**New: configuration**
+- HikerAPI key can be pasted into the UI: verified before it's accepted, and
+  optionally saved to `config/credentials.ini`, the same file the CLI reads.
+- Alternative **instagrapi** backend (`INSTAGRAM_BACKEND`), reaching feature
+  parity with HikerAPI except "Suggested profiles" and "Account info".
+
+**Bug fixes**
+- Migrated off HikerAPI endpoints deprecated in `hikerapi` 1.8 (`user_medias_v2`,
+  `user_followers_v2`, `user_following_v2`) to the current g2 ones.
+- `tagged`: HikerAPI returns `usertags` as `{"in": [...]}`, which was being
+  iterated as a list - no tagged users were ever found.
+- `photos`: photos were detected by the presence of `image_versions2`, which
+  every post has on the g2 endpoints; now uses `media_type`.
+- `mediatype`: carousels were counted as neither photos nor videos.
+
+**Removed**
+- The interactive shell and its command-line entry point (`main.py`,
+  `src/Osintgram.py`, `src/hikercli.py`, `src/config.py`,
+  `src/printcolors.py`, `doc/COMMANDS.md`). Everything they did is in the web
+  UI, which reaches further; keeping two implementations of the same lookups
+  meant fixing every bug twice.
+- With them go five dependencies (`instagram-private-api`, `prettytable`,
+  `requests-toolbelt`, `gnureadline`, `pyreadline`). `pyreadline==2.1` is
+  broken on Python 3.10+, so `pip install -r requirements.txt` used to fail
+  outright on modern Windows - it now installs everywhere.
+
+**Packaging**
+- `config/credentials.ini` is no longer tracked by git: `config/credentials.ini.example`
+  is the template to copy. Previously a clone could commit its own API key by
+  accident.
+- Docker now serves the web app instead of the removed shell, as a non-root
+  user, published on `127.0.0.1` only, with `config/`, `cache/` and `dossier/`
+  mounted from the host so no key or collected data is baked into the image.
+- CI actually runs the test suite (it used to swallow failures), on Python 3.10
+  and 3.13.
+- Minimum Python is **3.10**, the floor FastAPI and uvicorn require - the
+  previous "3.9+" claim was wrong.
+
+**Internals**
+- New `src/osint_service.py`: a side-effect-free service layer (no printing, no
+  file writing, no `input()`) that both the web app and new code build on.
+- `pytest` suite (125 tests) running entirely on synthetic fixtures - no API
+  key, quota or network - including tests that keep the documentation in sync
+  with the code.
+
 ## [1.3](https://github.com/Datalux/Osintgram/releases/tag/1.3)
 **Enhancements**
 - Artwork refactoring (#149) 

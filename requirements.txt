@@ -1,7 +1,13 @@
-requests-toolbelt==0.9.1
+# Web app
+fastapi>=0.110
+uvicorn[standard]>=0.27
+
+# Instagram data backends (either one is enough - see doc/web-ui.md)
+hikerapi==1.8.1
+instagrapi>=2.0
+
+# Local LLM client, for AI mode (Base mode doesn't need it)
+ollama>=0.3
+
+# Reverse-geocoding the locations tagged on posts
 geopy>=2.0.0
-prettytable==0.7.2
-instagram-private-api==1.6.0
-gnureadline>=8.0.0; platform_system != "Windows"
-pyreadline==2.1; platform_system == "Windows"
-hikerapi==1.7.1

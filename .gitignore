@@ -1,7 +1,33 @@
+# ---- Your data and credentials -------------------------------------------
+# Everything under config/ is yours: the HikerAPI key, the instagrapi session,
+# your search history. Only the template is tracked, so a new clone can never
+# commit a real key by accident.
+config/*
+!config/credentials.ini.example
+
+# Collected Instagram data - third parties' personal data, never in git.
+cache/
+dossier/
+
+# ---- Python ---------------------------------------------------------------
 __pycache__/
-output/
-**/*.pyc
-**/*.json
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
 venv/
-credentials.ini
-settings.json
+.venv/
+env/
+
+# ---- Editors and tooling --------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
+.claude/
+.graphify/
+.graphifyignore
