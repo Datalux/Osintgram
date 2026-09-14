@@ -1,11 +1,22 @@
+.git
 .github
+.gitignore
+.dockerignore
 .img
 doc
-output
-.dockerignore
-.gitignore
-Docker-compose.yml
+tests
+venv
+__pycache__
+**/__pycache__
+**/*.pyc
 Dockerfile
-LICENSE
+docker-compose.yml
 Makefile
+LICENSE
 README.md
+pytest.ini
+requirements-dev.txt
+# Never bake secrets or third parties' data into an image.
+config
+cache
+dossier

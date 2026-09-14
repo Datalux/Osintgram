@@ -1,0 +1,3882 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Osintgram Web: OSINT on public Instagram accounts, in plain language (local AI) or with commands you pick yourself.">
+<!-- A local tool handling personal data: keep it out of search engines even if it ends up reachable. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#121216">
+<title>Osintgram Web</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121216'/%3E%3Ctext x='4' y='22' font-family='monospace' font-size='17' font-weight='700' fill='%23f0a830'%3E%3E_%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f4f8;
+    --panel: #ffffff;
+    --panel-2: #f8f8fb;
+    --text: #17171b;
+    --muted: #6c6c78;
+    --border: #e2e2ea;
+    --accent: #5b52f0;
+    --accent-soft: #efeeff;
+    --accent-text: #ffffff;
+    --error: #c02e2e;
+    --error-soft: #fbeaea;
+    --ok: #1a8f5e;
+    --shadow: 0 1px 2px rgba(20, 20, 30, 0.04), 0 8px 24px rgba(20, 20, 30, 0.06);
+    --accent-gradient: linear-gradient(135deg, #5b52f0 0%, #a855f7 55%, #ec4899 100%);
+    --accent-glow: rgba(91, 82, 240, 0.35);
+    --bg-glow: rgba(91, 82, 240, 0.11);
+    --dot: rgba(23, 23, 27, 0.07);
+    --field-border: #d8d7ec;
+    --warn: #8a5a00;
+    --warn-soft: #fff7e8;
+    --warn-border: #f1d6a0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #131316;
+      --panel: #1c1c21;
+      --panel-2: #232329;
+      --text: #ececf1;
+      --muted: #9a9aa6;
+      --border: #313138;
+      --accent: #8b83ff;
+      --accent-soft: #262445;
+      --accent-text: #100f1c;
+      --error: #ff8a80;
+      --error-soft: #3a1f1f;
+      --ok: #5fd6a4;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.35);
+      --accent-gradient: linear-gradient(135deg, #8b83ff 0%, #c084fc 55%, #f472b6 100%);
+      --accent-glow: rgba(139, 131, 255, 0.35);
+      --bg-glow: rgba(139, 131, 255, 0.15);
+      --dot: rgba(255, 255, 255, 0.05);
+      --field-border: #3a3952;
+      --warn: #f5c56b;
+      --warn-soft: #2b2415;
+      --warn-border: #55431f;
+    }
+  }
+  /* "Base" (manual) mode: same layout, different accent so it's obvious at a
+     glance which mode is active. Scoped to body so it overrides :root. */
+  body.mode-base {
+    --accent: #0b8577;
+    --accent-soft: #e2f4f1;
+    --accent-gradient: linear-gradient(135deg, #0b8577 0%, #0ea5a4 50%, #3b82f6 100%);
+    --accent-glow: rgba(11, 133, 119, 0.32);
+    --bg-glow: rgba(11, 133, 119, 0.11);
+    --field-border: #cde4e0;
+  }
+  @media (prefers-color-scheme: dark) {
+    body.mode-base {
+      --accent: #4fd1bf;
+      --accent-soft: #17332f;
+      --accent-gradient: linear-gradient(135deg, #4fd1bf 0%, #38bdf8 100%);
+      --accent-glow: rgba(79, 209, 191, 0.3);
+      --bg-glow: rgba(79, 209, 191, 0.13);
+      --field-border: #2c4744;
+    }
+  }
+  * { box-sizing: border-box; }
+  /* Several containers set their own display (flex), which would otherwise
+     beat the UA's [hidden] rule and keep them visible. */
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    /* A soft glow in the mode's accent behind the header. */
+    background: radial-gradient(1100px 480px at 50% -140px, var(--bg-glow), transparent 72%) no-repeat, var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 28px 16px 40px;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s;
+  }
+  /* Faint dot grid fading out down the page - fixed, behind everything. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
+    background-size: 22px 22px;
+    -webkit-mask-image: linear-gradient(to bottom, #000, transparent 70%);
+    mask-image: linear-gradient(to bottom, #000, transparent 70%);
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* Header: a terminal window echoing the CLI's own banner (logo from
+     src/artwork.py, same amber, same version line). Deliberately dark in
+     both themes - it's the tool's identity, not a themed surface - so its
+     colors are fixed tokens; only the accent follows the AI/Base mode. */
+  :root {
+    --term-bg: #121216;
+    --term-bar: #1c1c22;
+    --term-border: #2c2c34;
+    --term-text: #d8d8e0;
+    --term-dim: #8a8a96;
+    --term-amber: #f0a830;
+    --term-accent: #aaa2ff;
+    --term-ok: #5fd6a4;
+    --term-err: #ff8a80;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  body.mode-base { --term-accent: #4fd1bf; }
+  /* Banner and search form are one window: the terminal is its dark top,
+     the form its body - one frame, one shadow, joined by a thin accent line. */
+  :root { --radius: 14px; }
+  .app-window {
+    border-radius: calc(var(--radius) + 2px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 18px 44px -12px rgba(10, 10, 20, 0.28);
+  }
+  .terminal {
+    border: 1px solid var(--term-border);
+    border-bottom: 0;
+    border-radius: calc(var(--radius) + 2px) calc(var(--radius) + 2px) 0 0;
+    overflow: hidden;
+    background: var(--term-bg);
+    color: var(--term-text);
+  }
+  .terminal::after {
+    content: "";
+    display: block;
+    height: 3px;
+    background: var(--accent-gradient);
+  }
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 14px;
+    background: var(--term-bar);
+    border-bottom: 1px solid var(--term-border);
+  }
+  .terminal-dots { display: flex; gap: 7px; flex: none; }
+  .terminal-dots i { display: block; width: 12px; height: 12px; border-radius: 50%; }
+  .terminal-dots i:nth-child(1) { background: #ff5f57; }
+  .terminal-dots i:nth-child(2) { background: #febc2e; }
+  .terminal-dots i:nth-child(3) { background: #28c840; }
+  .terminal-title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font: 500 0.78rem var(--mono);
+    color: var(--term-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .terminal-body { padding: 18px 22px 16px; }
+  .ascii-logo {
+    margin: 0;
+    font-family: var(--mono);
+    /* Scaled with the viewport so it always fits on one line (down to phone
+       width), capped for large screens: (viewport - page gutters - terminal
+       padding) / its width in columns (--logo-cols, set by the script from
+       the art itself) at ~0.6em per monospace glyph, plus some slack for
+       wider fonts. */
+    --logo-cols: 71;
+    font-size: clamp(6px, calc((100vw - 80px) / (var(--logo-cols) * 0.625)), 15px);
+    line-height: 1.15;
+    min-height: calc(6 * 1.15em); /* reserve its 6 lines before it loads */
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--term-amber);
+    text-shadow: 0 0 14px rgba(240, 168, 48, 0.35);
+  }
+  .terminal-line { margin: 0; font: 0.82rem/1.55 var(--mono); overflow-wrap: anywhere; }
+  .terminal-line.version { margin-top: 12px; color: var(--term-amber); }
+  @media (max-width: 520px) {
+    .terminal-title { visibility: hidden; }
+    .terminal-body { padding: 14px 14px 12px; }
+  }
+
+  .mode-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font: 600 0.78rem var(--mono);
+    color: var(--term-dim);
+    flex: none;
+  }
+  .mode-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .mode-switch .track {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--term-accent);
+    transition: background 0.2s;
+  }
+  .mode-switch .thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    transition: transform 0.2s;
+  }
+  .mode-switch input:checked + .track .thumb { transform: translateX(18px); }
+  .mode-switch input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28); }
+  .mode-switch input:disabled ~ * { opacity: 0.55; cursor: default; }
+  .mode-switch .side { transition: color 0.2s; }
+  body:not(.mode-base) .mode-switch .side-ai,
+  body.mode-base .mode-switch .side-base { color: var(--term-accent); }
+
+  fieldset.mode-fields {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #ai-fields { display: block; }
+  .cmd-toolbar {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .cmd-toolbar label { margin: 0; }
+  .cmd-count { font-size: 0.78rem; color: var(--muted); }
+  .link-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .cmd-search {
+    flex: 1 1 160px;
+    min-width: 0;
+    max-width: 240px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.8rem;
+  }
+  .cmd-search:focus { outline: none; border-color: var(--accent); }
+  .cmd-groups { display: flex; flex-direction: column; gap: 4px; }
+  .cmd-group { border-bottom: 1px solid var(--border); }
+  .cmd-group:last-child { border-bottom: 0; }
+  .cmd-group-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 2px;
+    margin: 0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }
+  .cmd-group-title::-webkit-details-marker { display: none; }
+  /* Own disclosure triangle: the native one can't be positioned reliably. */
+  .cmd-group-title::before {
+    content: "▸";
+    flex: none;
+    font-size: 0.7rem;
+    transition: transform 0.15s;
+  }
+  .cmd-group[open] > .cmd-group-title::before { transform: rotate(90deg); }
+  .cmd-group-name { flex: 1 1 auto; }
+  .cmd-group-count {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    opacity: 0.7;
+  }
+  .cmd-group-count.has-picked { color: var(--accent); opacity: 1; }
+  /* Multi-column rather than grid: a selected command grows to show its
+     parameters, and in a grid that would stretch the whole row, leaving two
+     empty cells beside it. Columns just reflow. */
+  .cmd-grid {
+    columns: 210px 3;
+    column-gap: 4px;
+    padding: 2px 0 10px;
+  }
+  .cmd {
+    break-inside: avoid;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: var(--panel-2);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .cmd:hover { border-color: var(--border); }
+  .cmd.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .cmd-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 9px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .cmd-head input { margin: 0; flex: none; accent-color: var(--accent); }
+  .cmd-icon { flex: none; font-size: 0.9rem; }
+  .cmd-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-weight: 500;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Marks a command that has parameters to set once it's selected. */
+  .cmd-gear { flex: none; font-size: 0.78rem; opacity: 0.45; line-height: 1; }
+  .cmd.selected .cmd-gear { opacity: 0; }
+  .cmd-params { display: flex; flex-direction: column; gap: 6px; padding: 0 9px 9px 31px; }
+  .param { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .param-name { flex: 1 1 120px; font-size: 0.8rem; }
+  .param input.param-value {
+    width: 96px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+  .param input.param-value:disabled { opacity: 0.5; }
+  .param select.param-value {
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+  .param select.param-value:disabled { opacity: 0.5; }
+  .param-all {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .param-all input { margin: 0; accent-color: var(--accent); }
+  form {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 calc(var(--radius) + 2px) calc(var(--radius) + 2px);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* The two fields a search starts from (target, AI request): larger, with
+     an icon, and a gradient border + glow in the mode's accent on focus. */
+  /* "form" prefix: outranks the generic .field label rule further down. */
+  form .hero-field > label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text);
+  }
+  form .hero-field > label .hint { margin-left: auto; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); }
+  .input-shell { position: relative; }
+  .input-icon {
+    position: absolute;
+    z-index: 1;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font: 700 1.05rem var(--mono);
+    color: var(--accent);
+    pointer-events: none;
+  }
+  .input-shell.multiline .input-icon { top: 14px; transform: none; }
+  /* Scoped under .input-shell to outrank the generic input/textarea rules
+     further down the sheet. */
+  .input-shell .hero-input {
+    padding: 14px 16px 14px 42px;
+    border: 1.5px solid var(--field-border);
+    border-radius: 14px;
+    background: var(--panel);
+    font-size: 1.05rem;
+    box-shadow: 0 1px 2px rgba(20, 20, 30, 0.04);
+    transition: border-color 0.15s, box-shadow 0.2s;
+  }
+  .input-shell .hero-input::placeholder { color: var(--muted); opacity: 0.8; }
+  .input-shell .hero-input:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--field-border)); }
+  .input-shell .hero-input:focus {
+    border-color: transparent;
+    background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--accent-gradient) border-box;
+    box-shadow: 0 0 0 4px var(--accent-soft), 0 12px 32px -12px var(--accent-glow);
+  }
+  .input-shell textarea.hero-input { min-height: 110px; line-height: 1.5; }
+  .suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+  .suggestions > span { font-size: 0.75rem; color: var(--muted); margin-right: 2px; }
+  .suggestions button {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--panel-2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.78rem;
+    padding: 5px 11px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .suggestions button:hover, .suggestions button:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-soft);
+    outline: none;
+  }
+
+  /* Secondary settings: visually quieter than the search fields. */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+  /* Side by side only when both pill rows fit unwrapped, else stacked. */
+  .options-grid { display: flex; flex-wrap: wrap; gap: 14px 28px; }
+  .options-grid > .field { flex: 0 1 auto; }
+  .options .field label { font-size: 0.7rem; }
+  .field label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  input[type="text"], textarea, input:not([type]) {
+    width: 100%;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  textarea {
+    min-height: 88px;
+    resize: vertical;
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .row > .field {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+  .history-wrap { position: relative; }
+  .history-panel {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    padding: 6px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .history-head {
+    padding: 4px 8px 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 264px;
+    overflow-y: auto;
+  }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 6px 6px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .history-item:hover, .history-item.active { background: var(--accent-soft); }
+  .history-item .avatar { width: 26px; height: 26px; font-size: 0.75rem; }
+  .history-name { flex: 1; min-width: 0; font-weight: 600; font-size: 0.9rem; overflow-wrap: anywhere; }
+  /* Requests can be long: two lines max in the list, the full text is
+     restored in the textarea on pick. */
+  #ai-fields .history-name {
+    font-weight: 500;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .history-when { flex: none; font-size: 0.75rem; color: var(--muted); }
+  .history-remove {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--muted);
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .history-remove:hover, .history-remove:focus-visible { background: var(--error-soft); color: var(--error); outline: none; }
+  .limit-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .limit-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+    margin: 0;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .limit-pill input { display: none; }
+  .limit-pill.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-row input { width: auto; margin: 0; accent-color: var(--accent); }
+  button.primary {
+    align-self: flex-start;
+    background: var(--accent-gradient);
+    color: var(--accent-text);
+    border: none;
+    border-radius: 12px;
+    padding: 12px 26px;
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 22px -8px var(--accent-glow);
+    transition: opacity 0.15s, transform 0.1s, box-shadow 0.2s, filter 0.2s;
+  }
+  button.primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow: 0 12px 28px -8px var(--accent-glow);
+  }
+  button.primary:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--accent-soft), 0 8px 22px -8px var(--accent-glow); }
+  button.secondary {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    font: 600 0.85rem var(--mono);
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  button.secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button.secondary:disabled { opacity: 0.6; cursor: default; }
+  .estimate-note { font-size: 0.78rem; color: var(--muted); }
+  .estimate-note strong { color: var(--text); }
+  .estimate-note.warn { color: var(--error); }
+  .btn-row .kbd-hint { margin-left: auto; font-size: 0.75rem; color: var(--muted); }
+  @media (max-width: 520px) { .btn-row .kbd-hint { display: none; } }
+  kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    background: var(--panel-2);
+    font: 600 0.72rem var(--mono);
+    color: var(--text);
+  }
+  button.primary:disabled {
+    opacity: 0.65;
+    cursor: default;
+    transform: none;
+  }
+  .btn-row { display: flex; gap: 10px; align-items: center; }
+  button.stop {
+    background: transparent;
+    color: var(--error);
+    border: 1px solid var(--error);
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  button.stop:hover { background: var(--error-soft); }
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+    border-top-color: currentColor;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  button.primary.loading .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #progress-wrap { margin-top: 18px; }
+  /* The verbose log is literally CLI output - shown in a small terminal
+     matching the banner (same window chrome, colors and font). */
+  .terminal-log {
+    border: 1px solid var(--term-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--term-bg);
+    color: var(--term-text);
+    box-shadow: var(--shadow);
+  }
+  .terminal-log .terminal-bar { padding: 7px 12px; }
+  .terminal-log .terminal-dots i { width: 10px; height: 10px; }
+  #progress-list {
+    list-style: none;
+    margin: 0;
+    padding: 10px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    font: 0.76rem/1.5 var(--mono);
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  #progress-list li {
+    position: relative;
+    padding: 2px 0 2px 16px;
+    overflow-wrap: anywhere;
+  }
+  #progress-list li::before {
+    content: "❯";
+    position: absolute;
+    left: 0;
+    color: var(--term-accent);
+  }
+  #progress-list li.step-result { color: var(--term-dim); }
+  #progress-list li.step-result::before { color: var(--term-ok); }
+  #progress-list li.step-error { color: var(--term-err); }
+  #progress-list li.step-error::before { color: var(--term-err); }
+
+  #output { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
+  #output[hidden] { display: none; }
+  #output-cards { display: flex; flex-direction: column; gap: 16px; }
+  .answer-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    line-height: 1.55;
+    font-size: 0.98rem;
+    overflow-wrap: anywhere;
+  }
+  .answer-card.error { border-color: var(--error); background: var(--error-soft); }
+  .answer-card p { margin: 0 0 10px; }
+  .answer-card p:last-child { margin-bottom: 0; }
+  .answer-card ul { margin: 0 0 10px; padding-left: 20px; }
+  .answer-card strong { font-weight: 700; }
+
+  .summary-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .summary-tile {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 64px;
+  }
+  .summary-tile .n { font-size: 1.05rem; font-weight: 700; }
+  .summary-tile .l { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
+  .summary-tile.ok .n { color: var(--ok); }
+  .summary-tile.err .n { color: var(--error); }
+  .summary-tile.cache .n { color: var(--accent); }
+  .summary-tile.api { border-color: var(--accent); }
+  .summary-tile.api .n { color: var(--accent); }
+
+  @keyframes flash-update {
+    0% { box-shadow: 0 0 0 3px var(--accent); }
+    100% { box-shadow: var(--shadow); }
+  }
+  .flash-update { animation: flash-update 0.9s ease-out; }
+
+  .details-heading {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 4px 2px;
+  }
+  .tool-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .tool-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .tool-icon { font-size: 1.1rem; }
+  .tool-title { font-weight: 700; font-size: 0.92rem; }
+  .tool-meta { color: var(--muted); font-size: 0.78rem; }
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--panel-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .badge.cache { color: var(--ok); border-color: var(--ok); }
+  .badge.err { color: var(--error); border-color: var(--error); }
+  .tool-body { margin-top: 10px; }
+  .json-toggle {
+    font-size: 0.75rem;
+    color: var(--accent);
+    cursor: pointer;
+    margin-top: 8px;
+    display: inline-block;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+  }
+  pre.json {
+    margin-top: 8px;
+    overflow-x: auto;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+  }
+  .stat-tile {
+    background: var(--panel-2);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .stat-tile .k { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
+  .stat-tile .v { font-size: 1.05rem; font-weight: 700; margin-top: 2px; word-break: break-word; }
+  .stat-tile .v.small { font-size: 0.85rem; font-weight: 500; }
+  /* Never split a figure across two lines - it stops reading as one number. */
+  .stat-tile .v.num { word-break: normal; overflow-wrap: normal; }
+  /* Identifiers are meant to be read digit by digit and copied out. */
+  .stat-tile .v.id {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    user-select: all;
+  }
+  .stat-tile a { color: var(--accent); text-decoration: none; }
+
+  .user-list { display: flex; flex-direction: column; gap: 2px; max-height: 340px; overflow-y: auto; }
+  .user-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .user-row:last-child { border-bottom: none; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    background: var(--accent-soft); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700;
+    text-decoration: none;
+  }
+  a.avatar:hover { filter: brightness(0.95); }
+  .user-info { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+  .user-info .uname { font-weight: 600; font-size: 0.88rem; }
+  .user-info .fname { color: var(--muted); font-size: 0.78rem; }
+  .user-info .fname.ctx { color: var(--accent); }
+  .user-extra { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+
+  /* Story Highlights: horizontal covers with title + count. */
+  .highlight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px; }
+  .highlight { text-decoration: none; color: inherit; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .highlight .hl-cover {
+    width: 66px; height: 66px; border-radius: 50%;
+    border: 2px solid var(--accent); padding: 2px;
+    overflow: hidden; background: var(--panel-2);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .highlight .hl-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+  .highlight .hl-title { font-size: 0.76rem; font-weight: 600; overflow-wrap: anywhere; }
+  .highlight .hl-count { font-size: 0.68rem; color: var(--muted); }
+  a.highlight:hover .hl-cover { filter: brightness(0.95); }
+
+  .compare-section + .compare-section { margin-top: 16px; }
+
+  /* Address map (lazy-loaded Leaflet) */
+  .addr-name { font-weight: 600; }
+  a.pin { text-decoration: none; }
+  .map-details { margin-top: 10px; }
+  .map-details > summary {
+    cursor: pointer; user-select: none; list-style: none;
+    font: 600 0.82rem var(--mono); color: var(--accent);
+  }
+  .map-details > summary::-webkit-details-marker { display: none; }
+  .map-details .map { height: 300px; margin-top: 10px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .map-details .map .empty { padding: 16px; }
+  .leaflet-container { font: inherit; background: var(--panel-2); }
+
+  .pill-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  /* Heading for a list rendered underneath a stat grid (bio links, former usernames). */
+  .sub-label {
+    margin: 14px 0 6px;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  a.pill-list, .pill-list a.pill { text-decoration: none; }
+  .pill-list a.pill:hover { filter: brightness(1.15); text-decoration: underline; }
+  .pill-list .pill {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .pill-list .pill .n { opacity: 0.7; font-weight: 500; margin-left: 4px; }
+
+  .addr-list, .quote-list, .comment-list { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; }
+  .addr-item { display: flex; gap: 8px; font-size: 0.88rem; }
+  .addr-item .pin { flex: none; }
+  .addr-item > div { min-width: 0; overflow-wrap: anywhere; }
+  .addr-item .t { color: var(--muted); font-size: 0.75rem; }
+  .quote-item {
+    background: var(--panel-2);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.86rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .comment-item {
+    background: var(--panel-2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.86rem;
+    overflow-wrap: anywhere;
+  }
+  .comment-item .who { font-weight: 700; margin-right: 4px; }
+
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+  .gallery a {
+    display: block;
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--panel-2);
+  }
+  .gallery img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* ---- HikerAPI balance (terminal bar) ---- */
+  .balance-chip {
+    flex: none;
+    padding: 2px 9px;
+    border: 1px solid var(--term-border);
+    border-radius: 999px;
+    font: 600 0.7rem var(--mono);
+    color: var(--term-dim);
+    white-space: nowrap;
+  }
+  .balance-chip.low { color: var(--term-err); border-color: color-mix(in srgb, var(--term-err) 45%, transparent); }
+  @media (max-width: 520px) { .balance-chip .amount { display: none; } }
+  .key-chip {
+    flex: none;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--term-fg) 30%, transparent);
+    background: none;
+    color: var(--term-fg);
+    font: inherit;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+  .key-chip:hover { border-color: var(--term-fg); }
+  .key-chip.missing { color: var(--term-err); border-color: color-mix(in srgb, var(--term-err) 55%, transparent); }
+
+  .key-panel {
+    padding: 14px 18px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+  .key-panel-head { display: flex; align-items: baseline; gap: 10px; }
+  .key-panel-title { font-size: 0.8rem; font-weight: 600; }
+  .key-panel-head .link-btn { margin-left: auto; }
+  .key-panel-note { margin: 6px 0 10px; font-size: 0.8rem; color: var(--muted); }
+  .key-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .key-input {
+    flex: 1 1 260px;
+    min-width: 0;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font: inherit;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+  }
+  .key-input:focus { outline: none; border-color: var(--accent); }
+  .key-remember { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 0.78rem; color: var(--muted); }
+  .key-remember code { font-size: 0.74rem; }
+  .key-status { margin: 10px 0 0; font-size: 0.8rem; }
+  .key-status.ok { color: var(--accent); }
+  .key-status.err { color: var(--term-err); }
+
+  /* ---- field heading with an inline action (e.g. "Clear cache") ---- */
+  .field-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .field-head label { margin-bottom: 0 !important; }
+  .field-head .link-btn { margin-left: auto; }
+  .field-head .note { font-size: 0.72rem; color: var(--muted); }
+
+  /* ---- export ---- */
+  .card-actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+  .card-actions .json-toggle { margin-top: 0; }
+  .export-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: 600 0.75rem var(--mono);
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .card-actions .export-btn:first-of-type { margin-left: auto; }
+  .export-btn:hover, .export-btn:focus-visible { text-decoration: underline; outline: none; }
+  .details-heading { display: flex; align-items: baseline; gap: 8px; }
+  .details-heading .export-btn { margin-left: auto; text-transform: none; letter-spacing: 0; }
+
+  /* ---- posting times heatmap ---- */
+  .tz-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
+  .tz-toggle button {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: 0.72rem var(--mono);
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+  .tz-toggle button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .heatmap-wrap { overflow-x: auto; }
+  .heatmap {
+    display: grid;
+    grid-template-columns: 34px repeat(24, minmax(9px, 1fr));
+    gap: 2px;
+    min-width: 280px;
+    font: 0.62rem var(--mono);
+    color: var(--muted);
+  }
+  .heatmap .hm-hour { text-align: center; }
+  .heatmap .hm-day { align-self: center; }
+  .heatmap .hm-cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent) var(--p, 0%), var(--panel-2));
+  }
+  .heatmap-summary { margin: 10px 0 0; font-size: 0.85rem; }
+  .heatmap-summary strong { color: var(--accent); }
+
+  /* ---- photo descriptions ---- */
+  .tool-body .hint { margin: 6px 0 10px; font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+  .desc-list { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
+  .desc-item { display: flex; gap: 12px; align-items: flex-start; }
+  .desc-item .thumb {
+    flex: none;
+    width: 56px;
+    height: 70px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--panel-2);
+  }
+  .desc-item .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .desc-item p { margin: 0; font-size: 0.88rem; line-height: 1.45; overflow-wrap: anywhere; }
+  .desc-item .t { display: block; margin-top: 2px; font: 0.7rem var(--mono); color: var(--muted); }
+
+  /* ---- post tile flags (collab / paid partnership) ---- */
+  .post-tile .post-flags { position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; }
+  .post-tile .post-flags span {
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  /* ---- terminal typography ----
+     Labels, headings, counters and controls use the banner's monospace, so
+     the whole page reads as one tool; prose (descriptions, answers,
+     captions, the request itself) stays in the UI font for readability. */
+  .field label,
+  form .hero-field > label,
+  .cmd-group-title,
+  .cmd-count,
+  .link-btn,
+  .suggestions > span,
+  .limit-pill,
+  .post-filter button,
+  .history-head,
+  .details-heading,
+  .summary-tile .n,
+  .summary-tile .l,
+  .badge,
+  .tool-meta,
+  button.primary,
+  button.stop,
+  .site-footer h2 {
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
+  }
+  .limit-pill { font-size: 0.74rem; }
+  .details-heading::before { content: "❯"; color: var(--accent); }
+
+  /* ---- filter box above a long list ---- */
+  .filterable { display: flex; flex-direction: column; }
+  .filterable .list-filter {
+    align-self: flex-start;
+    width: min(100%, 260px);
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--panel-2);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.82rem;
+  }
+  .filterable .list-filter-count { font: 0.72rem var(--mono); color: var(--muted); margin-bottom: 6px; }
+
+  /* ---- saved searches (dossier) ---- */
+  .dossier-panel {
+    margin-top: 18px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .dossier-panel > summary {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    font: 600 0.82rem var(--mono);
+    color: var(--accent);
+  }
+  .dossier-panel > summary::-webkit-details-marker { display: none; }
+  .dossier-panel > summary .n { color: var(--muted); font-weight: 500; }
+  .dossier-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .dossier-row:last-child { border-bottom: none; }
+  .dossier-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .dossier-when { font: 0.72rem var(--mono); color: var(--muted); }
+  .dossier-what { font-size: 0.85rem; overflow-wrap: anywhere; }
+  .dossier-row .link-btn { margin-left: 0; flex: none; }
+
+  /* ---- what changed between two dossiers ---- */
+  .diff-command + .diff-command { margin-top: 14px; }
+  .diff-title { font: 700 0.8rem var(--mono); letter-spacing: 0.02em; }
+  .diff-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 0.86rem; }
+  .diff-list li { padding: 2px 0; overflow-wrap: anywhere; }
+  .diff-list .added { color: var(--ok); }
+  .diff-list .removed { color: var(--error); }
+  .diff-list .changed s { color: var(--muted); }
+
+  /* ---- footer ---- */
+  .site-footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .site-footer h2 {
+    margin: 0 0 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .site-footer a { color: var(--accent); text-decoration: none; }
+  .site-footer a:hover { text-decoration: underline; }
+  .site-footer code {
+    font: 0.74rem var(--mono);
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .disclaimer {
+    padding: 14px 16px;
+    border: 1px solid var(--warn-border);
+    border-radius: var(--radius);
+    background: var(--warn-soft);
+    color: var(--text);
+  }
+  .disclaimer h2 { color: var(--warn); }
+  .disclaimer p { margin: 0 0 8px; }
+  .disclaimer .original { color: var(--muted); font-style: italic; }
+  .disclaimer ul { margin: 0; padding-left: 18px; }
+  .disclaimer li + li { margin-top: 3px; }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+    gap: 22px 28px;
+    margin-top: 24px;
+  }
+  .footer-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  .footer-list.libs li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+  .footer-list .ver, .footer-list .lic {
+    font: 0.68rem var(--mono);
+    padding: 0 5px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+  }
+  .footer-list .ver.off { opacity: 0.7; font-style: italic; }
+  .footer-list .role { flex-basis: 100%; font-size: 0.74rem; }
+  .footer-bottom {
+    margin: 24px 0 0;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+    font-size: 0.74rem;
+    text-align: center;
+  }
+  .noscript { max-width: 760px; margin: 16px auto; text-align: center; color: var(--error); }
+
+  /* Post previews: collapsed under a summary card by default, built (and
+     thumbnails fetched) only the first time it's opened. */
+  .post-previews { margin-top: 12px; }
+  .post-previews > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--accent);
+    list-style: none;
+    user-select: none;
+  }
+  .post-previews > summary::-webkit-details-marker { display: none; }
+  .post-previews > summary::before { content: "▸"; transition: transform 0.15s; }
+  .post-previews[open] > summary::before { transform: rotate(90deg); }
+  .post-previews > summary .n { color: var(--muted); font-weight: 500; }
+  .post-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .post-filter button {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+  .post-filter button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .post-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    grid-auto-flow: dense;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  button.post-tile {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    font: inherit;
+    cursor: pointer;
+  }
+  button.post-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button.post-tile:hover img { transform: scale(1.04); }
+  .post-tile.expanded { box-shadow: 0 0 0 3px var(--accent); }
+  .post-slides {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 6px;
+    padding: 8px;
+    border-radius: 10px;
+    background: var(--accent-soft);
+  }
+  .post-tile {
+    position: relative;
+    display: block;
+    aspect-ratio: 3 / 4;
+    max-width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--panel-2);
+    color: #fff;
+    text-decoration: none;
+  }
+  .post-tile img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.2s;
+  }
+  a.post-tile:hover img { transform: scale(1.04); }
+  a.post-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .post-tile .post-type {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+  }
+  .post-tile .post-stats {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    padding: 18px 8px 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  }
+  .post-tile .post-stats span { white-space: nowrap; }
+  .post-tile .post-missing {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: var(--muted);
+  }
+  .post-tile.broken img { display: none; }
+  .post-tile.broken .post-missing { display: flex; }
+
+  /* Stories: native vertical 9:16 frame, shown whole (contain) on black. */
+  .story-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .story {
+    position: relative;
+    aspect-ratio: 9 / 16;
+    max-width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+  }
+  .story-link { display: block; width: 100%; height: 100%; }
+  .story img, .story video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .story-badge, .story-open {
+    position: absolute;
+    top: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    text-decoration: none;
+  }
+  .story-badge { left: 6px; pointer-events: none; }
+  .story-open { right: 6px; }
+  .story-fallback {
+    display: none;
+    position: absolute;
+    inset: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: #ccc;
+  }
+  .story-fallback a { color: #fff; }
+  .story.broken img, .story.broken video, .story.broken .story-open { display: none; }
+  .story.broken .story-fallback { display: flex; }
+
+  .empty { color: var(--muted); font-size: 0.85rem; font-style: italic; }
+  details > summary { cursor: pointer; font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+
+  /* ---- standalone report ("📄 Report") ----
+     These rules ship inside the exported file (the whole stylesheet is
+     copied into it), and do nothing on the app page itself, which never
+     carries .report-page. */
+  .report-page { padding: 24px 16px 60px; }
+  .report-page #output { display: block; }
+  .report-header {
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  .report-header h1 {
+    font: 700 1.4rem var(--mono);
+    color: var(--accent);
+    margin: 0 0 12px;
+    letter-spacing: 0.04em;
+  }
+  .report-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 20px; margin: 0; }
+  .report-meta dt { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .report-meta dd { margin: 2px 0 0; font-size: 0.9rem; word-break: break-word; }
+  .report-json { margin-top: 10px; }
+  .report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .report-footer p { margin: 6px 0; }
+
+  /* ---- print / "save as PDF" ----
+     Applies both to the app page and to the exported report, so either can be
+     printed without the form, the buttons or the live progress log. */
+  @media print {
+    :root { --bg: #fff; --panel: #fff; --panel-2: #fff; --text: #111; --muted: #555; --border: #bbb; }
+    body { background: #fff; color: #111; }
+    .terminal, form, .site-footer, .progress-wrap, #dossier-panel,
+    .card-actions, .export-btn, .json-toggle, .post-filter, .list-filter,
+    .list-filter-count, .map-details, .mode-switch, .balance-chip { display: none !important; }
+    main, .app-window { max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; }
+    /* Keep a result and its heading on the same sheet where possible. */
+    .tool-card { break-inside: avoid; border: 1px solid #bbb; }
+    .stat-tile, .post-tile, .story, .user-row { break-inside: avoid; }
+    /* Paper has no hover: spell links out so a printed report stays usable. */
+    .addr-list a[href]::after, .report-footer a[href]::after { content: " (" attr(href) ")"; font-size: 0.75em; word-break: break-all; }
+    a { color: #111; text-decoration: underline; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <section class="app-window">
+    <header class="terminal">
+      <div class="terminal-bar">
+        <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="terminal-title" id="terminal-title">osintgram — web</span>
+        <span class="balance-chip" id="balance-chip" hidden title="Remaining HikerAPI credit (free check, spends no requests)"></span>
+        <button type="button" class="key-chip" id="key-chip" hidden title="HikerAPI key"></button>
+        <label class="mode-switch" title="AI mode: describe your request and the model picks the commands. Base mode: you pick the commands and their parameters.">
+          <span class="side side-base">Base</span>
+          <input type="checkbox" id="ai-mode" checked>
+          <span class="track"><span class="thumb"></span></span>
+          <span class="side side-ai">AI ✨</span>
+        </label>
+      </div>
+      <div class="terminal-body">
+        <h1 class="sr-only">Osintgram Web</h1>
+        <pre class="ascii-logo" id="ascii-logo" aria-hidden="true"></pre>
+        <p class="terminal-line version" id="version-line"></p>
+      </div>
+    </header>
+
+    <!-- Shown on its own only when no key is configured at all; otherwise it
+         is collapsed behind the 🔑 chip in the terminal bar. -->
+    <section class="key-panel" id="key-panel" hidden>
+      <div class="key-panel-head">
+        <span class="key-panel-title">🔑 HikerAPI key</span>
+        <button type="button" class="link-btn" id="key-close" hidden>Close</button>
+      </div>
+      <p class="key-panel-note" id="key-note">
+        A key is needed to query Instagram. Get one at
+        <a href="https://hikerapi.com" target="_blank" rel="noopener">hikerapi.com ↗</a> and paste it here.
+      </p>
+      <div class="key-row">
+        <input type="password" id="key-input" class="key-input" placeholder="paste your HikerAPI key"
+               autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="HikerAPI key">
+        <button type="button" class="secondary" id="key-save">Verify and use</button>
+      </div>
+      <label class="key-remember"><input type="checkbox" id="key-remember" checked>
+        Remember in <code>config/credentials.ini</code> (the same key also works for the CLI)</label>
+      <p class="key-status" id="key-status" hidden></p>
+    </section>
+
+    <form id="query-form">
+      <div class="row">
+        <div class="field hero-field">
+          <label for="target">Target username</label>
+          <div class="input-shell">
+            <span class="input-icon" aria-hidden="true">@</span>
+            <input type="text" class="hero-input" id="target" name="target" placeholder="Instagram username, e.g. instagram"
+                   required autocomplete="off" autocapitalize="none" spellcheck="false">
+          </div>
+        </div>
+      </div>
+      <!-- Only one of these two fieldsets is active at a time: the inactive one
+           is both hidden and disabled, so its inputs (e.g. the required
+           textarea) never block form validation. -->
+      <fieldset class="mode-fields field hero-field" id="ai-fields">
+        <label for="message">Request <span class="hint">in plain language</span></label>
+        <div class="input-shell multiline">
+          <span class="input-icon" aria-hidden="true">❯</span>
+          <textarea class="hero-input" id="message" name="message" placeholder="What do you want to know? e.g. how many followers do they have and which hashtags do they use most?" required></textarea>
+        </div>
+        <div class="suggestions" id="suggestions">
+          <span>Try:</span>
+          <button type="button">How many followers and posts?</button>
+          <button type="button">Which hashtags do they use most?</button>
+          <button type="button">Where were the photos taken?</button>
+          <button type="button">Who comments on their posts most?</button>
+        </div>
+      </fieldset>
+      <fieldset class="mode-fields" id="base-fields" hidden disabled>
+        <div class="field cmd-toolbar">
+          <label for="cmd-search">Commands</label>
+          <input type="search" id="cmd-search" class="cmd-search" placeholder="search a command…"
+                 aria-label="Search a command by name or description" autocomplete="off">
+          <span class="cmd-count" id="cmd-count"></span>
+          <button class="link-btn" id="cmd-clear" type="button">Clear all</button>
+        </div>
+        <div class="cmd-groups" id="cmd-groups"><p class="empty">Loading commands...</p></div>
+      </fieldset>
+      <div class="options">
+        <div class="options-grid">
+          <div class="field">
+            <label>Request limit</label>
+            <div class="limit-group" id="limit-group">
+              <label class="limit-pill active"><input type="checkbox" class="limit-option" data-value="" checked> No limit</label>
+              <label class="limit-pill"><input type="checkbox" class="limit-option" data-value="10"> 10</label>
+              <label class="limit-pill"><input type="checkbox" class="limit-option" data-value="50"> 50</label>
+              <label class="limit-pill"><input type="checkbox" class="limit-option" data-value="100"> 100</label>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-head">
+              <label>Cache lifetime</label>
+              <span class="note" id="cache-note"></span>
+              <button class="link-btn" id="cache-clear" type="button">Clear cache</button>
+            </div>
+            <div class="limit-group" id="cache-ttl-group">
+              <label class="limit-pill active"><input type="checkbox" class="cache-ttl-option" data-value="" checked> Default</label>
+              <label class="limit-pill"><input type="checkbox" class="cache-ttl-option" data-value="3600"> 1 hour</label>
+              <label class="limit-pill"><input type="checkbox" class="cache-ttl-option" data-value="21600"> 6 hours</label>
+              <label class="limit-pill"><input type="checkbox" class="cache-ttl-option" data-value="86400"> 24 hours</label>
+              <label class="limit-pill"><input type="checkbox" class="cache-ttl-option" data-value="0"> Off</label>
+            </div>
+          </div>
+        </div>
+        <label class="toggle-row">
+          <input type="checkbox" id="verbose">
+          Verbose mode (show step-by-step progress)
+        </label>
+      </div>
+      <div class="btn-row">
+        <button class="primary" id="submit" type="submit">
+          <span class="spinner"></span>
+          <span class="label">Search</span>
+        </button>
+        <button class="stop" id="stop-btn" type="button" hidden>⏹ Stop</button>
+        <button class="secondary" id="estimate-btn" type="button" hidden
+                title="Estimate how many HikerAPI/instagrapi requests the selected commands will cost">≈ Estimate requests</button>
+        <span class="estimate-note" id="estimate-note"></span>
+        <span class="kbd-hint" id="kbd-hint"></span>
+      </div>
+    </form>
+  </section>
+
+  <details class="dossier-panel" id="dossier-panel" hidden>
+    <summary>💾 Saved dossiers <span class="n" id="dossier-count"></span></summary>
+    <div id="dossier-list"></div>
+  </details>
+
+  <div id="progress-wrap" hidden>
+    <div id="progress" class="terminal-log">
+      <div class="terminal-bar">
+        <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="terminal-title">log — progress</span>
+      </div>
+      <ul id="progress-list" aria-live="polite"></ul>
+    </div>
+  </div>
+
+  <div id="output" hidden>
+    <div id="output-summary" class="summary-bar" hidden></div>
+    <div id="output-answer" class="answer-card"></div>
+    <div id="output-details-heading" class="details-heading" hidden>Request details</div>
+    <div id="output-cards"></div>
+  </div>
+
+  <footer class="site-footer">
+    <section class="disclaimer" aria-labelledby="disclaimer-title">
+      <h2 id="disclaimer-title">⚠️ Disclaimer</h2>
+      <p>
+        <strong>For educational purposes only.</strong> The contributors do not assume any responsibility for the 'uso di questo strumento.
+        <span class="original" lang="en">— FOR EDUCATIONAL PURPOSE ONLY! The contributors do not assume any responsibility for the use of this tool.</span>
+      </p>
+      <ul>
+        <li>It's advisable to <strong>non</strong> use your own personal or primary account with this tool.</li>
+        <li>Never upload your credentials (<code>config/credentials.ini</code>, HikerAPI token, instagrapi session) to a public repository.</li>
+        <li>The web interface <strong>has no authentication</strong>: keep it on <code>127.0.0.1</code> and do not expose it on a network without adding an authentication layer first.</li>
+        <li>Results can contain third parties' personal data: handle them in line with data-protection law (e.g. GDPR) and Instagram's Terms of 'uso di Instagram.</li>
+      </ul>
+    </section>
+
+    <div class="footer-grid">
+      <section aria-labelledby="footer-project">
+        <h2 id="footer-project">Project</h2>
+        <ul class="footer-list">
+          <li><strong>Osintgram</strong> <span class="badge" id="footer-version">v–</span></li>
+          <li id="footer-author">Developed by Giuseppe Criscione</li>
+          <li><a id="footer-repo" href="https://github.com/Datalux/Osintgram" target="_blank" rel="noopener">Source code on GitHub ↗</a></li>
+          <li><a id="footer-issues" href="https://github.com/Datalux/Osintgram/issues" target="_blank" rel="noopener">Report an issue ↗</a></li>
+          <li>Licence <a id="footer-license" href="https://github.com/Datalux/Osintgram/blob/master/LICENSE" target="_blank" rel="noopener">GPL-3.0 ↗</a></li>
+        </ul>
+      </section>
+      <section aria-labelledby="footer-libs">
+        <h2 id="footer-libs">Libraries</h2>
+        <ul class="footer-list libs" id="footer-libraries"><li class="empty">Loading…</li></ul>
+      </section>
+      <section aria-labelledby="footer-data">
+        <h2 id="footer-data">Data &amp; services</h2>
+        <ul class="footer-list">
+          <li>Instagram data via <a href="https://hikerapi.com" target="_blank" rel="noopener">HikerAPI ↗</a> o <a href="https://github.com/subzeroid/instagrapi" target="_blank" rel="noopener">instagrapi ↗</a></li>
+          <li>Geocoding: <a href="https://nominatim.org" target="_blank" rel="noopener">Nominatim ↗</a> — data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors ↗</a>, ODbL licence</li>
+          <li id="footer-model">AI mode: local model via <a href="https://ollama.com" target="_blank" rel="noopener">Ollama ↗</a></li>
+        </ul>
+      </section>
+    </div>
+
+    <p class="footer-bottom">
+      © <span id="footer-year"></span> Osintgram contributors · Released under the GPL-3.0 ·
+      Instagram è un marchio di Meta Platforms, Inc.: questo progetto non è affiliato né approvato da Meta.
+    </p>
+  </footer>
+</main>
+<noscript>
+  <p class="noscript">This interface needs JavaScript enabled.</p>
+</noscript>
+
+<script>
+  const form = document.getElementById("query-form");
+  const submitBtn = document.getElementById("submit");
+  const submitLabel = submitBtn.querySelector(".label");
+  const stopBtn = document.getElementById("stop-btn");
+  const progressWrap = document.getElementById("progress-wrap");
+  const progressList = document.getElementById("progress-list");
+  const output = document.getElementById("output");
+  const verboseCheckbox = document.getElementById("verbose");
+  let currentController = null;
+
+  // Aborting our own request only stops the browser listening: the server
+  // would keep working - and keep spending HikerAPI requests - to the end.
+  // /api/cancel stops the run itself; the id ties the two together.
+  let currentRunId = null;
+  stopBtn.addEventListener("click", () => {
+    if (currentRunId) {
+      fetch("/api/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ run_id: currentRunId }),
+        keepalive: true,
+      }).catch(() => { /* the abort below is what the user sees anyway */ });
+    }
+    if (currentController) currentController.abort();
+  });
+  // Wires up a group of checkboxes that behave as a single-select "pill"
+  // control (used for both "Request limit" and "Cache lifetime"): checking
+  // one unchecks the others, and unchecking the last one falls back to the
+  // option with data-value="" (the default/no-op choice). Returns a getter
+  // for the currently selected value (null when the default is selected).
+  function wirePillGroup(className) {
+    const checkboxes = Array.from(document.querySelectorAll(`.${className}`));
+    checkboxes.forEach((cb) => {
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          checkboxes.forEach((other) => { if (other !== cb) other.checked = false; });
+        } else if (!checkboxes.some((other) => other.checked)) {
+          const fallback = checkboxes.find((other) => other.dataset.value === "");
+          if (fallback) fallback.checked = true;
+        }
+        checkboxes.forEach((other) => {
+          other.closest(".limit-pill").classList.toggle("active", other.checked);
+        });
+      });
+    });
+    return () => {
+      const checked = checkboxes.find((cb) => cb.checked && cb.dataset.value !== "");
+      return checked ? parseInt(checked.dataset.value, 10) : null;
+    };
+  }
+
+  // [icon, label, description]. The description is only shown in Base mode;
+  // commands missing here (e.g. a tool added server-side later) still show
+  // up there, using the English docstring from /api/tools instead.
+  const TOOL_META = {
+    get_user_info: ["🧑", "Profile info", "Bio and bio links, follower/following/post counts, category, business/verified flags, public contact details and address."],
+    get_account_about: ["🪪", "Account info", "Instagram's \"About this account\": country of registration, creation month and how many times the username changed (HikerAPI only)."],
+    get_followers: ["👥", "Followers", "The target's followers (id, username, full name)."],
+    get_followings: ["👥", "Following", "The accounts the target follows."],
+    get_hashtags: ["#️⃣", "Hashtags", "Hashtags used in posts, most frequent first."],
+    get_addrs: ["📍", "Addresses", "Addresses of the locations tagged in posts, most recent first."],
+    get_captions: ["📝", "Captions", "The text of the post captions."],
+    get_total_comments: ["💬", "Comment totals", "Total, min, max and average comments per post."],
+    get_total_likes: ["❤️", "Like totals", "Total, min, max and average likes per post."],
+    get_media_type: ["🖼️", "Media types", "How many posts are photos, videos or carousels, with views, collaborations and paid partnerships."],
+    get_posting_times: ["🕒", "Posting times", "Which days and hours they post on (heatmap) and how often."],
+    get_photo_descriptions: ["🔍", "Photo descriptions", "Alt text of the photos (what they show), when the post's author wrote it."],
+    get_comment_data: ["💬", "Comments", "Every comment on the posts, with its author and post."],
+    get_people_who_commented: ["💬", "Who commented", "Accounts that commented on the posts, by number of comments."],
+    get_people_who_tagged: ["🏷️", "Who tagged", "Accounts that tagged the target in their own posts."],
+    get_people_tagged_by_user: ["🏷️", "Tagged by target", "Accounts the target tagged in their own posts."],
+    get_user_photos: ["🖼️", "Photos", "URLs of the published photos (no download)."],
+    get_user_propic: ["🖼️", "Profile picture", "URL of the profile picture at full resolution."],
+    get_user_stories: ["🎬", "Stories", "URLs of the currently active stories, if any."],
+    get_highlights: ["✨", "Story highlights", "The highlights pinned on the profile: title, count and cover."],
+    get_suggested_profiles: ["🫂", "Suggested profiles", "Accounts Instagram suggests as related to the target (HikerAPI only)."],
+    compare_with: ["🔀", "Compare profiles", "Connections in common with another account: shared followers and followings."],
+    search_hashtag: ["#️⃣", "Hashtag search", "Posts published with a hashtag and who published them. Needs no target."],
+    search_location: ["🌍", "Place search", "Posts published from a place and who published them. Needs no target."],
+    get_followers_email: ["✉️", "Follower emails", "Public emails among the followers (one request per account checked)."],
+    get_followings_email: ["✉️", "Following emails", "Public emails among the followed accounts (one request per account checked)."],
+    get_followers_phone: ["📞", "Follower phones", "Public phone numbers among the followers (one request per account checked)."],
+    get_followings_phone: ["📞", "Following phones", "Public phone numbers among the followed accounts (one request per account checked)."],
+  };
+
+  const TOOL_GROUPS = [
+    ["Profile", ["get_user_info", "get_account_about", "get_user_propic", "get_user_stories", "get_highlights", "get_user_photos"]],
+    ["Network", ["get_followers", "get_followings", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_people_tagged_by_user", "get_people_who_commented"]],
+    ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions"]],
+    ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
+    ["Search (no target)", ["search_hashtag", "search_location"]],
+  ];
+
+  const PARAM_LABELS = {
+    limit: "Max results",
+    limit_posts: "Posts to scan",
+    match_limit: "Max corrispondenze",
+    max_checks: "Max accounts checked",
+    other_username: "Other account",
+    scope: "Compare",
+    hashtag: "Hashtag",
+    place: "Place",
+    sort: "Sort by",
+  };
+
+  // User-facing labels for Literal choices (keyed by the raw value).
+  const CHOICE_LABELS = {
+    both: "Both",
+    followers: "Followers only",
+    followings: "Followings only",
+    top: "Most popular",
+    recent: "Most recent",
+  };
+
+  // ---- quick-limit / cache-duration checkboxes (single-select pills) ----
+  const getMaxItems = wirePillGroup("limit-option");
+  const getCacheTtlSeconds = wirePillGroup("cache-ttl-option");
+
+  // ---- AI / Base mode switch ----
+  // AI: free-text request, the local model picks which tools to run (/api/query).
+  // Base: the user picks the tools and their parameters directly (/api/run).
+  const MODE_STORAGE_KEY = "osintgram.mode";
+  const aiModeSwitch = document.getElementById("ai-mode");
+  const aiFields = document.getElementById("ai-fields");
+  const baseFields = document.getElementById("base-fields");
+  const cmdGroups = document.getElementById("cmd-groups");
+  const cmdCount = document.getElementById("cmd-count");
+
+  function isAiMode() {
+    return aiModeSwitch.checked;
+  }
+
+  function idleSubmitLabel() {
+    return isAiMode() ? "Search" : "Run";
+  }
+
+  function applyMode() {
+    const ai = isAiMode();
+    document.body.classList.toggle("mode-base", !ai);
+    aiFields.hidden = aiFields.disabled = !ai;
+    baseFields.hidden = baseFields.disabled = ai;
+    document.getElementById("kbd-hint").hidden = !ai; // the shortcut lives in the AI request field
+    // Nothing to price in AI mode: the model picks the commands as it goes.
+    document.getElementById("estimate-btn").hidden = ai;
+    document.getElementById("estimate-note").textContent = "";
+    syncTargetRequirement();
+    submitLabel.textContent = idleSubmitLabel();
+    try { localStorage.setItem(MODE_STORAGE_KEY, ai ? "ai" : "base"); } catch (e) { /* storage unavailable - just don't remember */ }
+  }
+
+  // ---- header (terminal banner) and footer (project info, credits) ----
+  // Logo and version line come from the CLI's own src/artwork.py via
+  // /api/about, so the web UI and the CLI always show the same banner; the
+  // library credits carry the versions/licenses actually installed.
+  document.getElementById("terminal-title").textContent = `osintgram@${location.host || "localhost"} — web`;
+  document.getElementById("footer-year").textContent = new Date().getFullYear();
+
+  function renderFooter(data) {
+    document.getElementById("footer-version").textContent = `v${data.version}`;
+    document.getElementById("footer-author").textContent = `Developed by ${data.author}`;
+    document.getElementById("footer-repo").href = data.repository;
+    document.getElementById("footer-issues").href = `${data.repository}/issues`;
+    const license = document.getElementById("footer-license");
+    license.href = data.license.url;
+    license.textContent = `${data.license.name} ↗`;
+    document.getElementById("footer-libraries").innerHTML = data.libraries.map((lib) => `<li>
+        <a href="${escapeHtml(lib.url)}" target="_blank" rel="noopener">${escapeHtml(lib.name)}</a>
+        ${lib.version ? `<span class="ver">${escapeHtml(lib.version)}</span>` : `<span class="ver off">not installed</span>`}
+        ${lib.license ? `<span class="lic">${escapeHtml(lib.license)}</span>` : ""}
+        <span class="role">${escapeHtml(lib.role)}</span>
+      </li>`).join("");
+    // Models have their own licenses - e.g. Meta's Llama license asks for a
+    // visible "Built with Llama" wherever a Llama model powers a product.
+    const isLlama = /^llama/i.test(data.ollama_model || "");
+    document.getElementById("footer-model").innerHTML =
+      `AI mode: local model <code>${escapeHtml(data.ollama_model)}</code> via <a href="https://ollama.com" target="_blank" rel="noopener">Ollama ↗</a>` +
+      (isLlama ? ` · <strong>Built with Llama</strong>` : " · check the licence of the model you use");
+  }
+
+  fetch("/api/about")
+    .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`))))
+    .then((data) => {
+      // The CLI's art starts with a blank line and ends with indentation.
+      const art = data.logo.replace(/^\s*\n/, "").replace(/\s+$/, "");
+      const logo = document.getElementById("ascii-logo");
+      logo.textContent = art;
+      logo.style.setProperty("--logo-cols", Math.max(...art.split("\n").map((line) => line.length)));
+      document.getElementById("version-line").textContent = `Version ${data.version} - Developed by ${data.author}`;
+      renderFooter(data);
+    })
+    .catch(() => {
+      document.getElementById("ascii-logo").textContent = "Osintgram";
+      document.getElementById("footer-libraries").innerHTML = `<li class="empty">Unavailable (cannot reach the server).</li>`;
+    });
+
+  // ---- HikerAPI key (terminal bar chip + panel) ----
+  // The key can be pasted here instead of hand-editing config/credentials.ini.
+  // It only ever travels one way: the server accepts it and afterwards
+  // returns a masked preview, never the key itself.
+  const keyPanel = document.getElementById("key-panel");
+  const keyChip = document.getElementById("key-chip");
+  const keyInput = document.getElementById("key-input");
+  const keyStatus = document.getElementById("key-status");
+  const keyNote = document.getElementById("key-note");
+  const keyClose = document.getElementById("key-close");
+  let keyState = { configured: false };
+
+  const KEY_SOURCE_LABEL = {
+    env: "the HIKERAPI_TOKEN environment variable",
+    runtime: "entered here",
+    file: "config/credentials.ini",
+  };
+
+  function renderKeyState() {
+    const { configured, preview, source, locked } = keyState;
+    keyChip.hidden = false;
+    keyChip.textContent = configured ? `🔑 ${preview || "set"}` : "🔑 no key";
+    keyChip.classList.toggle("missing", !configured);
+    keyChip.title = configured
+      ? `HikerAPI key da ${KEY_SOURCE_LABEL[source] || source}. Clicca per cambiarla.`
+      : "No HikerAPI key configured. Click to add one.";
+    // With no key nothing works, so the panel opens by itself and can't be
+    // dismissed; once one is set it's an occasional errand behind the chip.
+    keyPanel.hidden = configured;
+    keyClose.hidden = !configured;
+    if (locked) {
+      keyNote.innerHTML = "The key is set by <code>HIKERAPI_TOKEN</code>: finché quella variabile è definita, "
+        + "takes precedence over any key entered here.";
+    } else if (configured) {
+      keyNote.textContent = `Key active (${KEY_SOURCE_LABEL[source] || source}). Paste a new one to replace it.`;
+    } else {
+      keyNote.innerHTML = "A key is needed to query Instagram. Get one at "
+        + '<a href="https://hikerapi.com" target="_blank" rel="noopener">hikerapi.com ↗</a> and paste it here.';
+    }
+  }
+
+  function setKeyStatus(text, kind) {
+    keyStatus.textContent = text;
+    keyStatus.className = `key-status${kind ? ` ${kind}` : ""}`;
+    keyStatus.hidden = !text;
+  }
+
+  async function loadKeyState() {
+    try {
+      const response = await fetch("/api/token");
+      keyState = await response.json();
+    } catch (e) {
+      keyState = { configured: false };
+    }
+    renderKeyState();
+  }
+
+  keyChip.addEventListener("click", () => {
+    keyPanel.hidden = !keyPanel.hidden;
+    if (!keyPanel.hidden) keyInput.focus();
+  });
+  keyClose.addEventListener("click", () => { keyPanel.hidden = true; });
+
+  document.getElementById("key-save").addEventListener("click", async () => {
+    const token = keyInput.value.trim();
+    if (!token) { setKeyStatus("Paste a key.", "err"); return; }
+    const button = document.getElementById("key-save");
+    button.disabled = true;
+    setKeyStatus("Verifying the key…");
+    try {
+      const response = await fetch("/api/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, remember: document.getElementById("key-remember").checked }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+      keyState = data;
+      keyInput.value = "";  // never keep the key sitting in the DOM
+      renderKeyState();
+      const credit = data.balance ? ` — ${fmtNumber(data.balance.requests)} requests left` : "";
+      setKeyStatus(`✓ Key valid${credit}${data.saved ? ", saved to file" : ""}.`
+        + (data.warning ? ` ${data.warning}` : ""), "ok");
+      loadBalance();
+    } catch (err) {
+      setKeyStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  keyInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") { event.preventDefault(); document.getElementById("key-save").click(); }
+  });
+
+  // ---- HikerAPI balance (terminal bar) ----
+  // HikerAPI doesn't bill this lookup, so it's refreshed on load and after
+  // every search. Hidden entirely when another backend is in use.
+  const LOW_BALANCE_REQUESTS = 100;
+  const balanceChip = document.getElementById("balance-chip");
+  // Remembered so the cost estimate can say whether it fits in what's left.
+  let lastKnownBalance = null;
+
+  async function loadBalance() {
+    try {
+      const response = await fetch("/api/balance");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+      if (!data.available) {
+        lastKnownBalance = null;
+        balanceChip.hidden = true;
+        return;
+      }
+      lastKnownBalance = data.requests;
+      const amount = typeof data.amount === "number"
+        ? new Intl.NumberFormat(undefined, { style: "currency", currency: data.currency || "USD" }).format(data.amount)
+        : "";
+      balanceChip.innerHTML = `💳 ${escapeHtml(fmtNumber(data.requests))} requests${amount ? `<span class="amount"> · ${escapeHtml(amount)}</span>` : ""}`;
+      balanceChip.classList.toggle("low", data.requests < LOW_BALANCE_REQUESTS);
+      balanceChip.title = data.requests < LOW_BALANCE_REQUESTS
+        ? "HikerAPI credit almost exhausted"
+        : "Remaining HikerAPI credit (free check, spends no requests)";
+    } catch (err) {
+      balanceChip.textContent = "💳 credit n/a";
+      balanceChip.classList.add("low");
+      balanceChip.title = `Could not read the HikerAPI credit: ${err.message || err}`;
+    }
+    balanceChip.hidden = false;
+  }
+  loadBalance();
+  loadKeyState();
+
+  // ---- "Clear cache" (the CLI's `cache` command) ----
+  document.getElementById("cache-clear").addEventListener("click", async () => {
+    const note = document.getElementById("cache-note");
+    if (!confirm("Clear the cache? The next searches will re-send every request to HikerAPI/instagrapi.")) return;
+    try {
+      const response = await fetch("/api/cache", { method: "DELETE" });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const { cleared } = await response.json();
+      note.textContent = `cleared (${fmtNumber(cleared)} response${cleared === 1 ? "" : "s"})`;
+    } catch (err) {
+      note.textContent = `errore: ${err.message || err}`;
+    }
+  });
+
+  try { aiModeSwitch.checked = localStorage.getItem(MODE_STORAGE_KEY) !== "base"; } catch (e) { /* default: AI */ }
+  aiModeSwitch.addEventListener("change", applyMode);
+  applyMode();
+
+  // ---- search history dropdowns (target username, AI request) ----
+  // Persisted server-side (/api/history/<kind>, JSON files under config/) so
+  // they survive restarts of the tool. The server records an entry only once
+  // the target actually resolved to an account; both lists are refreshed
+  // after every search.
+  function fmtWhen(unixSeconds) {
+    const s = Math.max(0, Date.now() / 1000 - unixSeconds);
+    if (s < 60) return "adesso";
+    if (s < 3600) return `${Math.floor(s / 60)} min fa`;
+    if (s < 86400) return `${Math.floor(s / 3600)} h fa`;
+    if (s < 7 * 86400) return `${Math.floor(s / 86400)} g fa`;
+    return new Date(unixSeconds * 1000).toLocaleDateString();
+  }
+
+  // Attaches a "recent entries" dropdown to `input` (an <input> or a
+  // <textarea>): shown on focus/click, filtered as you type, arrows + Enter
+  // to pick, "×" or Shift+Delete to remove an entry. `normalize` maps both
+  // typed text and entries to the form they're compared in; `prefix` and
+  // `avatar` only affect how entries are displayed.
+  function createHistoryDropdown({ input, kind, title, normalize, prefix = "", avatar = false }) {
+    const wrap = document.createElement("div");
+    wrap.className = "history-wrap";
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    wrap.insertAdjacentHTML("beforeend", `<div class="history-panel" hidden>
+        <div class="history-head">${escapeHtml(title)}</div>
+        <ul class="history-list" id="history-list-${kind}" role="listbox" aria-label="${escapeHtml(title)}"></ul>
+      </div>`);
+    const panel = wrap.querySelector(".history-panel");
+    const list = wrap.querySelector(".history-list");
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-autocomplete", "list");
+    input.setAttribute("aria-controls", list.id);
+    input.setAttribute("aria-expanded", "false");
+    let entries = [];
+    let active = -1;
+
+    function visible() {
+      const q = normalize(input.value);
+      return entries.filter((e) => normalize(e.value).includes(q));
+    }
+
+    function hide() {
+      panel.hidden = true;
+      active = -1;
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-activedescendant");
+    }
+
+    function render() {
+      const items = visible();
+      if (items.length === 0) {
+        hide();
+        return;
+      }
+      active = Math.min(active, items.length - 1);
+      list.innerHTML = items.map((e, i) => {
+        const shown = escapeHtml(prefix + e.value);
+        return `<li class="history-item${i === active ? " active" : ""}" id="history-${kind}-${i}" role="option"
+            aria-selected="${i === active}" data-index="${i}">
+          ${avatar ? `<span class="avatar">${escapeHtml(initials(e.value))}</span>` : ""}
+          <span class="history-name">${shown}</span>
+          <span class="history-when">${escapeHtml(fmtWhen(e.last_searched_at))}</span>
+          <button type="button" class="history-remove" tabindex="-1" title="Rimuovi dallo storico" aria-label="Rimuovi ${shown} dallo storico">×</button>
+        </li>`;
+      }).join("");
+      panel.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+      if (active >= 0) {
+        input.setAttribute("aria-activedescendant", `history-${kind}-${active}`);
+        document.getElementById(`history-${kind}-${active}`).scrollIntoView({ block: "nearest" });
+      } else {
+        input.removeAttribute("aria-activedescendant");
+      }
+    }
+
+    async function load() {
+      try {
+        const response = await fetch(`/api/history/${kind}`);
+        if (response.ok) entries = await response.json();
+      } catch (e) { /* server unreachable - keep whatever we had */ }
+      if (document.activeElement === input) render();
+    }
+
+    async function remove(value) {
+      // Optimistic: drop it from the list right away, then take the server's
+      // copy as the truth (or reload it if the delete failed).
+      entries = entries.filter((e) => e.value !== value);
+      render();
+      try {
+        const response = await fetch(`/api/history/${kind}?value=${encodeURIComponent(value)}`, { method: "DELETE" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        entries = await response.json();
+        if (document.activeElement === input) render();
+      } catch (e) {
+        load();
+      }
+    }
+
+    function pick(value) {
+      input.value = value;
+      hide();
+    }
+
+    input.addEventListener("focus", render);
+    // Reopens it after Escape or a pick, without having to leave the field.
+    input.addEventListener("click", () => { if (panel.hidden) render(); });
+    input.addEventListener("input", () => { active = -1; render(); });
+    input.addEventListener("blur", hide);
+    input.addEventListener("keydown", (event) => {
+      // In a textarea holding several lines, up/down must keep moving the
+      // caret between them - only single-line text gets list navigation.
+      const arrowsNavigate = !input.value.includes("\n");
+      if (panel.hidden) {
+        if (event.key === "ArrowDown" && arrowsNavigate) { render(); event.preventDefault(); }
+        return;
+      }
+      const items = visible();
+      if ((event.key === "ArrowDown" || event.key === "ArrowUp") && arrowsNavigate) {
+        event.preventDefault();
+        const step = event.key === "ArrowDown" ? 1 : -1;
+        // Cycles through the entries plus "nothing highlighted" (-1), so
+        // arrowing past either end returns to the typed text.
+        active = ((active + 1 + step + items.length + 1) % (items.length + 1)) - 1;
+        render();
+      } else if (event.key === "Enter" && active >= 0) {
+        event.preventDefault(); // pick the highlighted entry instead of submitting / a newline
+        pick(items[active].value);
+      } else if (event.key === "Delete" && active >= 0 && event.shiftKey) {
+        event.preventDefault();
+        remove(items[active].value);
+      } else if (event.key === "Escape") {
+        hide();
+      }
+    });
+    // mousedown would blur the input (closing the panel) before the click
+    // lands - keep focus in the field so both picking and "×" work.
+    list.addEventListener("mousedown", (event) => event.preventDefault());
+    list.addEventListener("click", (event) => {
+      const item = event.target.closest(".history-item");
+      if (!item) return;
+      const entry = visible()[Number(item.dataset.index)];
+      if (!entry) return;
+      if (event.target.closest(".history-remove")) remove(entry.value);
+      else pick(entry.value);
+    });
+
+    load();
+    return { reload: load };
+  }
+
+  const targetHistory = createHistoryDropdown({
+    input: document.getElementById("target"),
+    kind: "targets",
+    title: "Recent searches",
+    normalize: (v) => v.trim().replace(/^@/, "").toLowerCase(),
+    prefix: "@",
+    avatar: true,
+  });
+  const queryHistory = createHistoryDropdown({
+    input: document.getElementById("message"),
+    kind: "queries",
+    title: "Recent requests",
+    normalize: (v) => v.split(/\s+/).filter(Boolean).join(" ").toLowerCase(),
+  });
+
+  // ---- AI request: example chips and Cmd/Ctrl+Enter to search ----
+  const messageInput = document.getElementById("message");
+  document.getElementById("suggestions").addEventListener("click", (event) => {
+    const chip = event.target.closest("button");
+    if (!chip) return;
+    messageInput.value = chip.textContent;
+    messageInput.focus();
+    messageInput.setSelectionRange(messageInput.value.length, messageInput.value.length);
+  });
+  // Plain Enter keeps adding a new line in the textarea.
+  messageInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+  document.getElementById("kbd-hint").innerHTML = `<kbd>${isMac ? "⌘" : "Ctrl"}</kbd> + <kbd>Invio</kbd> per cercare`;
+
+  // ---- request-cost estimate (Base mode) ----
+  // Only in Base mode: in AI mode the model decides which commands to run, so
+  // there is nothing to price before it starts.
+  const estimateBtn = document.getElementById("estimate-btn");
+  const estimateNote = document.getElementById("estimate-note");
+
+  estimateBtn.addEventListener("click", async () => {
+    const target = document.getElementById("target").value.trim();
+    const calls = collectCalls();
+    estimateNote.className = "estimate-note";
+    if (!target) {
+      estimateNote.textContent = "Enter a target username first.";
+      return;
+    }
+    if (calls.length === 0) {
+      estimateNote.textContent = "Select at least one command.";
+      return;
+    }
+    estimateBtn.disabled = true;
+    estimateNote.textContent = "calcolo…";
+    try {
+      const response = await fetch("/api/estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, calls, max_items: getMaxItems(), cache_ttl_seconds: getCacheTtlSeconds() }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+      const range = data.total_low === data.total_high
+        ? fmtNumber(data.total_high)
+        : `${fmtNumber(data.total_low)}–${fmtNumber(data.total_high)}`;
+      const left = lastKnownBalance;
+      const overBudget = typeof left === "number" && data.total_high > left;
+      estimateNote.innerHTML = `≈ <strong>${escapeHtml(range)}</strong> requests`
+        + (typeof left === "number" ? ` · available ${escapeHtml(fmtNumber(left))}` : "")
+        + (overBudget ? " ⚠️ may not be enough" : "");
+      estimateNote.classList.toggle("warn", overBudget);
+      // Detail per command, for the curious - and to spot the expensive one.
+      estimateNote.title = data.per_command
+        .map((c) => `${(TOOL_META[c.name] || ["", c.name])[1]}: ${c.low === c.high ? c.low : `${c.low}–${c.high}`}`)
+        .join("\n");
+    } catch (err) {
+      estimateNote.textContent = `estimate failed: ${err.message || err}`;
+      estimateNote.classList.add("warn");
+    } finally {
+      estimateBtn.disabled = false;
+    }
+  });
+
+  // ---- Base mode: command list built from /api/tools ----
+  function renderParam(p) {
+    const label = PARAM_LABELS[p.name] || p.name.replace(/_/g, " ");
+    const nameCell = `<span class="param-name" title="${escapeHtml(p.description || "")}">${escapeHtml(label)}</span>`;
+    // A parameter with a fixed set of choices (a Literal on the server) is a
+    // dropdown, not a free-text box - no "all" toggle needed.
+    if (Array.isArray(p.choices)) {
+      const options = p.choices.map((c) =>
+        `<option value="${escapeHtml(c)}"${c === p.default ? " selected" : ""}>${escapeHtml(CHOICE_LABELS[c] || c)}</option>`
+      ).join("");
+      return `<div class="param" data-param="${escapeHtml(p.name)}" data-type="choice">
+        ${nameCell}
+        <select class="param-value" aria-label="${escapeHtml(label)}" disabled>${options}</select>
+      </div>`;
+    }
+    const isInt = p.type === "integer";
+    const placeholder = p.default === null ? "all" : String(p.default);
+    // Empty field = the tool's own default. The "all" (no limit) shortcut
+    // only makes sense for a numeric cap - not for a free-text field, nor for
+    // one whose default is already "no limit" (null).
+    const allToggle = isInt && p.default !== null
+      ? `<label class="param-all"><input type="checkbox" class="param-all-check"> all</label>`
+      : "";
+    return `<div class="param" data-param="${escapeHtml(p.name)}" data-type="${escapeHtml(p.type)}">
+      ${nameCell}
+      <input class="param-value" ${isInt ? 'type="number" min="1" step="1" inputmode="numeric"' : 'type="text"'} placeholder="${escapeHtml(placeholder)}" aria-label="${escapeHtml(label)}" disabled>
+      ${allToggle}
+    </div>`;
+  }
+
+  // One line per command: 29 of them with a two-line description each turned
+  // the picker into something you had to scroll rather than scan. The
+  // description lives in the tooltip (and feeds the search box below), so it
+  // is one hover away instead of permanently in the way.
+  function renderCommand(spec) {
+    const [icon, label, description] = TOOL_META[spec.name] || ["🔧", spec.name, spec.description];
+    const params = spec.params.length
+      ? `<div class="cmd-params" hidden>${spec.params.map(renderParam).join("")}</div>`
+      : "";
+    const hint = description || "";
+    return `<div class="cmd" data-name="${escapeHtml(spec.name)}" data-search="${escapeHtml((label + " " + hint + " " + spec.name).toLowerCase())}">
+      <label class="cmd-head" title="${escapeHtml(hint)}">
+        <input type="checkbox" class="cmd-check">
+        <span class="cmd-icon">${icon}</span>
+        <span class="cmd-title">${escapeHtml(label)}</span>
+        ${params.length ? '<span class="cmd-gear" aria-hidden="true">⚙</span>' : ""}
+      </label>
+      ${params}
+    </div>`;
+  }
+
+  // Commands that run without a target account (hashtag / place searches).
+  const targetFreeTools = new Set();
+
+  function renderCommandList(specs) {
+    specs.forEach((s) => { if (s.needs_target === false) targetFreeTools.add(s.name); });
+    const byName = new Map(specs.map((s) => [s.name, s]));
+    const grouped = new Set(TOOL_GROUPS.flatMap(([, names]) => names));
+    const groups = TOOL_GROUPS
+      .map(([title, names]) => [title, names.filter((n) => byName.has(n)).map((n) => byName.get(n))])
+      .concat([["Altro", specs.filter((s) => !grouped.has(s.name))]])
+      .filter(([, items]) => items.length > 0);
+    cmdGroups.innerHTML = groups
+      .map(([title, items]) => `<details class="cmd-group" data-group="${escapeHtml(title)}"${openGroups.has(title) ? " open" : ""}>
+        <summary class="cmd-group-title">
+          <span class="cmd-group-name">${escapeHtml(title)}</span>
+          <span class="cmd-group-count" data-total="${items.length}">0/${items.length}</span>
+        </summary>
+        <div class="cmd-grid">${items.map(renderCommand).join("")}</div>
+      </details>`)
+      .join("");
+    updateCmdCount();
+  }
+
+  // Which groups are expanded, remembered across reloads: an investigation
+  // usually keeps reaching for the same two or three groups.
+  const GROUPS_STORAGE_KEY = "osintgram.openGroups";
+  const openGroups = (() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(GROUPS_STORAGE_KEY) || "null");
+      if (Array.isArray(saved)) return new Set(saved);
+    } catch (e) { /* storage unavailable - fall through to the default */ }
+    return new Set(TOOL_GROUPS.map(([title]) => title));  // first visit: all open
+  })();
+
+  cmdGroups.addEventListener("toggle", (event) => {
+    const group = event.target.closest(".cmd-group");
+    if (!group || !group.dataset.group) return;
+    // While filtering, groups are forced open - that isn't a user choice.
+    if (cmdSearch.value.trim()) return;
+    if (group.open) openGroups.add(group.dataset.group);
+    else openGroups.delete(group.dataset.group);
+    try { localStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify([...openGroups])); } catch (e) { /* ignore */ }
+  }, true);
+
+  // Typing filters every group at once and opens whatever still matches, so a
+  // command can be found without remembering which group it lives in.
+  const cmdSearch = document.getElementById("cmd-search");
+  cmdSearch.addEventListener("input", () => {
+    const needle = cmdSearch.value.trim().toLowerCase();
+    cmdGroups.querySelectorAll(".cmd-group").forEach((group) => {
+      let visible = 0;
+      group.querySelectorAll(".cmd").forEach((cmd) => {
+        const match = !needle || cmd.dataset.search.includes(needle);
+        cmd.hidden = !match;
+        if (match) visible += 1;
+      });
+      group.hidden = visible === 0;
+      group.open = needle ? true : openGroups.has(group.dataset.group);
+    });
+  });
+
+  // Derives every dependent state of one command card from its checkboxes:
+  // selected styling, params shown, and each value input enabled only when
+  // the command is selected and "all" isn't ticked - disabled inputs are
+  // skipped by form validation, so a leftover invalid value in a deselected
+  // command can't block submitting.
+  function syncCommand(cmd) {
+    const selected = cmd.querySelector(".cmd-check").checked;
+    cmd.classList.toggle("selected", selected);
+    const params = cmd.querySelector(".cmd-params");
+    if (params) params.hidden = !selected;
+    cmd.querySelectorAll(".param").forEach((p) => {
+      const all = p.querySelector(".param-all-check");
+      p.querySelector(".param-value").disabled = !selected || Boolean(all && all.checked);
+    });
+  }
+
+  function selectedCommands() {
+    return Array.from(cmdGroups.querySelectorAll(".cmd")).filter((cmd) => cmd.querySelector(".cmd-check").checked);
+  }
+
+  function updateCmdCount() {
+    const n = selectedCommands().length;
+    cmdCount.textContent = n ? `${n} selected` : "";
+    // Per-group tally, so a collapsed group still says whether anything
+    // inside it is going to run.
+    cmdGroups.querySelectorAll(".cmd-group").forEach((group) => {
+      const badge = group.querySelector(".cmd-group-count");
+      if (!badge) return;
+      const picked = group.querySelectorAll(".cmd-check:checked").length;
+      badge.textContent = `${picked}/${badge.dataset.total}`;
+      badge.classList.toggle("has-picked", picked > 0);
+    });
+    syncTargetRequirement();
+  }
+
+  // True unless everything that will run is a target-free search. In AI mode
+  // the model picks the commands, so nothing can be known in advance: leaving
+  // the field empty is allowed there and simply restricts the model to the
+  // hashtag/place searches (see _run_agent_events in app.py).
+  function selectionNeedsTarget() {
+    if (isAiMode()) return false;
+    const selected = selectedCommands().map((cmd) => cmd.dataset.name);
+    return selected.length === 0 || selected.some((name) => !targetFreeTools.has(name));
+  }
+
+  // A hashtag/place-only selection needs no username, so the field must stop
+  // blocking the form (and say so).
+  function syncTargetRequirement() {
+    const needed = selectionNeedsTarget();
+    const input = document.getElementById("target");
+    input.required = needed;
+    const label = document.querySelector('label[for="target"]');
+    if (!label) return;
+    if (needed) label.textContent = "Target username";
+    else if (isAiMode()) label.innerHTML = 'Target username <span class="hint">optional: without it, hashtag/place searches only</span>';
+    else label.innerHTML = 'Target username <span class="hint">not needed for these searches</span>';
+  }
+
+  cmdGroups.addEventListener("change", (event) => {
+    const cmd = event.target.closest(".cmd");
+    if (!cmd) return;
+    syncCommand(cmd);
+    updateCmdCount();
+    // The selection changed, so any estimate on screen is stale.
+    const note = document.getElementById("estimate-note");
+    note.textContent = "";
+    note.className = "estimate-note";
+  });
+
+  document.getElementById("cmd-clear").addEventListener("click", () => {
+    selectedCommands().forEach((cmd) => {
+      cmd.querySelector(".cmd-check").checked = false;
+      syncCommand(cmd);
+    });
+    updateCmdCount();
+  });
+
+  // One {name, args} per selected command, in on-screen order. An empty
+  // value is simply omitted so the server applies the tool's own default;
+  // "all" is sent as null, which every limit parameter treats as no limit.
+  function collectCalls() {
+    return selectedCommands().map((cmd) => {
+      const args = {};
+      cmd.querySelectorAll(".param").forEach((p) => {
+        const all = p.querySelector(".param-all-check");
+        const raw = p.querySelector(".param-value").value.trim();
+        if (all && all.checked) args[p.dataset.param] = null;
+        else if (raw !== "") args[p.dataset.param] = p.dataset.type === "integer" ? parseInt(raw, 10) : raw;
+      });
+      return { name: cmd.dataset.name, args };
+    });
+  }
+
+  fetch("/api/tools")
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    })
+    .then(renderCommandList)
+    .catch((err) => {
+      cmdGroups.innerHTML = `<p class="empty">⚠️ Could not load the command list: ${escapeHtml(err.message || String(err))}</p>`;
+    });
+
+  // ---- stats / summary bar ----
+  // Fallback for non-verbose (batch) mode, where no live per-request events
+  // exist - a tool call is never itself served from cache (only individual
+  // backend requests inside it may be, see liveStats in runVerbose for the
+  // live/verbose equivalent), so there's no "cached" count to report here.
+  function computeToolStats(toolCalls) {
+    const stats = { ok: 0, err: 0, cached: 0, ms: 0 };
+    for (const tc of toolCalls) {
+      if (!("result" in tc)) continue; // still in flight - don't count it as OK yet
+      if (tc.is_error) stats.err += 1;
+      else stats.ok += 1;
+      if (typeof tc.elapsed_ms === "number") stats.ms += tc.elapsed_ms;
+    }
+    return stats;
+  }
+
+  function fmtSeconds(ms) {
+    return (ms / 1000).toFixed(1).replace(".", ",") + "s";
+  }
+
+  function renderSummaryBar(stats, totalWallMs, apiCallsTotal, backend) {
+    const s = stats;
+    const tiles = [];
+    if (typeof apiCallsTotal === "number") {
+      tiles.push([apiCallsTotal, backend ? `${backend} requests` : "API requests", "api"]);
+    }
+    tiles.push(
+      [s.ok, "OK", "ok"],
+      [s.err, "FAIL", "err"],
+      [s.cached, "CACHE", "cache"],
+      [fmtSeconds(totalWallMs != null ? totalWallMs : s.ms), "time", ""]
+    );
+    return tiles
+      .map(([n, l, cls]) => `<div class="summary-tile${cls ? ` ${cls}` : ""}"><span class="n">${escapeHtml(n)}</span><span class="l">${l}</span></div>`)
+      .join("");
+  }
+
+  // ---- helpers ----
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  function renderMarkdownLite(text) {
+    if (!text) return "<p class=\"empty\">(no written answer)</p>";
+    const escaped = escapeHtml(text);
+    const withInline = escaped
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/`([^`]+?)`/g, "<code>$1</code>");
+    const lines = withInline.split(/\r?\n/);
+    let html = "";
+    let inList = false;
+    for (const line of lines) {
+      const bullet = line.match(/^\s*[-*]\s+(.*)/);
+      if (bullet) {
+        if (!inList) { html += "<ul>"; inList = true; }
+        html += `<li>${bullet[1]}</li>`;
+      } else {
+        if (inList) { html += "</ul>"; inList = false; }
+        if (line.trim() === "") continue;
+        html += `<p>${line}</p>`;
+      }
+    }
+    if (inList) html += "</ul>";
+    return html || "<p class=\"empty\">(no written answer)</p>";
+  }
+
+  function fmtNumber(n) {
+    return typeof n === "number" ? n.toLocaleString() : n;
+  }
+
+  function initials(name) {
+    return (name || "?").trim().slice(0, 1).toUpperCase() || "?";
+  }
+
+  function renderUserRow(u) {
+    const extras = [];
+    if (u.is_private) extras.push('<span class="badge">🔒 private</span>');
+    if (u.is_verified) extras.push('<span class="badge">✔️ verified</span>');
+    for (const key of ["counter", "posts", "email", "contact_phone_number"]) {
+      if (u[key] !== undefined && u[key] !== null) {
+        const label = { counter: "×", posts: "post", email: "", contact_phone_number: "" }[key];
+        extras.push(`<span class="badge">${escapeHtml(label ? `${u[key]} ${label}` : String(u[key]))}</span>`);
+      }
+    }
+    const search = [u.username, u.full_name, u.context, u.email, u.contact_phone_number]
+      .filter(Boolean).join(" ").toLowerCase();
+    return `<div class="user-row" data-search="${escapeHtml(search)}">
+      <a class="avatar" href="https://www.instagram.com/${encodeURIComponent(u.username || "")}/" target="_blank" rel="noopener" title="Open @${escapeHtml(u.username || "")} on Instagram">${escapeHtml(initials(u.username || u.full_name))}</a>
+      <div class="user-info">
+        <div class="uname">@${escapeHtml(u.username || "?")}</div>
+        ${u.full_name ? `<div class="fname">${escapeHtml(u.full_name)}</div>` : ""}
+        ${u.context ? `<div class="fname ctx">${escapeHtml(u.context)}</div>` : ""}
+      </div>
+      <div class="user-extra">${extras.join("")}</div>
+    </div>`;
+  }
+
+  function renderUserList(items) {
+    return filterable(`<div class="user-list">${items.map(renderUserRow).join("")}</div>`, items.length, "account");
+  }
+
+  // A long list is only scrollable, which makes finding one name hard - above
+  // a dozen rows it gets a filter box (client-side, over the rows already on
+  // screen: no extra request).
+  const FILTER_FROM = 12;
+
+  function filterable(html, count, noun) {
+    if (count <= FILTER_FROM) return html;
+    return `<div class="filterable">
+      <input type="search" class="list-filter" placeholder="Filter ${escapeHtml(noun)}… (${fmtNumber(count)})" aria-label="Filter ${escapeHtml(noun)}">
+      <span class="list-filter-count"></span>
+      ${html}
+    </div>`;
+  }
+
+  // ---- Story Highlights (archived stories pinned on the profile) ----
+  function renderHighlights(items) {
+    const cells = items.map((h) => {
+      const cover = h.thumbnail_url
+        ? `<img src="${escapeHtml(h.thumbnail_url)}" loading="lazy" referrerpolicy="no-referrer" alt="" onerror="this.style.visibility='hidden'">`
+        : "";
+      const count = typeof h.media_count === "number" ? `${h.media_count} stories` : "";
+      const inner = `<span class="hl-cover">${cover}</span>
+        <span class="hl-title">${escapeHtml(h.title || "—")}</span>
+        ${count ? `<span class="hl-count">${escapeHtml(count)}</span>` : ""}`;
+      return h.id
+        ? `<a class="highlight" href="https://www.instagram.com/stories/highlights/${encodeURIComponent(h.id)}/" target="_blank" rel="noopener">${inner}</a>`
+        : `<span class="highlight">${inner}</span>`;
+    });
+    return `<div class="highlight-grid">${cells.join("")}</div>`;
+  }
+
+  // ---- hashtag / place search (posts by other people) ----
+  function renderSearch(result) {
+    const header = result.hashtag
+      ? `<strong>${escapeHtml(result.hashtag)}</strong> · ${escapeHtml(CHOICE_LABELS[result.sort] || result.sort || "")}`
+      : `<strong>${escapeHtml((result.place || {}).name || "—")}</strong>`
+        + ((result.place || {}).address ? ` · ${escapeHtml(result.place.address)}` : "");
+    const alternatives = (result.alternatives || []).length
+      ? `<p class="hint">Altri luoghi con lo stesso nome: ${escapeHtml(result.alternatives.join(" · "))}</p>`
+      : "";
+    const authors = (result.authors || []).length
+      ? `<div class="details-heading"><span>Who posted <span class="n">${result.authors.length}</span></span></div>${renderUserList(result.authors)}`
+      : `<p class="empty">No posts found.</p>`;
+    return `<p class="hint">${header} · ${fmtNumber(result.posts || 0)} post</p>
+      ${alternatives}${authors}
+      ${Array.isArray(result.previews) ? renderPostPreviews(result.previews) : ""}`;
+  }
+
+  // ---- compare two accounts (connections in common) ----
+  function renderCompare(result) {
+    const section = (title, list) => {
+      const body = list.length
+        ? renderUserList(list)
+        : `<p class="empty">None in common among those scanned.</p>`;
+      return `<div class="compare-section"><div class="details-heading"><span>${title} <span class="n">${list.length}</span></span></div>${body}</div>`;
+    };
+    const s = result.scanned || {};
+    const scannedBits = [];
+    if ("target_followers" in s) scannedBits.push(`${fmtNumber(s.target_followers)}/${fmtNumber(s.other_followers)} follower`);
+    if ("target_followings" in s) scannedBits.push(`${fmtNumber(s.target_followings)}/${fmtNumber(s.other_followings)} following`);
+    // Only the compared side(s) are present in the result (see `scope`).
+    const sections = [];
+    if (Array.isArray(result.common_followers)) sections.push(section("Followers in common", result.common_followers));
+    if (Array.isArray(result.common_followings)) sections.push(section("Followings in common", result.common_followings));
+    return `<p class="hint">Comparing <strong>@${escapeHtml(result.target)}</strong> with <strong>@${escapeHtml(result.other)}</strong>${scannedBits.length ? ` (scanned ${scannedBits.join(" e ")})` : ""}.</p>
+      ${sections.join("")}`;
+  }
+
+  function renderHashtags(items) {
+    const pills = items.map(
+      (h) => `<span class="pill">${escapeHtml(h.hashtag)}<span class="n">×${escapeHtml(h.count)}</span></span>`
+    );
+    return `<div class="pill-list">${pills.join("")}</div>`;
+  }
+
+  // Points wait here, keyed by an id on the <details>, so the map is only
+  // built (and OSM tiles only fetched) when the user opens it.
+  const mapStore = new Map();
+  let mapSeq = 0;
+
+  function renderAddresses(items) {
+    const rows = items.map((a) => {
+      const link = (typeof a.lat === "number" && typeof a.lng === "number")
+        ? `https://www.openstreetmap.org/?mlat=${a.lat}&mlon=${a.lng}#map=16/${a.lat}/${a.lng}`
+        : null;
+      const pin = link
+        ? `<a class="pin" href="${escapeHtml(link)}" target="_blank" rel="noopener" title="Open in OpenStreetMap">📍</a>`
+        : `<span class="pin">📍</span>`;
+      return `<div class="addr-item">${pin}<div>
+        ${a.name ? `<div class="addr-name">${escapeHtml(a.name)}</div>` : ""}
+        <div>${escapeHtml(a.address)}</div>
+        ${a.time ? `<div class="t">${escapeHtml(a.time)}</div>` : ""}
+      </div></div>`;
+    });
+    const points = items.filter((a) => typeof a.lat === "number" && typeof a.lng === "number");
+    let map = "";
+    if (points.length) {
+      const id = `map${++mapSeq}`;
+      mapStore.set(id, points);
+      map = `<details class="map-details" data-map="${id}">
+        <summary>🗺️ Mostra mappa (${points.length})</summary>
+        <div class="map" aria-label="Mappa delle località"></div>
+      </details>`;
+    }
+    return `<div class="addr-list">${rows.join("")}</div>${map}`;
+  }
+
+  // Leaflet, loaded from cdnjs only the first time a map is opened. Tiles come
+  // from OpenStreetMap; the page sends no referrer (Referrer-Policy), so the
+  // local URL isn't leaked, but the coordinates are - hence it's opt-in.
+  let leafletPromise = null;
+  function loadLeaflet() {
+    if (leafletPromise) return leafletPromise;
+    leafletPromise = new Promise((resolve, reject) => {
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+      document.head.appendChild(css);
+      const js = document.createElement("script");
+      js.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+      js.onload = () => window.L ? resolve(window.L) : reject(new Error("Leaflet non caricato"));
+      js.onerror = () => reject(new Error("could not load the map library"));
+      document.head.appendChild(js);
+    });
+    return leafletPromise;
+  }
+
+  async function initMap(details) {
+    const el = details.querySelector(".map");
+    const points = mapStore.get(details.dataset.map) || [];
+    if (details.dataset.ready || !points.length) return;
+    details.dataset.ready = "1";
+    let L;
+    try {
+      L = await loadLeaflet();
+    } catch (err) {
+      el.innerHTML = `<p class="empty">${escapeHtml(err.message)}. Use the 📍 links next to the addresses.</p>`;
+      return;
+    }
+    const map = L.map(el, { scrollWheelZoom: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+      maxZoom: 19,
+    }).addTo(map);
+    const markers = points.map((p) => {
+      const text = [p.name, p.address, p.time].filter(Boolean).map(escapeHtml).join("<br>");
+      return L.marker([p.lat, p.lng]).addTo(map).bindPopup(text);
+    });
+    map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2), { maxZoom: 15 });
+  }
+
+  function renderQuotes(items) {
+    const rows = items.map((s) => `<div class="quote-item" data-search="${escapeHtml(String(s).toLowerCase())}">${escapeHtml(s)}</div>`).join("");
+    return filterable(`<div class="quote-list">${rows}</div>`, items.length, "testi");
+  }
+
+  function renderComments(items) {
+    const rows = items.map((c) => {
+      const search = `${c.username || ""} ${c.comment || ""}`.toLowerCase();
+      return `<div class="comment-item" data-search="${escapeHtml(search)}"><span class="who">@${escapeHtml(c.username || "?")}</span>${escapeHtml(c.comment || "")}</div>`;
+    });
+    return filterable(`<div class="comment-list">${rows.join("")}</div>`, items.length, "commenti");
+  }
+
+  function renderGallery(items) {
+    const cells = items
+      .filter((i) => i && i.url)
+      .map((i) => `<a href="${escapeHtml(i.url)}" target="_blank" rel="noopener"><img src="${escapeHtml(i.url)}" loading="lazy" alt=""></a>`);
+    return `<div class="gallery">${cells.join("")}</div>`;
+  }
+
+  // Stories need their own renderer: a video story's `url` is an .mp4, which
+  // a plain <img> (renderGallery) can't display - it gets a <video> instead,
+  // using the cover frame (thumbnail_url) as poster when there is one. If the
+  // CDN refuses a media file (e.g. an expired signed URL), the cell falls
+  // back to a message plus a link to open it, instead of a blank box.
+  function renderStories(items) {
+    const cells = items.filter((i) => i && i.url).map((i) => {
+      const url = escapeHtml(i.url);
+      const onError = `onerror="this.closest('.story').classList.add('broken')"`;
+      const isVideo = i.media_type === "video";
+      const media = isVideo
+        ? `<video src="${url}"${i.thumbnail_url ? ` poster="${escapeHtml(i.thumbnail_url)}"` : ""} controls muted playsinline loop preload="metadata" ${onError}></video>`
+        : `<a class="story-link" href="${url}" target="_blank" rel="noopener"><img src="${url}" loading="lazy" referrerpolicy="no-referrer" alt="" ${onError}></a>`;
+      return `<div class="story">
+        ${media}
+        <span class="story-badge">${isVideo ? "▶ video" : "📷 photo"}</span>
+        <a class="story-open" href="${url}" target="_blank" rel="noopener" title="Open in a new tab">↗</a>
+        <div class="story-fallback">Preview unavailable<a href="${url}" target="_blank" rel="noopener">Open ↗</a></div>
+      </div>`;
+    });
+    return `<div class="story-grid">${cells.join("")}</div>`;
+  }
+
+  // ---- post previews (collapsed section under post-summary results) ----
+  // Only a closed <details> is rendered with the card; the grid itself is
+  // built the first time it's opened, so no thumbnail is fetched from the
+  // CDN unless the user actually asks to see them. The data waits here
+  // meanwhile, keyed by an id on the <details> element.
+  const previewStore = new Map();
+  let previewSeq = 0;
+  const POST_TYPES = [["photo", "Photos"], ["video", "Videos"], ["carousel", "Carousels"]];
+  const compactNumber = new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 });
+
+  function renderPostPreviews(previews) {
+    if (previews.length === 0) return "";
+    const id = `pv${++previewSeq}`;
+    previewStore.set(id, previews);
+    return `<details class="post-previews" data-previews="${id}">
+      <summary>Post previews <span class="n">${previews.length}</span></summary>
+    </details>`;
+  }
+
+  const MEDIA_NOUN = { photo: "the photo", video: "the video" };
+
+  function tileImage(url) {
+    return url
+      ? `<img src="${escapeHtml(url)}" loading="lazy" referrerpolicy="no-referrer" alt="" onerror="this.parentElement.classList.add('broken')">`
+      : "";
+  }
+
+  // Photos and videos link straight to the original file on Instagram's CDN
+  // (the .mp4 / full-size image, like stories do) - no instagram.com page in
+  // between. A carousel has several files, so its tile instead expands a
+  // strip with one directly-linked tile per slide (see toggleSlides).
+  function renderPostTile(p, index) {
+    const slideCount = (p.slides || []).length;
+    const typeBadge = { video: "▶", carousel: `⧉ ${slideCount || ""}`.trim() }[p.media_type];
+    const date = p.taken_at ? new Date(p.taken_at * 1000).toLocaleDateString() : "";
+    const coauthors = (p.coauthors || []).map((u) => `@${u}`).join(", ");
+    const exactCounts = [
+      typeof p.like_count === "number" ? `${fmtNumber(p.like_count)} likes` : "",
+      typeof p.comment_count === "number" ? `${fmtNumber(p.comment_count)} comments` : "",
+      typeof p.play_count === "number" ? `${fmtNumber(p.play_count)} views` : "",
+    ].filter(Boolean).join(" · ");
+    const title = [
+      p.author && `@${p.author}`,
+      date,
+      // The badges below are rounded to fit a thumbnail; the real figures live here.
+      exactCounts,
+      p.caption,
+      coauthors && `Collaboration with ${coauthors}`,
+      p.audio && `♪ ${p.audio}`,
+      p.paid_partnership && "Paid partnership",
+    ].filter(Boolean).join("\n");
+    const stats = [
+      typeof p.like_count === "number" ? `❤ ${compactNumber.format(p.like_count)}` : "",
+      typeof p.comment_count === "number" ? `💬 ${compactNumber.format(p.comment_count)}` : "",
+      typeof p.play_count === "number" ? `👁 ${compactNumber.format(p.play_count)}` : "",
+    ].filter(Boolean).map((s) => `<span>${escapeHtml(s)}</span>`).join("");
+    const flags = [
+      coauthors ? `<span title="Collaboration with ${escapeHtml(coauthors)}">👥</span>` : "",
+      p.paid_partnership ? `<span title="Paid partnership">ADV</span>` : "",
+    ].join("");
+    const inner = `
+      ${tileImage(p.thumbnail_url)}
+      <span class="post-missing">🖼️</span>
+      ${flags ? `<span class="post-flags">${flags}</span>` : ""}
+      ${typeBadge ? `<span class="post-type">${escapeHtml(typeBadge)}</span>` : ""}
+      ${stats ? `<span class="post-stats">${stats}</span>` : ""}`;
+    const attrs = `class="post-tile${p.thumbnail_url ? "" : " broken"}" data-type="${escapeHtml(p.media_type)}" title="${escapeHtml(title)}"`;
+    const when = date ? ` del ${escapeHtml(date)}` : "";
+    if (slideCount > 0) {
+      return `<button type="button" ${attrs} data-index="${index}" aria-expanded="false" aria-label="Mostra le ${slideCount} slide del carosello${when}">${inner}</button>`;
+    }
+    return p.media_url
+      ? `<a ${attrs} href="${escapeHtml(p.media_url)}" target="_blank" rel="noopener" aria-label="Open ${MEDIA_NOUN[p.media_type] || "the file"} in full${when}">${inner}</a>`
+      : `<div ${attrs}>${inner}</div>`;
+  }
+
+  function renderSlideTile(s, i, all) {
+    const inner = `
+      ${tileImage(s.thumbnail_url)}
+      <span class="post-missing">🖼️</span>
+      <span class="post-type">${s.media_type === "video" ? "▶ " : ""}${i + 1}/${all.length}</span>`;
+    const attrs = `class="post-tile${s.thumbnail_url ? "" : " broken"}"`;
+    return s.media_url
+      ? `<a ${attrs} href="${escapeHtml(s.media_url)}" target="_blank" rel="noopener" aria-label="Open ${MEDIA_NOUN[s.media_type] || "the file"} in full (slide ${i + 1} of ${all.length})">${inner}</a>`
+      : `<div ${attrs}>${inner}</div>`;
+  }
+
+  // Opens/closes a carousel's slides as a full-width strip right after its
+  // tile; the grid's dense auto-flow keeps the rest of that row filled.
+  function toggleSlides(tile) {
+    const open = tile.nextElementSibling && tile.nextElementSibling.classList.contains("post-slides");
+    if (open) {
+      tile.nextElementSibling.remove();
+    } else {
+      const post = previewStore.get(tile.closest(".post-previews").dataset.previews)[Number(tile.dataset.index)];
+      tile.insertAdjacentHTML("afterend",
+        `<div class="post-slides" role="group" aria-label="Carousel slides">${post.slides.map(renderSlideTile).join("")}</div>`);
+    }
+    tile.classList.toggle("expanded", !open);
+    tile.setAttribute("aria-expanded", String(!open));
+  }
+
+  function closeAllSlides(details) {
+    details.querySelectorAll(".post-slides").forEach((strip) => strip.remove());
+    details.querySelectorAll(".post-tile.expanded").forEach((tile) => {
+      tile.classList.remove("expanded");
+      tile.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  function buildPostPreviewBody(details) {
+    const previews = previewStore.get(details.dataset.previews) || [];
+    const counts = POST_TYPES
+      .map(([type, label]) => [type, label, previews.filter((p) => p.media_type === type).length])
+      .filter(([, , n]) => n > 0);
+    // Filter chips only when there's actually more than one type to pick from.
+    const filter = counts.length > 1
+      ? `<div class="post-filter" role="group" aria-label="Filter by type">
+          <button type="button" class="active" data-filter="">All ${previews.length}</button>
+          ${counts.map(([type, label, n]) => `<button type="button" data-filter="${type}">${label} ${n}</button>`).join("")}
+        </div>`
+      : "";
+    details.insertAdjacentHTML("beforeend", `${filter}<div class="post-grid">${previews.map((p, i) => renderPostTile(p, i)).join("")}</div>`);
+    details.dataset.built = "1";
+  }
+
+  // Looked up here rather than via outCards, which is declared further down.
+  const previewHost = document.getElementById("output-cards");
+  // "toggle" doesn't bubble - listen in the capture phase instead.
+  previewHost.addEventListener("toggle", (event) => {
+    const details = event.target;
+    if (!details.matches) return;
+    if (details.matches(".post-previews") && details.open && !details.dataset.built) {
+      buildPostPreviewBody(details);
+    } else if (details.matches(".map-details") && details.open) {
+      initMap(details);
+    }
+  }, true);
+
+  previewHost.addEventListener("input", (event) => {
+    const input = event.target.closest(".list-filter");
+    if (!input) return;
+    const needle = input.value.trim().toLowerCase();
+    const box = input.closest(".filterable");
+    let shown = 0;
+    box.querySelectorAll("[data-search]").forEach((row) => {
+      const matches = !needle || row.dataset.search.includes(needle);
+      row.hidden = !matches;
+      if (matches) shown += 1;
+    });
+    box.querySelector(".list-filter-count").textContent = needle ? `${fmtNumber(shown)} results` : "";
+  });
+
+  previewHost.addEventListener("click", (event) => {
+    const carousel = event.target.closest("button.post-tile");
+    if (carousel) {
+      toggleSlides(carousel);
+      return;
+    }
+    const exportBtn = event.target.closest(".export-btn[data-card]");
+    if (exportBtn) {
+      exportCard(Number(exportBtn.dataset.card), exportBtn.dataset.format, exportBtn);
+      return;
+    }
+    const tzBtn = event.target.closest(".tz-toggle button");
+    if (tzBtn) {
+      const box = tzBtn.closest(".posting-times");
+      box.querySelectorAll(".tz-toggle button").forEach((b) => b.classList.toggle("active", b === tzBtn));
+      box.querySelector(".heatmap-body").innerHTML = renderHeatmap(timesStore.get(box.dataset.times) || [], tzBtn.dataset.tz === "utc");
+      return;
+    }
+    const chip = event.target.closest(".post-filter button");
+    if (!chip) return;
+    const details = chip.closest(".post-previews");
+    closeAllSlides(details);
+    details.querySelectorAll(".post-filter button").forEach((b) => b.classList.toggle("active", b === chip));
+    details.querySelectorAll(".post-tile").forEach((tile) => {
+      tile.hidden = Boolean(chip.dataset.filter) && tile.dataset.type !== chip.dataset.filter;
+    });
+  });
+
+  // ---- posting times: 7x24 heatmap ----
+  // The service counts in UTC (the target's own timezone is unknown); the
+  // heatmap is redrawn client-side from the raw timestamps, in the viewer's
+  // timezone by default or UTC on request. Timestamps wait in timesStore,
+  // keyed by an id on the card, for the timezone toggle.
+  const WEEKDAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const WEEKDAYS_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+  const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "ora locale";
+  const timesStore = new Map();
+  let timesSeq = 0;
+  const hh = (h) => String(h).padStart(2, "0");
+
+  function renderPostingTimes(result) {
+    const tiles = renderStatGrid({
+      post: result.posts,
+      "first post": result.first_post,
+      "last post": result.last_post,
+      "days between posts": result.avg_days_between_posts,
+    });
+    if (result.timestamps.length === 0) return `${tiles}<p class="empty">No post carries a date.</p>`;
+    const id = `tm${++timesSeq}`;
+    timesStore.set(id, result.timestamps);
+    return `${tiles}<div class="posting-times" data-times="${id}">
+      <div class="tz-toggle" role="group" aria-label="Fuso orario">
+        <button type="button" class="active" data-tz="local">Ora locale (${escapeHtml(LOCAL_TZ)})</button>
+        <button type="button" data-tz="utc">UTC</button>
+      </div>
+      <div class="heatmap-body">${renderHeatmap(result.timestamps, false)}</div>
+    </div>`;
+  }
+
+  function renderHeatmap(timestamps, utc) {
+    const grid = Array.from({ length: 7 }, () => new Array(24).fill(0));
+    for (const t of timestamps) {
+      const d = new Date(t * 1000);
+      const day = ((utc ? d.getUTCDay() : d.getDay()) + 6) % 7; // Monday first
+      grid[day][utc ? d.getUTCHours() : d.getHours()] += 1;
+    }
+    const max = Math.max(...grid.flat());
+    const byDay = grid.map((row) => row.reduce((a, b) => a + b, 0));
+    const byHour = grid[0].map((_, h) => grid.reduce((a, row) => a + row[h], 0));
+    const topDay = byDay.indexOf(Math.max(...byDay));
+    const topHour = byHour.indexOf(Math.max(...byHour));
+    const header = `<span></span>` + byHour.map((_, h) => `<span class="hm-hour">${h % 3 === 0 ? hh(h) : ""}</span>`).join("");
+    const rows = grid.map((row, d) =>
+      `<span class="hm-day">${WEEKDAYS_SHORT[d]}</span>` +
+      row.map((n, h) => `<span class="hm-cell" style="--p:${n ? Math.round(20 + (80 * n) / max) : 0}%" title="${WEEKDAYS_SHORT[d]} ${hh(h)}:00 · ${n} post"></span>`).join("")
+    ).join("");
+    return `<div class="heatmap-wrap"><div class="heatmap" role="img" aria-label="Posts by weekday and hour of day">${header}${rows}</div></div>
+      <p class="heatmap-summary">Busiest day: <strong>${WEEKDAYS_LONG[topDay]}</strong> · busiest hour:
+        <strong>${hh(topHour)}:00–${hh((topHour + 1) % 24)}:00</strong> ${utc ? "UTC" : "(local time)"}</p>`;
+  }
+
+  // ---- photo descriptions (alt text, Instagram's accessibility_caption) ----
+  // Only filled when the author wrote alt text, so an empty list is the
+  // common case - say how many photos were checked instead of a bare
+  // "No results" that reads like a failure.
+  function renderDescriptions(result) {
+    const scanned = result.photos_scanned || 0;
+    const found = result.descriptions.length;
+    const analyzed = `${fmtNumber(scanned)} photo${scanned === 1 ? "" : "s"} scanned`;
+    if (scanned === 0) return `<p class="empty">No photos among the scanned posts (videos or reels only).</p>`;
+    if (found === 0) {
+      return `<p class="empty">${scanned === 1 ? "The one photo scanned has no alt text." : `None of the ${analyzed} has alt text.`}</p>
+        <p class="hint">Instagram only returns alt text written by the post's author: its automatic descriptions are no longer exposed, so on most accounts this list is empty.</p>`;
+    }
+    const rows = result.descriptions.map((d) => {
+      const date = d.taken_at ? new Date(d.taken_at * 1000).toLocaleDateString() : "";
+      const img = d.thumbnail_url
+        ? `<img src="${escapeHtml(d.thumbnail_url)}" loading="lazy" referrerpolicy="no-referrer" alt="" onerror="this.remove()">`
+        : "";
+      const thumb = d.media_url
+        ? `<a class="thumb" href="${escapeHtml(d.media_url)}" target="_blank" rel="noopener" aria-label="Open the original photo">${img}</a>`
+        : `<span class="thumb">${img}</span>`;
+      return `<div class="desc-item">${thumb}<p>${escapeHtml(d.description)}${date ? `<span class="t">${escapeHtml(date)}</span>` : ""}</p></div>`;
+    });
+    return `<p class="hint">${fmtNumber(found)} of ${analyzed} ${found === 1 ? "has" : "have"} alt text.</p>
+      <div class="desc-list">${rows.join("")}</div>`;
+  }
+
+  // The service speaks Instagram's own field names; the UI gives them readable
+  // labels. A key with no entry here falls back to its raw name with the
+  // underscores turned into spaces, so a new field still shows up unlabelled
+  // rather than disappearing.
+  const STAT_LABELS = {
+    id: "ID", username: "Username", full_name: "Full name", biography: "Biography",
+    follower_count: "Followers", following_count: "Following", media_count: "Posts",
+    is_private: "Private profile", is_business: "Business account", is_verified: "Verified",
+    profile_pic_url_hd: "Profile picture", external_url: "Website", pronouns: "Pronouns",
+    public_email: "Public email", contact_phone_number: "Contact phone",
+    public_phone_country_code: "Phone country code", public_phone_number: "Public phone",
+    whatsapp_number: "WhatsApp", business_contact_method: "Preferred contact",
+    address_street: "Address", city_name: "City", zip: "Postcode",
+    latitude: "Latitude", longitude: "Longitude", instagram_location_id: "Instagram location id",
+    category: "Category", category_name: "Category", business_category_name: "Business category",
+    account_type: "Account type", is_memorialized: "Memorialised account",
+    fbid_v2: "Linked Facebook id", total_clips_count: "Reels", total_igtv_videos: "IGTV videos",
+    usertags_count: "Times tagged", highlight_reel_count: "Story highlights",
+    country: "Country of registration", date_joined: "Account created",
+    former_usernames_count: "Username changes",
+    photos: "Photos", videos: "Videos", carousels: "Carousels", total: "Posts scanned",
+    video_plays_total: "Total views", video_plays_avg: "Average views",
+    collaborations: "Collaborations", paid_partnerships: "Paid partnerships",
+    like_counter: "Total likes", comment_counter: "Total comments", posts: "Posts",
+    min: "Minimum", max: "Maximum", avg: "Average",
+  };
+
+  // Instagram ids (the account's own, a linked Facebook id, a location id):
+  // never formatted, never abbreviated - see renderStatGrid.
+  function isIdentifier(key) {
+    return key === "id" || key === "pk" || key === "fbid_v2" || /(^|_)id$/.test(key);
+  }
+
+  function renderStatGrid(obj) {
+    const tiles = Object.entries(obj)
+      .filter(([, v]) => v !== null && v !== undefined && v !== "" && typeof v !== "object")
+      .map(([k, v]) => {
+        let display;
+        let hint = "";
+        let extraClass = "";
+        if (typeof v === "boolean") display = v ? "Yes" : "No";
+        else if (typeof v === "string" && /^https?:\/\//.test(v)) display = `<a href="${escapeHtml(v)}" target="_blank" rel="noopener">Open ↗</a>`;
+        else if (isIdentifier(k)) {
+          // An identifier is a label, not a quantity: it must be shown whole
+          // and be copy-pasteable, so no thousands separators (they'd have to
+          // be stripped again) and never an abbreviation - "5B" for an
+          // Instagram user id tells you nothing.
+          display = escapeHtml(String(v));
+          extraClass = " id";
+        } else if (typeof v === "number") {
+          // Always the full figure. The rounded form is only a hover hint, so
+          // a glance still gives the order of magnitude.
+          display = escapeHtml(fmtNumber(v));
+          if (Math.abs(v) >= 1e7) hint = compactNumber.format(v);
+          extraClass = " num";
+        } else display = escapeHtml(fmtNumber(v));
+        const text = typeof v === "string" || typeof v === "number" ? String(display) : "";
+        // Numbers shrink sooner than prose: a figure that wraps mid-digits
+        // ("12.480.33" / "3") is harder to read than a smaller one that fits.
+        const isLong = text.length > (typeof v === "number" ? 8 : 14) && !/^https?:\/\//.test(String(v));
+        const label = STAT_LABELS[k] || k.replace(/_/g, " ");
+        return `<div class="stat-tile"${hint ? ` title="≈ ${escapeHtml(hint)}"` : ""}><div class="k">${escapeHtml(label)}</div><div class="v${isLong ? " small" : ""}${extraClass}">${display}</div></div>`;
+      });
+    return `<div class="stat-grid">${tiles.join("")}</div>`;
+  }
+
+  // renderStatGrid only shows scalars, so the two list-shaped profile fields
+  // (the links in the bio, the account's former usernames) get their own rows
+  // underneath it - otherwise they'd silently disappear from the card.
+  function renderProfileLists(result) {
+    let html = "";
+    if (Array.isArray(result.bio_links) && result.bio_links.length) {
+      const links = result.bio_links.map((l) => {
+        const url = String(l.url || "");
+        return `<a class="pill" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">🔗 ${escapeHtml(l.title || url)}</a>`;
+      });
+      html += `<div class="sub-label">Bio links</div><div class="pill-list">${links.join("")}</div>`;
+    }
+    if (Array.isArray(result.former_usernames) && result.former_usernames.length) {
+      const names = result.former_usernames.map(
+        (u) => `<span class="pill">@${escapeHtml(u)}</span>`);
+      html += `<div class="sub-label">Former usernames</div><div class="pill-list">${names.join("")}</div>`;
+    }
+    return html;
+  }
+
+  function renderToolResult(result) {
+    if (result && typeof result === "object" && !Array.isArray(result) && "error" in result) {
+      return `<p class="empty">⚠️ ${escapeHtml(result.error)}</p>`;
+    }
+    if (Array.isArray(result)) {
+      if (result.length === 0) return `<p class="empty">No results.</p>`;
+      const first = result[0];
+      if (typeof first === "string") return renderQuotes(result);
+      if (first && typeof first === "object") {
+        if ("title" in first && "media_count" in first) return renderHighlights(result);
+        if ("url" in first && "media_type" in first) return renderStories(result);
+        if ("url" in first) return renderGallery(result);
+        if ("hashtag" in first) return renderHashtags(result);
+        if ("address" in first) return renderAddresses(result);
+        if ("comment" in first) return renderComments(result);
+        if ("username" in first) return renderUserList(result);
+      }
+      return `<pre class="json">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+    }
+    if (result && typeof result === "object") {
+      if ("url" in result && Object.keys(result).length === 1) return renderGallery([result]);
+      if ("common_followers" in result || "common_followings" in result) return renderCompare(result);
+      if ("hashtag" in result || "place" in result) return renderSearch(result);
+      if (Array.isArray(result.timestamps)) return renderPostingTimes(result);
+      if (Array.isArray(result.descriptions)) return renderDescriptions(result);
+      return renderStatGrid(result) + renderProfileLists(result)
+        + (Array.isArray(result.previews) ? renderPostPreviews(result.previews) : "");
+    }
+    return `<pre class="json">${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+  }
+
+  function summarizeInput(input) {
+    const entries = Object.entries(input || {});
+    if (entries.length === 0) return "";
+    return entries.map(([k, v]) => `${k}=${v}`).join(", ");
+  }
+
+  function renderToolCard(tc, idx) {
+    const [icon, label] = TOOL_META[tc.name] || ["🔧", tc.name];
+    const badges = [];
+    if (tc.is_error) badges.push('<span class="badge err">error</span>');
+    if (typeof tc.elapsed_ms === "number") badges.push(`<span class="badge">⏱ ${tc.elapsed_ms} ms</span>`);
+    if (typeof tc.api_calls_delta === "number") badges.push(`<span class="badge">🌐 ${tc.api_calls_delta} API request${tc.api_calls_delta === 1 ? "" : "s"}</span>`);
+    const meta = summarizeInput(tc.input);
+    const body = tc.is_error
+      ? `<p class="empty">⚠️ ${escapeHtml(tc.result && tc.result.error ? tc.result.error : JSON.stringify(tc.result))}</p>`
+      : renderToolResult(tc.result);
+    const jsonId = `json-${idx}`;
+    const mediaCount = tc.is_error ? 0 : collectMediaUrls(tc.result).length;
+    return `<div class="tool-card">
+      <div class="tool-head">
+        <span class="tool-icon">${icon}</span>
+        <span class="tool-title">${escapeHtml(label)}</span>
+        ${meta ? `<span class="tool-meta">${escapeHtml(meta)}</span>` : ""}
+        ${badges.join("")}
+      </div>
+      <div class="tool-body">${body}</div>
+      <div class="card-actions">
+        <button class="json-toggle" type="button" onclick="const el=document.getElementById('${jsonId}'); el.hidden=!el.hidden;">Show/hide JSON</button>
+        <button class="export-btn" type="button" data-card="${idx}" data-format="json" title="Download the full result as JSON">⬇ JSON</button>
+        <button class="export-btn" type="button" data-card="${idx}" data-format="csv" title="Download the result as a CSV table (comma separated)">⬇ CSV</button>
+        ${mediaCount ? `<button class="export-btn" type="button" data-card="${idx}" data-format="zip"
+            title="Download the original files (photos and videos) as one zip archive">⬇ Media (${mediaCount})</button>` : ""}
+      </div>
+      <pre class="json" id="${jsonId}" hidden>${escapeHtml(JSON.stringify(tc.result, null, 2))}</pre>
+    </div>`;
+  }
+
+  // ---- export (JSON / CSV) ----
+  // The search being shown: what was asked, plus its tool calls - the same
+  // array the cards were rendered from, so card N exports toolCalls[N].
+  let exportState = { meta: null, toolCalls: [] };
+
+  function downloadFile(name, content, type) {
+    const blob = content instanceof Blob ? content : new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function exportFileName(label, ext) {
+    const safe = (s) => String(s || "").replace(/[^\w.-]+/g, "_");
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[-:]/g, "").replace("T", "-");
+    return `osintgram_${safe(exportState.meta && exportState.meta.target)}_${safe(label)}_${stamp}.${ext}`;
+  }
+
+  // The table a result naturally is: a list's own rows; a post summary's
+  // per-post previews; posting times' timestamps; otherwise the scalar
+  // fields as key/value rows.
+  function csvRows(result) {
+    if (Array.isArray(result)) return result.map((r) => (r && typeof r === "object" ? r : { value: r }));
+    if (result && typeof result === "object") {
+      if (Array.isArray(result.previews) && result.previews.length) return result.previews;
+      if (Array.isArray(result.descriptions) && result.descriptions.length) return result.descriptions;
+      if (Array.isArray(result.timestamps) && result.timestamps.length) {
+        return result.timestamps.map((t) => ({ taken_at: t, utc: new Date(t * 1000).toISOString() }));
+      }
+      return Object.entries(result)
+        .filter(([, v]) => v === null || typeof v !== "object")
+        .map(([key, value]) => ({ key, value }));
+    }
+    return [{ value: result }];
+  }
+
+  function csvCell(value) {
+    if (value === null || value === undefined) return "";
+    let s;
+    if (Array.isArray(value) && value.every((v) => v === null || typeof v !== "object")) s = value.join(", ");
+    else if (typeof value === "object") s = JSON.stringify(value);
+    else s = String(value);
+    // Text scraped from profiles/captions opened in a spreadsheet: neutralize
+    // anything that would be read as a formula (CSV injection).
+    if (typeof value === "string" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  }
+
+  // Comma-separated with a UTF-8 BOM, which is what Excel needs to read the
+  // file as UTF-8 rather than mangling every accented character.
+  function toCsv(rows) {
+    const columns = [...new Set(rows.flatMap((r) => Object.keys(r)))];
+    const lines = [columns.map(csvCell).join(","), ...rows.map((r) => columns.map((c) => csvCell(r[c])).join(","))];
+    return "\uFEFF" + lines.join("\r\n");
+  }
+
+  // Every original media file a result points at (photos, videos, carousel
+  // slides, story files) - what "⬇ Media" packs into a zip. Thumbnails are
+  // skipped: the full-size file is always alongside them.
+  function collectMediaUrls(value, found = []) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => collectMediaUrls(item, found));
+    } else if (value && typeof value === "object") {
+      for (const [key, item] of Object.entries(value)) {
+        if ((key === "media_url" || key === "url") && typeof item === "string" && /^https:\/\//.test(item)) {
+          found.push(item);
+        } else if (key !== "thumbnail_url") {
+          collectMediaUrls(item, found);
+        }
+      }
+    }
+    return [...new Set(found)];
+  }
+
+  async function downloadMediaZip(tc, button) {
+    const urls = collectMediaUrls(tc.result);
+    if (urls.length === 0) return;
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = `⏳ ${urls.length} file…`;
+    try {
+      const response = await fetch("/api/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urls, name: `${exportState.meta && exportState.meta.target || "media"}_${tc.name}` }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error((data && data.detail) || `HTTP ${response.status}`);
+      }
+      const report = JSON.parse(response.headers.get("X-Download-Report") || "{}");
+      const blob = await response.blob();
+      downloadFile(exportFileName(`${tc.name}_media`, "zip"), blob, "application/zip");
+      button.textContent = report.failed
+        ? `✓ ${report.saved} file (${report.failed} non riusciti)`
+        : `✓ ${report.saved} file`;
+    } catch (err) {
+      button.textContent = `✗ ${err.message || err}`;
+    } finally {
+      setTimeout(() => { button.textContent = original; button.disabled = false; }, 4000);
+    }
+  }
+
+  function exportCard(index, format, button) {
+    const tc = exportState.toolCalls[index];
+    if (!tc) return;
+    if (format === "zip") {
+      downloadMediaZip(tc, button);
+    } else if (format === "csv") {
+      downloadFile(exportFileName(tc.name, "csv"), toCsv(csvRows(tc.result)), "text/csv;charset=utf-8");
+    } else {
+      const payload = { ...exportMeta(), tool: tc.name, input: tc.input, result: tc.result };
+      downloadFile(exportFileName(tc.name, "json"), JSON.stringify(payload, null, 2), "application/json");
+    }
+  }
+
+  function exportMeta() {
+    return {
+      exported_by: "Osintgram Web",
+      exported_at: new Date().toISOString(),
+      ...(exportState.meta || {}),
+    };
+  }
+
+  // The whole search as one object - downloaded by "Export all" and
+  // stored as-is by "Save dossier", so a saved run reopens exactly as shown.
+  function currentRunPayload() {
+    return {
+      ...exportMeta(),
+      answer: exportState.answer || null,
+      results: exportState.toolCalls,
+    };
+  }
+
+  function exportAll() {
+    downloadFile(exportFileName("search", "json"), JSON.stringify(currentRunPayload(), null, 2), "application/json");
+  }
+
+  // ---- shareable report (standalone HTML) ----
+  // JSON and CSV export the *data*; this exports the *page*: one self-contained
+  // .html file that opens in any browser with no server, so a finished search
+  // can be handed to someone who doesn't run Osintgram. Built by cloning the
+  // results already on screen rather than re-implementing every renderer, so
+  // the report always looks exactly like what was reviewed.
+  // Controls that only make sense against a live server (downloads, filters)
+  // and the Leaflet map, whose tiles are injected by a script the standalone
+  // file doesn't load - the addresses themselves, with their OSM links, stay.
+  const REPORT_STRIP = [
+    ".card-actions", ".json-toggle", ".export-btn", ".post-filter",
+    ".list-filter", ".list-filter-count", ".map-details",
+  ].join(",");
+
+  async function exportReport(button) {
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "Preparing...";
+    try {
+      // Opening each <details> runs the same lazy builders the user's own
+      // click would (post grids, maps), so nothing is missing from the clone.
+      const collapsed = [...outCards.querySelectorAll("details:not([open])")];
+      collapsed.forEach((d) => { d.open = true; });
+      if (collapsed.length) await new Promise((r) => setTimeout(r, 400));
+
+      const clone = document.getElementById("output").cloneNode(true);
+      clone.removeAttribute("hidden");
+      clone.querySelectorAll(REPORT_STRIP).forEach((el) => el.remove());
+      // A filter box left with text in it hides rows; the report must carry
+      // the whole result, not whatever was on screen.
+      clone.querySelectorAll("[data-search][hidden]").forEach((el) => el.removeAttribute("hidden"));
+      // The raw JSON block of each card is collapsed on the page - keep it in
+      // the report (it's the evidence), just closed inside a <details>.
+      clone.querySelectorAll("pre.json").forEach((pre) => {
+        pre.removeAttribute("hidden");
+        const box = document.createElement("details");
+        box.className = "report-json";
+        box.innerHTML = "<summary>Raw data (JSON)</summary>";
+        pre.replaceWith(box);
+        box.append(pre);
+      });
+      clone.querySelectorAll("details").forEach((d) => {
+        if (!d.classList.contains("report-json")) d.setAttribute("open", "");
+      });
+      // Thumbnails stay as Instagram CDN links: embedding them would make the
+      // file enormous, and the URLs are signed anyway (see the note below).
+      clone.querySelectorAll("img").forEach((img) => img.setAttribute("loading", "eager"));
+
+      const meta = exportMeta();
+      const css = [...document.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+      const rows = [
+        ["Target", meta.target ? `@${meta.target}` : "none (search without a target)"],
+        ["Mode", meta.mode === "ai" ? "AI" : "Base"],
+        [meta.mode === "ai" ? "Request" : "Commands",
+          meta.mode === "ai" ? (meta.request || "") : (meta.commands || []).map((c) => c.name).join(", ")],
+        ["Backend", meta.backend || "-"],
+        ["Run on", new Date(meta.started_at || Date.now()).toLocaleString()],
+        ["Report generated", new Date().toLocaleString()],
+      ];
+      const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Osintgram — report ${escapeHtml(meta.target ? "@" + meta.target : "search")}</title>
+<style>${css}</style>
+</head><body class="report-page${document.body.classList.contains("mode-base") ? " mode-base" : ""}">
+<main>
+  <header class="report-header">
+    <h1>Osintgram — report</h1>
+    <dl class="report-meta">${rows.map(([k, v]) =>
+        `<div><dt>${escapeHtml(k)}</dt><dd>${escapeHtml(String(v || "-"))}</dd></div>`).join("")}</dl>
+  </header>
+  ${clone.outerHTML}
+  <footer class="report-footer">
+    <p><strong>For educational purposes only.</strong> The contributors do not assume any responsibility for the 'uso di questo strumento.
+    <span lang="en">FOR EDUCATIONAL PURPOSE ONLY! The contributors do not assume any responsibility for the use of this tool.</span></p>
+    <p>Image previews point at Instagram's CDN with signed URLs that <strong>expire after a few hours</strong>: to keep the files themselves use "⬇ Media" on the original page. The numbers and text in this report are complete and permanent.</p>
+    <p>Generated by <a href="https://github.com/Datalux/Osintgram">Osintgram</a>.</p>
+  </footer>
+</main>
+</body></html>`;
+      downloadFile(exportFileName("report", "html"), html, "text/html;charset=utf-8");
+      button.textContent = "✓ downloaded";
+      // The button's job is to produce a file, not to rearrange the page:
+      // put back whatever the user had collapsed (their content stays built).
+      collapsed.forEach((d) => { d.open = false; });
+    } catch (err) {
+      button.textContent = `✗ ${err.message || err}`;
+    } finally {
+      setTimeout(() => { button.textContent = original; button.disabled = false; }, 2500);
+    }
+  }
+
+  // Output is built from four independently-updatable slots so results can
+  // appear the instant each one is ready (verbose mode) instead of only
+  // once the whole multi-step query finishes - see initLiveOutput() below.
+  const outSummary = document.getElementById("output-summary");
+  const outAnswer = document.getElementById("output-answer");
+  const outHeading = document.getElementById("output-details-heading");
+  const outCards = document.getElementById("output-cards");
+
+  function resetOutput() {
+    outSummary.innerHTML = "";
+    outSummary.hidden = true;
+    outAnswer.innerHTML = "";
+    outAnswer.className = "answer-card";
+    outHeading.hidden = true;
+    outHeading.dataset.backend = "";
+    outCards.innerHTML = "";
+    previewStore.clear();
+    timesStore.clear();
+    mapStore.clear();
+  }
+
+  // Re-triggers a one-shot CSS animation on an element even if it was just
+  // played (adding a class the element already has doesn't restart a CSS
+  // animation - this forces a reflow in between so it plays again).
+  function flash(el) {
+    el.classList.remove("flash-update");
+    void el.offsetWidth;
+    el.classList.add("flash-update");
+  }
+
+  function setSummary(stats, totalMs, apiCallsTotal, backend, hasStarted) {
+    if (hasStarted) {
+      outSummary.innerHTML = renderSummaryBar(stats, totalMs, apiCallsTotal, backend);
+      outSummary.hidden = false;
+    } else {
+      outSummary.hidden = true;
+    }
+  }
+
+  // `text === null` hides the card - Base mode has no model-written answer,
+  // only the per-command result cards.
+  function setAnswer(text, isError) {
+    outAnswer.hidden = text === null;
+    if (text === null) return;
+    outAnswer.className = `answer-card${isError ? " error" : ""}`;
+    outAnswer.innerHTML = isError ? escapeHtml(text) : renderMarkdownLite(text);
+  }
+
+  function setHeading(backend) {
+    const title = isAiMode() ? "Request details" : "Results";
+    outHeading.innerHTML = `<span>${title}${backend ? ` &middot; via ${escapeHtml(backend)}` : ""}</span>
+      <button class="export-btn" type="button" data-save-dossier title="Save this search: you can reopen it without spending requests again, and compare it with a later one">💾 Save dossier</button>
+      <button class="export-btn" type="button" data-export-all title="Download request, answer and every result as one JSON file">⬇ Export all</button>
+      <button class="export-btn" type="button" data-export-report title="Download a standalone HTML report, readable without Osintgram and printable to PDF">📄 Report</button>`;
+    outHeading.hidden = false;
+    if (exportState.meta && backend) exportState.meta.backend = backend;
+  }
+  outHeading.addEventListener("click", (event) => {
+    if (event.target.closest("[data-export-all]")) exportAll();
+    else if (event.target.closest("[data-export-report]")) exportReport(event.target.closest("[data-export-report]"));
+    else if (event.target.closest("[data-save-dossier]")) saveDossier(event.target.closest("[data-save-dossier]"));
+  });
+
+  // ---- saved searches (dossier) ----
+  // A finished run stored server-side: reopening it costs nothing, and two
+  // runs of the same target can be compared to see what changed.
+  const dossierPanel = document.getElementById("dossier-panel");
+  const dossierList = document.getElementById("dossier-list");
+  const dossierCount = document.getElementById("dossier-count");
+  let dossierEntries = [];
+
+  async function saveDossier(button) {
+    const payload = currentRunPayload();
+    if (!payload.target || !(payload.results || []).length) return;
+    const original = button.textContent;
+    button.disabled = true;
+    try {
+      const response = await fetch("/api/dossier", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      button.textContent = "✓ saved";
+      loadDossiers();
+    } catch (err) {
+      button.textContent = `✗ ${err.message || err}`;
+    } finally {
+      setTimeout(() => { button.textContent = original; button.disabled = false; }, 2500);
+    }
+  }
+
+  async function loadDossiers() {
+    const target = document.getElementById("target").value.trim().replace(/^@/, "");
+    try {
+      const response = await fetch(`/api/dossier${target ? `?target=${encodeURIComponent(target)}` : ""}`);
+      dossierEntries = response.ok ? await response.json() : [];
+    } catch (e) {
+      dossierEntries = [];
+    }
+    renderDossiers();
+  }
+
+  function renderDossiers() {
+    if (dossierEntries.length === 0) {
+      dossierPanel.hidden = true;
+      return;
+    }
+    dossierCount.textContent = dossierEntries.length;
+    dossierList.innerHTML = dossierEntries.map((d, i) => {
+      const when = d.saved_at ? new Date(d.saved_at * 1000).toLocaleString() : "";
+      const what = d.mode === "ai" && d.request ? d.request : `${(d.commands || []).length} commands`;
+      // Compared against the next (older) entry of the same target.
+      const older = dossierEntries.slice(i + 1).find((o) => o.target === d.target);
+      return `<div class="dossier-row" data-target="${escapeHtml(d.target)}" data-id="${escapeHtml(d.id)}">
+        <div class="dossier-info">
+          <span class="dossier-when">${escapeHtml(when)}</span>
+          <span class="dossier-what">@${escapeHtml(d.target)} · ${escapeHtml(what)}</span>
+        </div>
+        <button type="button" class="link-btn" data-action="open">Open</button>
+        ${older ? `<button type="button" class="link-btn" data-action="diff" data-other="${escapeHtml(older.id)}"
+            title="Compare with the dossier from ${escapeHtml(older.saved_at ? new Date(older.saved_at * 1000).toLocaleString() : "")}">What changed</button>` : ""}
+        <button type="button" class="history-remove" data-action="delete" title="Delete this dossier" aria-label="Delete the dossier">×</button>
+      </div>`;
+    }).join("");
+    dossierPanel.hidden = false;
+  }
+
+  dossierList.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    const row = button.closest(".dossier-row");
+    const { target, id } = row.dataset;
+    if (button.dataset.action === "delete") {
+      await fetch(`/api/dossier/${encodeURIComponent(target)}/${encodeURIComponent(id)}`, { method: "DELETE" });
+      loadDossiers();
+      return;
+    }
+    if (button.dataset.action === "open") {
+      const response = await fetch(`/api/dossier/${encodeURIComponent(target)}/${encodeURIComponent(id)}`);
+      if (!response.ok) return;
+      const run = await response.json();
+      exportState = { meta: run, toolCalls: run.results || [], answer: run.answer || null };
+      renderOutput(run.answer || null, run.results || [], false, { backend: run.backend });
+      output.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    // "What changed": diff against the previous saved run.
+    const response = await fetch(
+      `/api/dossier/${encodeURIComponent(target)}/${encodeURIComponent(button.dataset.other)}/diff/${encodeURIComponent(id)}`);
+    if (!response.ok) return;
+    renderDiff(await response.json());
+    output.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  function renderDiff(diff) {
+    const when = (t) => (t ? new Date(t * 1000).toLocaleString() : "?");
+    const changedCommands = (diff.commands || []).filter((c) => !c.unchanged);
+    const body = changedCommands.length === 0
+      ? `<p class="empty">No differences between the two dossiers.</p>`
+      : changedCommands.map((c) => {
+          const label = (TOOL_META[c.name] || ["🔧", c.name])[1];
+          const lines = [];
+          (c.added || []).forEach((v) => lines.push(`<li class="added">+ ${escapeHtml(v)}</li>`));
+          (c.removed || []).forEach((v) => lines.push(`<li class="removed">− ${escapeHtml(v)}</li>`));
+          (c.changed || []).forEach((ch) => lines.push(
+            `<li class="changed">${escapeHtml(ch.field)}: <s>${escapeHtml(String(ch.from))}</s> → <strong>${escapeHtml(String(ch.to))}</strong></li>`));
+          const counts = typeof c.count_before === "number" ? ` <span class="dossier-when">${fmtNumber(c.count_before)} → ${fmtNumber(c.count_after)}</span>` : "";
+          return `<div class="diff-command"><div class="diff-title">${escapeHtml(label)}${counts}</div><ul class="diff-list">${lines.join("")}</ul></div>`;
+        }).join("");
+    resetOutput();
+    setAnswer(null, false);
+    outHeading.innerHTML = `<span>What changed &middot; @${escapeHtml(diff.target || "")}</span>`;
+    outHeading.hidden = false;
+    outCards.innerHTML = `<div class="tool-card">
+      <p class="hint">From <strong>${escapeHtml(when(diff.before.saved_at))}</strong> to <strong>${escapeHtml(when(diff.after.saved_at))}</strong>.</p>
+      ${body}
+    </div>`;
+    output.hidden = false;
+  }
+
+  document.getElementById("target").addEventListener("change", loadDossiers);
+  loadDossiers();
+
+  function appendCard(tc, idx) {
+    setHeading(outHeading.dataset.backend || "");
+    outCards.insertAdjacentHTML("beforeend", renderToolCard(tc, idx));
+    flash(outCards.lastElementChild);
+  }
+
+  function initLiveOutput(expectAnswer) {
+    resetOutput();
+    setAnswer(expectAnswer ? "In corso..." : null, false);
+    output.hidden = false;
+    // The results area is well below the form/progress log - without this,
+    // live updates happen out of view and only get noticed once the user
+    // scrolls down at the end, which looks identical to "nothing updated
+    // until it finished" even though it did.
+    output.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderOutput(answer, toolCalls, isError, meta) {
+    resetOutput();
+    const hasStarted = toolCalls && toolCalls.length > 0;
+    if (!isError) {
+      setSummary(computeToolStats(toolCalls || []), meta && meta.totalMs, meta && meta.apiCallsTotal, meta && meta.backend, hasStarted);
+    }
+    setAnswer(answer, isError);
+    if (toolCalls && toolCalls.length > 0) {
+      outHeading.dataset.backend = (meta && meta.backend) || "";
+      setHeading(outHeading.dataset.backend);
+      toolCalls.forEach((tc, i) => outCards.insertAdjacentHTML("beforeend", renderToolCard(tc, i)));
+    }
+    output.hidden = false;
+  }
+
+  // ---- live progress log (verbose mode) ----
+  function addProgressStep(text, kind) {
+    const li = document.createElement("li");
+    if (kind) li.className = `step-${kind}`;
+    li.textContent = text;
+    progressList.appendChild(li);
+    progressList.scrollTop = progressList.scrollHeight; // the list itself is the scroll container
+  }
+
+  // `url`/`payload` pick the mode: /api/query (AI, ends with an "answer"
+  // event) or /api/run (Base, no answer - expectAnswer false). Both stream
+  // the same start/tool_call/api_call/tool_result events.
+  async function runVerbose(url, payload, signal, expectAnswer) {
+    const queryStart = performance.now();
+    const toolCalls = [];
+    exportState.toolCalls = toolCalls; // cards index into this same array
+    let answer = "";
+    let backend = "";
+    let step = 0;
+    let apiCallsTotal = 0;
+    let aborted = false;
+    // Fed directly by each raw "api_call" event (one per actual request to
+    // Hiker/instagrapi, success or failure) plus one "cached" bump per tool
+    // result served from cache - this is what makes OK/KO/cache tick live at
+    // the same granularity as "requests", instead of only once per tool
+    // call at the very end (see computeToolStats for the coarser fallback
+    // used in non-verbose/batch mode, which has no per-request events).
+    const liveStats = { ok: 0, err: 0, cached: 0 };
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, verbose: true }),
+        signal,
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data && data.detail ? data.detail : `HTTP ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let sepIndex;
+        while ((sepIndex = buffer.indexOf("\n\n")) !== -1) {
+          const rawEvent = buffer.slice(0, sepIndex);
+          buffer = buffer.slice(sepIndex + 2);
+          if (!rawEvent.startsWith("data: ")) continue;
+
+          const evt = JSON.parse(rawEvent.slice(6));
+          const [icon, label] = TOOL_META[evt.name] || ["🔧", evt.name];
+
+          if (evt.type === "start") {
+            backend = evt.backend;
+            apiCallsTotal = evt.api_calls_total;
+            initLiveOutput(expectAnswer);
+            outHeading.dataset.backend = backend;
+            addProgressStep(`🔌 Connected to @${evt.target} (id ${evt.target_id}) via ${evt.backend} — starting to process the request (${apiCallsTotal} ${backend} request(s) so far)`);
+            setSummary(liveStats, performance.now() - queryStart, apiCallsTotal, backend, true);
+          } else if (evt.type === "tool_call") {
+            step += 1;
+            const params = summarizeInput(evt.input);
+            addProgressStep(`Step ${step} — 🔧 API call: ${label} (${evt.name}) via ${backend}${params ? ` — parameters: ${params}` : " — no parameters"}...`);
+            toolCalls.push({ name: evt.name, input: evt.input });
+          } else if (evt.type === "api_call") {
+            apiCallsTotal = evt.total;
+            const detail = evt.detail ? ` [${evt.detail}]` : "";
+            if (evt.status === "error") {
+              liveStats.err += 1;
+              addProgressStep(`   🌐 ❌ Request a ${backend}: ${evt.method}${detail} failed (${evt.total} so far) — ${evt.error || ""}`, "error");
+            } else if (evt.status === "cached") {
+              // Served from the per-request cache - no actual call reached
+              // the backend, so it doesn't count as OK/KO and the running
+              // running request total (evt.total) is deliberately unchanged.
+              liveStats.cached += 1;
+              addProgressStep(`   🌐 ♻️ Request a ${backend}: ${evt.method}${detail} from cache, no request sent (${evt.total} so far)`, "result");
+            } else if (evt.status === "retry") {
+              // A dropped connection or a momentary 429/5xx: the request was
+              // spent (evt.total already counts it) but another attempt
+              // follows, so it isn't a final KO either.
+              addProgressStep(`   🌐 🔁 Request a ${backend}: ${evt.method}${detail} failed, retrying (${evt.total} so far) — ${evt.error || ""}`, "error");
+            } else if (evt.status === "limit") {
+              // The query-wide request budget is exhausted - this request
+              // was skipped before ever reaching the backend, so it's not
+              // OK/KO/cache either; the tool itself still returns whatever
+              // partial results it already gathered (see osint_service.py),
+              // this line is purely informational.
+              addProgressStep(`   🌐 ⏸️ Request a ${backend}: ${evt.method}${detail} skipped, request limit reached (${evt.total} so far)`, "error");
+            } else {
+              liveStats.ok += 1;
+              addProgressStep(`   🌐 ✅ Request a ${backend}: ${evt.method}${detail} (${evt.total} so far)`, "result");
+            }
+            setSummary(liveStats, performance.now() - queryStart, apiCallsTotal, backend, true);
+          } else if (evt.type === "tool_result") {
+            const tc = [...toolCalls].reverse().find((t) => t.name === evt.name && !("result" in t));
+            if (tc) {
+              tc.result = evt.result; tc.is_error = evt.is_error;
+              tc.elapsed_ms = evt.elapsed_ms; tc.api_calls_delta = evt.api_calls_delta;
+            }
+            apiCallsTotal = evt.api_calls_total;
+            if (evt.is_error) {
+              const errMsg = evt.result && evt.result.error ? evt.result.error : JSON.stringify(evt.result);
+              addProgressStep(`   ↳ ❌ FAIL (${evt.elapsed_ms} ms, ${evt.api_calls_delta} ${backend} requests) — ${errMsg}`, "error");
+            } else {
+              // A tool call is never itself served from cache - only the
+              // individual "api_call" requests inside it may be (see the
+              // "cached" status above); this line just reports the tool's
+              // own outcome.
+              const count = Array.isArray(evt.result) ? `, ${evt.result.length} items` : "";
+              addProgressStep(`   ↳ ✅ OK — finished in ${evt.elapsed_ms} ms${count} — ${evt.api_calls_delta} ${backend} request${evt.api_calls_delta === 1 ? "" : "s"} (${apiCallsTotal} so far)`, "result");
+            }
+            // Show this result the instant it's ready, not only once the
+            // whole multi-step query finishes.
+            if (tc) appendCard(tc, toolCalls.indexOf(tc));
+            setSummary(liveStats, performance.now() - queryStart, apiCallsTotal, backend, true);
+          } else if (evt.type === "answer_delta") {
+            // The model is still writing: show the text as it lands, so a
+            // slow local model fills the card instead of leaving it blank.
+            answer += evt.text || "";
+            setAnswer(answer, false);
+          } else if (evt.type === "answer") {
+            answer = evt.text || "";
+            exportState.answer = answer;
+            setAnswer(answer, false);
+            addProgressStep("🤖 Answer generated.", "result");
+          } else if (evt.type === "error") {
+            throw new Error(evt.detail);
+          }
+        }
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") throw err;
+      aborted = true;
+    }
+
+    if (aborted) {
+      addProgressStep("⏹️ Search stopped by the user.", "error");
+      setAnswer(answer || (expectAnswer
+        ? "Search stopped by the user before a complete answer came back."
+        : "Run stopped by the user."), false);
+    } else if (!expectAnswer) {
+      addProgressStep("✅ Commands completed.", "result");
+    }
+    setSummary(liveStats, performance.now() - queryStart, apiCallsTotal, backend, toolCalls.length > 0);
+  }
+
+  async function runPlain(url, payload, signal, expectAnswer) {
+    const queryStart = performance.now();
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal,
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data && data.detail ? data.detail : `HTTP ${response.status}`);
+      }
+
+      exportState.toolCalls = data.tool_calls || [];
+      exportState.answer = expectAnswer ? data.answer : null;
+      renderOutput(expectAnswer ? data.answer : null, data.tool_calls, false, {
+        backend: data.backend,
+        apiCallsTotal: data.api_calls_total,
+        totalMs: performance.now() - queryStart,
+      });
+    } catch (err) {
+      if (err.name !== "AbortError") throw err;
+      renderOutput("Search stopped by the user.", [], true);
+    }
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const target = document.getElementById("target").value.trim();
+    const ai = isAiMode();
+    if (!target && selectionNeedsTarget()) return;
+    const payload = { target, max_items: getMaxItems(), cache_ttl_seconds: getCacheTtlSeconds() };
+    let url;
+    if (ai) {
+      const message = document.getElementById("message").value.trim();
+      if (!message) return;
+      url = "/api/query";
+      payload.message = message;
+    } else {
+      const calls = collectCalls();
+      if (calls.length === 0) {
+        progressWrap.hidden = true;
+        renderOutput("Select at least one command to run.", [], true);
+        return;
+      }
+      url = "/api/run";
+      payload.calls = calls;
+    }
+
+    exportState = {
+      meta: {
+        target,
+        mode: ai ? "ai" : "base",
+        ...(ai ? { request: payload.message } : { commands: payload.calls }),
+        call_limit: payload.max_items,
+        cache_ttl_seconds: payload.cache_ttl_seconds,
+        started_at: new Date().toISOString(),
+      },
+      toolCalls: [],
+      answer: null,
+    };
+    const verbose = verboseCheckbox.checked;
+
+    // Identifies this run so "Stop" can stop it on the server too.
+    currentRunId = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now() + Math.random());
+    payload.run_id = currentRunId;
+    currentController = new AbortController();
+    submitBtn.disabled = true;
+    submitBtn.classList.add("loading");
+    submitLabel.textContent = ai ? "Searching..." : "Running...";
+    // Switching mode mid-run would change what the in-flight response is
+    // rendered as (answer vs. none, heading text) - lock it until done.
+    aiModeSwitch.disabled = true;
+    stopBtn.hidden = false;
+    output.hidden = true;
+    resetOutput();
+    progressList.textContent = "";
+    progressWrap.hidden = !verbose;
+
+    try {
+      if (verbose) {
+        await runVerbose(url, payload, currentController.signal, ai);
+      } else {
+        await runPlain(url, payload, currentController.signal, ai);
+      }
+    } catch (err) {
+      renderOutput(err.message || String(err), [], true);
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("loading");
+      aiModeSwitch.disabled = false;
+      submitLabel.textContent = idleSubmitLabel();
+      stopBtn.hidden = true;
+      currentController = null;
+      currentRunId = null;
+      // The server has just recorded the target (and, in AI mode, the
+      // request) if the target resolved.
+      targetHistory.reload();
+      queryHistory.reload();
+      loadBalance(); // the search may have spent requests
+      loadDossiers(); // saved runs for whichever target was just searched
+    }
+  });
+</script>
+</body>
+</html>

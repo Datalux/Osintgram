@@ -1,8 +1,22 @@
-version: '3.7'
-
 services:
   osintgram:
     container_name: osintgram
     build: .
+    # Published on localhost only: the app has no authentication. Changing this
+    # to "8000:8000" would expose it to your whole network - don't, unless you
+    # put an authenticated reverse proxy in front of it first.
+    ports:
+      - "127.0.0.1:8000:8000"
     volumes:
-      - ./output:/home/osintgram/output
+      # Your HikerAPI key / instagrapi session, kept on the host.
+      - ./config:/home/osintgram/config
+      # Cached responses and saved searches: third parties' Instagram data,
+      # deliberately outside the image.
+      - ./cache:/home/osintgram/cache
+      - ./dossier:/home/osintgram/dossier
+    environment:
+      # AI mode talks to an Ollama running on the host. On Linux, either run
+      # the container with --network=host or set this to your host's IP.
+      - OLLAMA_HOST=http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
