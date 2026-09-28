@@ -138,11 +138,15 @@ app = FastAPI(title="Osintgram Web")
 # The app is meant for 127.0.0.1 and has no login, which is fine for a tool
 # you run on your own machine - but "local" is exactly what a DNS-rebinding
 # page targets: it makes your browser resolve its own hostname to 127.0.0.1
-# and then talks to this server as if it were same-origin. Every other
-# endpoint is already covered, because they all require a JSON body and a
-# cross-origin JSON POST needs a CORS preflight that never succeeds here.
-# Rebinding sidesteps that, so the two endpoints that touch the API key check
-# the hostname they were reached on as well. Localhost only, a few lines.
+# and then talks to this server as if it were same-origin. A state-changing
+# endpoint with a JSON body is covered on its own, since a cross-origin JSON
+# POST/DELETE needs a CORS preflight that never succeeds here - but a plain
+# GET is a CORS "simple request": no preflight, no body, sent (and acted on
+# server-side) whether or not the calling page can read the response. So any
+# endpoint reachable by GET needs this check explicitly too, not just the
+# ones that write. Used on the key and dossier endpoints; a JSON-body POST
+# elsewhere doesn't strictly need it, but calling it is always harmless.
+# Localhost only, a few lines.
 _LOCAL_HOSTS = {"localhost", "127.0.0.1", "[::1]", "::1", "0.0.0.0"}
 
 
@@ -161,7 +165,7 @@ def _is_local_host(value: str) -> bool:
 
 def _require_local_origin(request: Request) -> None:
     if not _is_local_host(request.headers.get("host", "")):
-        raise HTTPException(403, "The key can only be set from localhost.")
+        raise HTTPException(403, "This endpoint only answers requests reached via localhost.")
     origin = request.headers.get("origin")
     if origin and not _is_local_host(origin):
         raise HTTPException(403, "Origin not allowed.")
@@ -879,21 +883,24 @@ def download_media(req: DownloadRequest):
 
 
 @app.post("/api/dossier")
-def save_dossier(run: dict):
+def save_dossier(run: dict, request: Request):
     """Store a finished search so it can be reopened for free later - and
     compared with a later run of the same target."""
+    _require_local_origin(request)
     if not run.get("target"):
         raise HTTPException(400, "The dossier is missing its target.")
     return dossier.save(run)
 
 
 @app.get("/api/dossier")
-def list_dossiers(target: Optional[str] = None):
+def list_dossiers(request: Request, target: Optional[str] = None):
+    _require_local_origin(request)
     return dossier.list_for(target)
 
 
 @app.get("/api/dossier/{target}/{dossier_id}")
-def get_dossier(target: str, dossier_id: str):
+def get_dossier(target: str, dossier_id: str, request: Request):
+    _require_local_origin(request)
     run = dossier.load(target, dossier_id)
     if run is None:
         raise HTTPException(404, "Dossier not found.")
@@ -901,13 +908,15 @@ def get_dossier(target: str, dossier_id: str):
 
 
 @app.delete("/api/dossier/{target}/{dossier_id}")
-def delete_dossier(target: str, dossier_id: str):
+def delete_dossier(target: str, dossier_id: str, request: Request):
+    _require_local_origin(request)
     return {"deleted": dossier.delete(target, dossier_id)}
 
 
 @app.get("/api/dossier/{target}/{before_id}/diff/{after_id}")
-def diff_dossiers(target: str, before_id: str, after_id: str):
+def diff_dossiers(target: str, before_id: str, after_id: str, request: Request):
     """What changed between two saved runs of the same target."""
+    _require_local_origin(request)
     before, after = dossier.load(target, before_id), dossier.load(target, after_id)
     if before is None or after is None:
         raise HTTPException(404, "Dossier not found.")

@@ -50,6 +50,49 @@ def test_username_cannot_escape_the_dossier_directory():
     assert all(dossier.DOSSIER_DIR in p.parents for p in dossier.DOSSIER_DIR.rglob("*.json"))
 
 
+def test_a_bare_double_dot_target_does_not_escape_either():
+    """A multi-segment payload ("../../etc/passwd") gets its slashes replaced
+    and is already covered above - but ".." on its own is made entirely of
+    characters _safe()'s regex allows (dots), so it survives that
+    substitution untouched and is a path segment meaning "parent directory"
+    in its own right. Saving one must not write outside DOSSIER_DIR."""
+    parent_before = set(dossier.DOSSIER_DIR.parent.iterdir())
+
+    saved = dossier.save(run(".."))
+
+    parent_after = set(dossier.DOSSIER_DIR.parent.iterdir())
+    # Nothing new appeared next to (i.e. one level above) DOSSIER_DIR...
+    assert parent_after - parent_before <= {dossier.DOSSIER_DIR}
+    # ...and the file is exactly where a same-directory save would put it.
+    assert dossier.load("..", saved["id"]) is not None
+    assert all(dossier.DOSSIER_DIR in p.parents for p in dossier.DOSSIER_DIR.rglob("*.json"))
+
+
+def test_a_bare_double_dot_id_does_not_escape_either():
+    saved_at = dossier.save(run("alice"))
+    escaped = dossier._path("alice", "..")
+    assert dossier.DOSSIER_DIR in escaped.parents
+    assert escaped.name != ".."
+
+
+def test_deleting_a_bare_double_dot_target_cannot_remove_a_file_above_dossier_dir():
+    sentinel = dossier.DOSSIER_DIR.parent / "sentinel.json"
+    sentinel.write_text("{}")
+    dossier.save(run(".."))  # lands inside DOSSIER_DIR/_, not next to it
+
+    dossier.delete("..", "whatever-id-does-not-even-need-to-exist")
+
+    assert sentinel.exists()  # untouched: delete() could never have reached it
+
+
+def test_a_lone_dot_target_does_not_collapse_into_dossier_dir_itself():
+    """"." is "this directory" - as the whole target it would make _path()
+    write straight into DOSSIER_DIR (no per-target subfolder at all), not
+    escape it, but it's the same class of mistake as ".." and just as easy
+    to rule out at no cost."""
+    assert dossier._safe(".") != "."
+
+
 def test_load_missing_returns_none():
     assert dossier.load("alice", "nope") is None
 

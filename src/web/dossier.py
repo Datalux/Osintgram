@@ -28,8 +28,21 @@ _IDENTITY_FIELDS = ("pk", "id", "username", "hashtag", "address", "description")
 
 
 def _safe(name: str) -> str:
-    """Filesystem-safe form of a username / id (also blocks path traversal)."""
-    return re.sub(r"[^\w.@-]+", "_", str(name))[:80] or "_"
+    """Filesystem-safe form of a username / id: always exactly one path
+    segment, never able to name its own parent.
+
+    The regex collapses every *run* of disallowed characters (slashes
+    included) to a single "_", which is enough to stop a multi-segment
+    payload like "../../etc/passwd" - but "." and "@" and "-" are themselves
+    allowed (usernames and dossier ids use them), so a bare ".." is made
+    entirely of allowed characters and comes out the other side untouched.
+    As the sole content of a path segment, "." or ".." is never a filename -
+    it is the filesystem's own name for "here" or "the parent directory", so
+    passing either straight to Path.__truediv__ escapes DOSSIER_DIR instead
+    of naming something inside it. Caught explicitly, after the regex, since
+    the regex has no way to express "not this exact whole string"."""
+    safe = re.sub(r"[^\w.@-]+", "_", str(name))[:80] or "_"
+    return "_" if safe in (".", "..") else safe
 
 
 def _path(target: str, dossier_id: str) -> Path:
