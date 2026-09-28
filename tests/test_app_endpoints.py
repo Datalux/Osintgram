@@ -49,7 +49,10 @@ def client(tmp_path, monkeypatch):
 
     monkeypatch.setattr(appmod, "build_service", fake_build)
     monkeypatch.setattr(appmod.ollama, "chat", lambda **kw: stream("fatto"))
-    return TestClient(appmod.app)
+    # TestClient defaults to Host "testserver", which _require_local_origin
+    # refuses on purpose (see test_a_remote_host_header_cannot_set_the_key) -
+    # a real browser always sends "127.0.0.1:8000" here, never "testserver".
+    return TestClient(appmod.app, base_url="http://127.0.0.1:8000")
 
 
 def test_tools_endpoint_lists_commands(client):
