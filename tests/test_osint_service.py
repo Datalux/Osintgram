@@ -180,10 +180,13 @@ def _hashtag_page(codes, cursor=None):
 
 
 class SearchClient:
-    def __init__(self, pages=None, places=None, location_medias=None):
+    def __init__(self, pages=None, places=None, location_medias=None, comment_pages=None, resolved_pk=None):
         self.pages = pages or []
         self.places = places or {"items": []}
         self.location_medias = location_medias or [[], None]
+        # Comment pages for a single media, used by get_post_comments tests.
+        self.comment_pages = comment_pages or []
+        self.resolved_pk = resolved_pk
         self.calls = []
 
     def hashtag_medias_top_v2(self, name, page_id=None, **k):
@@ -200,6 +203,21 @@ class SearchClient:
     def location_medias_recent_chunk_v1(self, pk, max_id=None, **k):
         self.calls.append(("location", pk, max_id))
         return self.location_medias
+
+    def media_pk_from_url_v1(self, url, **k):
+        self.calls.append(("pk_from_url", url))
+        return self.resolved_pk
+
+    def media_pk_from_code_v1(self, code, **k):
+        self.calls.append(("pk_from_code", code))
+        return self.resolved_pk
+
+    def media_comments_v2(self, media_id, page_id="", **k):
+        self.calls.append(("comments", media_id, page_id))
+        idx = int(page_id) if page_id else 0
+        if idx >= len(self.comment_pages):
+            return {"response": {"comments": []}, "next_page_id": None}
+        return self.comment_pages[idx]
 
 
 def test_search_hashtag_collects_posts_and_authors():
@@ -252,6 +270,67 @@ def test_search_location_resolves_the_place_and_maps_v1_medias():
 def test_search_location_without_matches():
     with pytest.raises(OsintServiceError):
         OsintgramService(None, SearchClient(places={"items": []})).search_location("nessun luogo")
+
+
+def _comment_page(texts, cursor=None):
+    return {
+        "response": {"comments": [
+            {"user_id": str(i), "user": {"username": f"u{i}"}, "text": t} for i, t in enumerate(texts)
+        ]},
+        "next_page_id": cursor,
+    }
+
+
+def test_get_post_comments_accepts_a_raw_id_with_no_resolution_call():
+    client = SearchClient(comment_pages=[_comment_page(["hi", "nice shot"])])
+    svc = OsintgramService(None, client)  # no target at all
+    result = svc.get_post_comments("3182736450192837465_123456789")
+    assert [c["comment"] for c in result] == ["hi", "nice shot"]
+    assert all(c["post_id"] == "3182736450192837465_123456789" for c in result)
+    assert not any(call[0].startswith("pk_from") for call in client.calls)  # no resolution spent
+
+
+def test_get_post_comments_resolves_a_shortcode():
+    client = SearchClient(resolved_pk="2110901750722920960", comment_pages=[_comment_page(["ciao"])])
+    result = OsintgramService(None, client).get_post_comments("B1LbfVPlwIA")
+    assert [c["comment"] for c in result] == ["ciao"]
+    assert ("pk_from_code", "B1LbfVPlwIA") in client.calls
+    assert ("comments", "2110901750722920960", "") in client.calls
+
+
+def test_get_post_comments_resolves_a_full_url():
+    client = SearchClient(resolved_pk="2110901750722920960", comment_pages=[_comment_page(["ciao"])])
+    url = "https://www.instagram.com/p/B1LbfVPlwIA/"
+    result = OsintgramService(None, client).get_post_comments(url)
+    assert [c["comment"] for c in result] == ["ciao"]
+    assert ("pk_from_url", url) in client.calls
+    assert not any(call[0] == "pk_from_code" for call in client.calls)
+
+
+def test_get_post_comments_strips_a_trailing_slash_from_a_bare_shortcode():
+    client = SearchClient(resolved_pk="42", comment_pages=[_comment_page(["x"])])
+    OsintgramService(None, client).get_post_comments("p/B1LbfVPlwIA/")
+    assert ("pk_from_code", "B1LbfVPlwIA") in client.calls
+
+
+def test_get_post_comments_requires_an_input():
+    with pytest.raises(OsintServiceError):
+        OsintgramService(None, SearchClient()).get_post_comments("")
+
+
+def test_get_post_comments_reports_an_unresolvable_input():
+    client = SearchClient(resolved_pk="not-a-number")
+    with pytest.raises(OsintServiceError):
+        OsintgramService(None, client).get_post_comments("not-a-real-shortcode")
+
+
+def test_get_post_comments_respects_the_limit_without_extra_pages():
+    client = SearchClient(comment_pages=[
+        _comment_page(["a", "b"], cursor="1"), _comment_page(["c", "d"], cursor="2"),
+    ])
+    result = OsintgramService(None, client).get_post_comments("123_456", limit=3)
+    assert len(result) == 3
+    assert sum(1 for call in client.calls if call[0] == "comments") == 2  # stopped after enough comments
 
 
 def test_target_only_commands_refuse_to_run_without_a_target():

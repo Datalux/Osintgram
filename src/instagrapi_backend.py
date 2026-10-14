@@ -1,11 +1,12 @@
 """Adapter exposing a HikerAPI-shaped client interface backed by instagrapi.
 
-OsintgramService (src/osint_service.py) only ever calls a dozen methods on the
-client it's given (user_by_username_v2, user_medias_g2, media_comments_v2,
-user_followers_g2, user_following_g2, user_tag_medias_v2, user_stories_v2,
-user_by_id_v2, user_highlights_v2, hashtag_medias_top_v2 /
-hashtag_medias_recent_v2, fbsearch_places_v2, location_medias_recent_chunk_v1)
-- always returning the same shapes HikerAPI does ({"response": {"items"|
+OsintgramService (src/osint_service.py) only ever calls about a dozen methods
+on the client it's given (user_by_username_v2, user_medias_g2,
+media_comments_v2, user_followers_g2, user_following_g2, user_tag_medias_v2,
+user_stories_v2, user_by_id_v2, user_highlights_v2, hashtag_medias_top_v2 /
+hashtag_medias_recent_v2, fbsearch_places_v2, location_medias_recent_chunk_v1,
+media_pk_from_url_v1, media_pk_from_code_v1) - always returning the same
+shapes HikerAPI does ({"response": {"items"|
 "users"|"comments": [...]}, "next_page_id": ...} or {"user": {...}}, with
 next_page_id falsy once pagination is exhausted). InstagrapiClient implements
 those same methods on top of instagrapi, so OsintgramService needs zero
@@ -331,6 +332,18 @@ class InstagrapiClient:
             medias = self._cl.location_medias_recent_v1(int(location_pk), amount=30) if not max_id else []
             cursor = None
         return [[self._media_to_dict(m) for m in medias], cursor or None]
+
+    def media_pk_from_url_v1(self, url: str, **kwargs) -> str:
+        """Unlike the same-named HikerAPI endpoint, this costs no request at
+        all on a normal /p/ or /reel/ URL: instagrapi decodes the shortcode's
+        pk locally. (A legacy /share/p/ short link is the one exception -
+        instagrapi has to follow it to find the shortcode first.)"""
+        return str(self._cl.media_pk_from_url(url))
+
+    def media_pk_from_code_v1(self, code: str, **kwargs) -> str:
+        """Free: the pk is encoded in the shortcode itself, decoded locally -
+        no request to Instagram at all."""
+        return str(self._cl.media_pk_from_code(code))
 
     def user_suggested_profiles_v2(self, user_id, **kwargs) -> dict:
         # instagrapi has no equivalent of Instagram's suggestion chaining.

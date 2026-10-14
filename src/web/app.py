@@ -364,10 +364,11 @@ def _run_agent_events(
         f"investigating the Instagram account @{service.target} (already "
         "resolved - do not attempt to look up a different username)"
         if service.target else
-        "searching Instagram by hashtag and by place. No target account is "
-        "set, so only the hashtag/place search tools are available - if the "
-        "user asks about a specific account, say that they have to type the "
-        "username in the target field first"
+        "searching Instagram by hashtag, by place, or pulling the comments off "
+        "one specific post/reel given its URL. No target account is set, so "
+        "only those target-free tools are available - if the user asks about "
+        "a specific account's own feed/followers/profile, say that they have "
+        "to type the username in the target field first"
     )
     known = _profile_facts(service)
     system_prompt = (

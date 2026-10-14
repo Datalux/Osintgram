@@ -256,7 +256,7 @@ both modes.
 
 ## 5. What you can ask for
 
-28 commands, grouped by what they tell you. Parameters are in `code`.
+29 commands, grouped by what they tell you. Parameters are in `code`.
 
 ### Profile
 
@@ -327,9 +327,19 @@ full profile lookup. See [Keeping the cost down](#6-keeping-the-cost-down).
 |---|---|---|
 | **Hashtag search** | Posts published with a hashtag, and who posted them | `hashtag`, `sort` (`top`/`recent`), `limit` (30) |
 | **Place search** | Recent posts from a place, searched by name, with the matched place and its alternatives | `place`, `limit` (30) |
+| **Post comments** | Every comment on one specific post or reel, given directly | `post`, `limit` |
 
 With only these selected the username field stops being required, and the label
 says so.
+
+**On "Post comments":** `post` takes whatever's easiest to have in hand — the
+post/reel's full Instagram URL, its shortcode (the part after `/p/` or
+`/reel/` in the URL), or a raw id you already have from an earlier result
+(e.g. a post preview's `"id"` field — pasting that back in skips resolving it
+again). On HikerAPI, resolving a URL or shortcode costs one extra request;
+pasting a raw id doesn't. On instagrapi it's free either way — the pk is
+encoded in the shortcode itself, decoded locally with no request to
+Instagram.
 
 ---
 

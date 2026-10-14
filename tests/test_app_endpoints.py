@@ -101,7 +101,7 @@ def test_target_still_required_for_target_commands(client):
 
 
 def test_ai_mode_runs_without_a_target_on_the_search_tools(client, monkeypatch):
-    """No target means the hashtag/place searches only - but the agent still
+    """No target means only the target-free tools - but the agent still
     runs, instead of being refused before it starts."""
     offered = {}
 
@@ -113,7 +113,7 @@ def test_ai_mode_runs_without_a_target_on_the_search_tools(client, monkeypatch):
     monkeypatch.setattr(appmod.ollama, "chat", fake_chat)
     r = client.post("/api/query", json={"message": "post con #milano"})
     assert r.status_code == 200 and r.json()["answer"] == "ecco"
-    assert set(offered["tools"]) == {"search_hashtag", "search_location"}
+    assert set(offered["tools"]) == {"search_hashtag", "search_location", "get_post_comments"}
     assert "No target account is set" in offered["system"]
     assert client.get("/api/history/targets").json() == []  # nothing to record
 

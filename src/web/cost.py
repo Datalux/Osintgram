@@ -11,6 +11,7 @@ Estimates are ranges, never promises: page sizes vary with the endpoint and
 Instagram's own batching, and a cache hit costs nothing at all.
 """
 import math
+import re
 from typing import Optional
 
 # Observed page sizes (items per request) for the endpoints behind each
@@ -33,6 +34,9 @@ _FEED = {
 # Feed + one comment scan per post.
 _FEED_AND_COMMENTS = {"get_comment_data", "get_people_who_commented"}
 _CONTACTS = {"get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"}
+# Mirrors OsintgramService._RAW_MEDIA_ID: a post already given as an id (not
+# a URL/shortcode) needs no resolution request - see get_post_comments below.
+_RAW_MEDIA_ID = re.compile(r"^\d+(_\d+)?$")
 
 
 def _pages(count: Optional[int], per_page: tuple) -> tuple:
@@ -96,6 +100,15 @@ def estimate_command(name: str, params: dict, profile: dict, max_items: Optional
     if name == "search_location":
         pages = _pages(_capped(params.get("limit"), None, fallback=30), USERS_PER_PAGE)
         return (pages[0] + 1, pages[1] + 1)  # plus the place lookup
+    if name == "get_post_comments":
+        post = str(params.get("post") or "").strip()
+        # A URL/shortcode costs one resolution request on HikerAPI before the
+        # comments themselves; a raw id (copied from an earlier result) skips
+        # it. instagrapi resolves locally either way, but this module prices
+        # the backend that actually bills per request.
+        resolving = 0 if not post or _RAW_MEDIA_ID.match(post) else 1
+        pages = _pages(_capped(params.get("limit"), None, fallback=100), COMMENTS_PER_PAGE)
+        return (pages[0] + resolving, pages[1] + resolving)
     if name == "compare_with":
         scope = params.get("scope") or "both"
         limit = params.get("limit")

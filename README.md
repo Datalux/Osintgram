@@ -58,7 +58,7 @@ Osintgram.
 them and summarizes. It can only choose from the same list below; it can't
 invent lookups or make up data.
 
-**Base mode** — no model, no Ollama needed. All 28 commands, one line each,
+**Base mode** — no model, no Ollama needed. All 29 commands, one line each,
 grouped and searchable. Tick what you want, set the parameters, run them in
 order.
 
@@ -75,7 +75,7 @@ or a place — those searches belong to no account.
 | **Network** | Followers and followings, accounts Instagram suggests as related, who tagged them, who they tagged, who comments most — and **mutual connections** between two accounts |
 | **Content** | Hashtags ranked by use, captions, every comment, like and comment statistics, photo/video/carousel breakdown with views and paid partnerships, **posting-times heatmap**, geotagged locations **on a map**, photo alt text |
 | **Contacts** | Public emails and phone numbers among a target's followers or followings |
-| **No target needed** | Posts published with a **hashtag** (top or recent) or from a **place**, and who published them |
+| **No target needed** | Posts published with a **hashtag** (top or recent) or from a **place**, and who published them — plus every **comment on one specific post or reel**, given its URL, shortcode or id |
 
 Stories, highlights and profile pictures come back as direct CDN links — and
 any card with media in it offers a one-click zip of the originals.

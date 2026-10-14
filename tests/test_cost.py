@@ -48,6 +48,19 @@ def test_compare_scope_halves_the_cost():
     assert one_side[1] < both[1]
 
 
+def test_post_comments_charges_one_extra_for_resolving_a_url_or_shortcode():
+    raw_id = est("get_post_comments", {"post": "123_456"})
+    shortcode = est("get_post_comments", {"post": "B1LbfVPlwIA"})
+    url = est("get_post_comments", {"post": "https://www.instagram.com/p/B1LbfVPlwIA/"})
+    assert shortcode == url
+    assert shortcode[0] == raw_id[0] + 1 and shortcode[1] == raw_id[1] + 1
+
+
+def test_post_comments_scales_with_limit():
+    assert est("get_post_comments", {"post": "123_456", "limit": 10})[1] \
+        < est("get_post_comments", {"post": "123_456", "limit": 1000})[1]
+
+
 def test_unknown_command_counts_as_one():
     assert est("get_something_new") == (1, 1)
 
