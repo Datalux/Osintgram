@@ -874,6 +874,58 @@ class OsintgramService:
                 )
         return comments
 
+    # A media id already looks like this everywhere else in this file (a
+    # post preview's "id", what _get_comments is called with above): either
+    # the bare numeric pk, or "<pk>_<owner pk>". Accepted as-is, no lookup.
+    _RAW_MEDIA_ID = re.compile(r"^\d+(_\d+)?$")
+
+    def _resolve_media_id(self, post: str) -> str:
+        """A post/reel given as a URL, a shortcode, or a raw id already seen
+        elsewhere (e.g. a previous command's "id" field) - whichever is more
+        convenient to have in hand. Resolving a URL or shortcode is a real
+        lookup on HikerAPI (one request); instagrapi decodes a shortcode
+        locally - the pk is encoded in it, no request spent."""
+        value = (post or "").strip()
+        if not value:
+            raise OsintServiceError("Specify a post/reel URL, shortcode or id.")
+        if self._RAW_MEDIA_ID.match(value):
+            return value
+        is_url = value.startswith(("http://", "https://"))
+        try:
+            if is_url:
+                resolved = self.api.media_pk_from_url_v1(value)
+            else:
+                # A bare shortcode, or one with stray slashes around it
+                # ("p/Cx.../", a path fragment rather than a full URL).
+                code = value.strip("/").rsplit("/", 1)[-1]
+                resolved = self.api.media_pk_from_code_v1(code)
+        except RequestLimitReachedError:
+            raise
+        except Exception as e:
+            raise OsintServiceError(f"Could not resolve {post!r} to a post: {e}") from e
+        # Documented as a bare string on both backends; a dict is handled too
+        # in case a future client version wraps it.
+        resolved = normalize_payload(resolved)
+        pk = str(resolved.get("pk") if isinstance(resolved, dict) else resolved).strip()
+        if not pk or not pk.isdigit():
+            raise OsintServiceError(f"Could not resolve {post!r} to a post.")
+        return pk
+
+    def get_post_comments(self, post: str, limit: Optional[int] = None) -> list:
+        """Every comment on one specific post or reel, given directly - not
+        the target's whole feed. Needs no target account: works on any
+        public post, given its URL, shortcode, or a raw id seen elsewhere."""
+        media_id = self._resolve_media_id(post)
+        return [
+            {
+                "post_id": media_id,
+                "user_id": comment.get("user_id"),
+                "username": (comment.get("user") or {}).get("username"),
+                "comment": comment.get("text"),
+            }
+            for comment in self._get_comments(media_id, limit=limit)
+        ]
+
     def get_people_who_commented(self, limit_posts: Optional[int] = None) -> list:
         self._require_public()
         data = self._get_feed(limit=limit_posts)

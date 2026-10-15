@@ -1740,6 +1740,7 @@
     compare_with: ["🔀", "Compare profiles", "Connections in common with another account: shared followers and followings."],
     search_hashtag: ["#️⃣", "Hashtag search", "Posts published with a hashtag and who published them. Needs no target."],
     search_location: ["🌍", "Place search", "Posts published from a place and who published them. Needs no target."],
+    get_post_comments: ["💬", "Post comments", "Every comment on one specific post or reel, given by its URL, shortcode or id. Needs no target."],
     get_followers_email: ["✉️", "Follower emails", "Public emails among the followers (one request per account checked)."],
     get_followings_email: ["✉️", "Following emails", "Public emails among the followed accounts (one request per account checked)."],
     get_followers_phone: ["📞", "Follower phones", "Public phone numbers among the followers (one request per account checked)."],
@@ -1751,18 +1752,19 @@
     ["Network", ["get_followers", "get_followings", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_people_tagged_by_user", "get_people_who_commented"]],
     ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions"]],
     ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
-    ["Search (no target)", ["search_hashtag", "search_location"]],
+    ["Search (no target)", ["search_hashtag", "search_location", "get_post_comments"]],
   ];
 
   const PARAM_LABELS = {
     limit: "Max results",
     limit_posts: "Posts to scan",
-    match_limit: "Max corrispondenze",
+    match_limit: "Max matches",
     max_checks: "Max accounts checked",
     other_username: "Other account",
     scope: "Compare",
     hashtag: "Hashtag",
     place: "Place",
+    post: "Post/reel URL, shortcode or id",
     sort: "Sort by",
   };
 

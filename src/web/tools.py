@@ -51,9 +51,11 @@ _INT_PARAMS = {"limit", "limit_posts", "match_limit", "max_checks"}
 # cache hits are being spent.
 _CLAMPED_BY_MAX_ITEMS = {"limit", "limit_posts", "match_limit"}
 
-# Searches that belong to no account: they run without a target username, so
-# the web UI doesn't require one when only these are selected.
-TARGET_FREE_TOOLS = {"search_hashtag", "search_location"}
+# Capabilities that belong to no particular account: they run without a
+# target username, so the web UI doesn't require one when only these are
+# selected. get_post_comments takes its own post/reel directly, not the
+# target's feed, so it needs no target either.
+TARGET_FREE_TOOLS = {"search_hashtag", "search_location", "get_post_comments"}
 
 
 def _coerce_int(value):
@@ -346,6 +348,21 @@ def build_tools(service: OsintgramService) -> list:
             return _to_json({"error": "Specify a place to search for."})
         return _call(service.search_location, place=place, limit=limit)
 
+    def get_post_comments(post: str = "", limit: Optional[int] = None) -> str:
+        """Get every comment on one specific post or reel, given directly -
+        not the target's whole feed. Does not need a target account: works on
+        any public post.
+
+        Args:
+            post: The post/reel's Instagram URL, its shortcode (the part
+                after /p/ or /reel/ in the URL), or a raw id seen in an
+                earlier result (e.g. a post preview's "id" field).
+            limit: Maximum number of comments to return.
+        """
+        if not (post or "").strip():
+            return _to_json({"error": "Specify a post/reel URL, shortcode or id."})
+        return _call(service.get_post_comments, post=post, limit=limit)
+
     def get_highlights() -> str:
         """List the target's Story Highlights (archived stories pinned on the
         profile): title, number of stories, cover image and dates."""
@@ -436,4 +453,5 @@ def build_tools(service: OsintgramService) -> list:
         compare_with,
         search_hashtag,
         search_location,
+        get_post_comments,
     ]

@@ -49,6 +49,16 @@ class FakeInstagrapi:
         self.calls.append(("location", location_pk, max_id))
         return ([_media(7, "carla")], None)
 
+    def media_pk_from_url(self, url):
+        self.calls.append(("pk_from_url", url))
+        # Returned as an int here on purpose, to prove the adapter's own
+        # str(...) wrapping doesn't assume instagrapi already gives a string.
+        return 2110901750722920960
+
+    def media_pk_from_code(self, code):
+        self.calls.append(("pk_from_code", code))
+        return 2110901750722920960
+
 
 def _client(fake):
     client = InstagrapiClient.__new__(InstagrapiClient)  # no login, no session file
@@ -106,3 +116,44 @@ def test_hashtag_search_falls_back_when_the_chunked_method_is_missing():
 
     service = OsintgramService(None, _client(Older()))
     assert service.search_hashtag("milano")["posts"] == 1
+
+
+def test_media_pk_from_url_is_a_free_local_decode_on_instagrapi():
+    fake = FakeInstagrapi()
+    client = _client(fake)
+    pk = client.media_pk_from_url_v1("https://www.instagram.com/p/B1LbfVPlwIA/")
+    assert pk == "2110901750722920960"
+    assert isinstance(pk, str)
+    assert fake.calls == [("pk_from_url", "https://www.instagram.com/p/B1LbfVPlwIA/")]
+
+
+def test_media_pk_from_code_is_a_free_local_decode_on_instagrapi():
+    fake = FakeInstagrapi()
+    client = _client(fake)
+    pk = client.media_pk_from_code_v1("B1LbfVPlwIA")
+    assert pk == "2110901750722920960" and isinstance(pk, str)
+    assert fake.calls == [("pk_from_code", "B1LbfVPlwIA")]
+
+
+def test_get_post_comments_works_end_to_end_on_the_instagrapi_backend():
+    """Exercises the real call path: OsintgramService -> InstagrapiClient ->
+    the (faked) instagrapi Client, resolving a shortcode then paging comments -
+    not just the adapter's two new methods in isolation."""
+    # Duck-typed the way InstagrapiClient._comment_to_dict reads a comment:
+    # user_id comes from comment.user.pk, not a user_id field on the comment.
+    comment = types.SimpleNamespace(
+        user=types.SimpleNamespace(pk="9", username="anna", full_name="Anna"), text="nice shot")
+
+    class Fake(FakeInstagrapi):
+        def media_comments_chunk(self, media_id, max_amount, min_id=None):
+            self.calls.append(("comments", media_id, min_id))
+            return ([comment], None)
+
+    fake = Fake()
+    service = OsintgramService(None, _client(fake))
+    result = service.get_post_comments("B1LbfVPlwIA")
+    assert result == [{"post_id": "2110901750722920960", "user_id": "9", "username": "anna", "comment": "nice shot"}]
+    assert ("pk_from_code", "B1LbfVPlwIA") in fake.calls
+    # The bare pk (no owner suffix) is what reaches media_comments_chunk -
+    # instagrapi's own media_id() upgrades it internally if it needs to.
+    assert ("comments", "2110901750722920960", None) in fake.calls
