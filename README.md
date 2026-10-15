@@ -15,7 +15,7 @@ Ask in plain language and a **local AI model** figures out which lookups to
 run. Or don't: pick the commands yourself and skip the model entirely.
 
 <p align="center">
-<img src=".img/web-app.png" width="900" alt="The Osintgram web interface: a terminal-style header, the command picker, and result cards showing profile details and hashtags">
+<img src=".img/web-app.png" width="900" alt="The Osintgram web interface: the request form with a run sheet showing limits and cost, the written answer, and numbered result exhibits with profile details and hashtags">
 </p>
 
 ---
@@ -51,7 +51,7 @@ Osintgram.
 ## Two ways to drive it
 
 <p align="center">
-<img src=".img/web-commands.png" width="860" alt="Base mode: 28 commands in three columns, grouped and collapsible, with a search box">
+<img src=".img/web-commands.png" width="860" alt="Base mode: 28 commands in two columns, grouped by colour and collapsible, with a search box and the run sheet">
 </p>
 
 **AI mode** — describe what you want. A local model picks the commands, runs
