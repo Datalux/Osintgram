@@ -6,109 +6,84 @@
 <meta name="description" content="Osintgram Web: OSINT on public Instagram accounts, in plain language (local AI) or with commands you pick yourself.">
 <!-- A local tool handling personal data: keep it out of search engines even if it ends up reachable. -->
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#121216">
+<meta name="theme-color" content="#f7f5ef">
 <title>Osintgram Web</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23121216'/%3E%3Ctext x='4' y='22' font-family='monospace' font-size='17' font-weight='700' fill='%23f0a830'%3E%3E_%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%231f2329'/%3E%3Ctext x='6' y='23' font-family='sans-serif' font-size='19' font-weight='700' fill='%23f3f4f0'%3EO%3C/text%3E%3C/svg%3E">
 <style>
+
+  /* Accession Register. Paper-and-ink ground, one blue ink for selection and
+     links, vermilion kept for stamps and errors. Every result is an exhibit
+     with a number, a source and a cost. Light/dark follow the system; AI and
+     Base modes share one ink; the header switch says which is active. No external fonts: the system sans carries prose, tabular
+     figures and a monospace carry identifiers and measurements. */
   :root {
     color-scheme: light dark;
-    --bg: #f4f4f8;
-    --panel: #ffffff;
-    --panel-2: #f8f8fb;
-    --text: #17171b;
-    --muted: #6c6c78;
-    --border: #e2e2ea;
-    --accent: #5b52f0;
-    --accent-soft: #efeeff;
+    --bg: #f7f5ef;
+    --panel: #fdfcf8;
+    --panel-2: #eeebe1;
+    --text: #1f2329;
+    --muted: #565b63;
+    --border: #dcd7c7;
+    --rule: #c7c1ae;
+    --accent: #355c7d;
+    --accent-soft: #e3eaf0;
     --accent-text: #ffffff;
-    --error: #c02e2e;
-    --error-soft: #fbeaea;
-    --ok: #1a8f5e;
-    --shadow: 0 1px 2px rgba(20, 20, 30, 0.04), 0 8px 24px rgba(20, 20, 30, 0.06);
-    --accent-gradient: linear-gradient(135deg, #5b52f0 0%, #a855f7 55%, #ec4899 100%);
-    --accent-glow: rgba(91, 82, 240, 0.35);
-    --bg-glow: rgba(91, 82, 240, 0.11);
-    --dot: rgba(23, 23, 27, 0.07);
-    --field-border: #d8d7ec;
-    --warn: #8a5a00;
-    --warn-soft: #fff7e8;
-    --warn-border: #f1d6a0;
+    --stamp: #a7452f;
+    --error: #a3362a;
+    --error-soft: #f7e6e2;
+    --ok: #2c6a49;
+    --warn: #7a5200;
+    --warn-soft: #f8efd8;
+    --warn-border: #dcc58e;
+    --shadow: 0 1px 0 rgba(31, 35, 41, 0.06);
+    --focus: #1a4f8a;
+    --radius: 4px;
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --serif: Charter, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #131316;
-      --panel: #1c1c21;
-      --panel-2: #232329;
-      --text: #ececf1;
-      --muted: #9a9aa6;
-      --border: #313138;
-      --accent: #8b83ff;
-      --accent-soft: #262445;
-      --accent-text: #100f1c;
-      --error: #ff8a80;
-      --error-soft: #3a1f1f;
-      --ok: #5fd6a4;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.35);
-      --accent-gradient: linear-gradient(135deg, #8b83ff 0%, #c084fc 55%, #f472b6 100%);
-      --accent-glow: rgba(139, 131, 255, 0.35);
-      --bg-glow: rgba(139, 131, 255, 0.15);
-      --dot: rgba(255, 255, 255, 0.05);
-      --field-border: #3a3952;
-      --warn: #f5c56b;
-      --warn-soft: #2b2415;
-      --warn-border: #55431f;
-    }
-  }
-  /* "Base" (manual) mode: same layout, different accent so it's obvious at a
-     glance which mode is active. Scoped to body so it overrides :root. */
-  body.mode-base {
-    --accent: #0b8577;
-    --accent-soft: #e2f4f1;
-    --accent-gradient: linear-gradient(135deg, #0b8577 0%, #0ea5a4 50%, #3b82f6 100%);
-    --accent-glow: rgba(11, 133, 119, 0.32);
-    --bg-glow: rgba(11, 133, 119, 0.11);
-    --field-border: #cde4e0;
-  }
-  @media (prefers-color-scheme: dark) {
-    body.mode-base {
-      --accent: #4fd1bf;
-      --accent-soft: #17332f;
-      --accent-gradient: linear-gradient(135deg, #4fd1bf 0%, #38bdf8 100%);
-      --accent-glow: rgba(79, 209, 191, 0.3);
-      --bg-glow: rgba(79, 209, 191, 0.13);
-      --field-border: #2c4744;
+      --bg: #161b26;
+      --panel: #1d2331;
+      --panel-2: #262d3d;
+      --text: #e8e6de;
+      --muted: #a3a6a4;
+      --border: #303849;
+      --rule: #434c61;
+      --accent: #8db6d9;
+      --accent-soft: #1f3345;
+      --accent-text: #0f1a24;
+      --stamp: #e39379;
+      --error: #f0907f;
+      --error-soft: #3a2420;
+      --ok: #7fc59d;
+      --warn: #e8c168;
+      --warn-soft: #2d2616;
+      --warn-border: #5a4821;
+      --shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+      --focus: #9fc7ea;
     }
   }
   * { box-sizing: border-box; }
-  /* Several containers set their own display (flex), which would otherwise
-     beat the UA's [hidden] rule and keep them visible. */
   [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    /* A soft glow in the mode's accent behind the header. */
-    background: radial-gradient(1100px 480px at 50% -140px, var(--bg-glow), transparent 72%) no-repeat, var(--bg);
+    background: var(--bg);
     color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    padding: 28px 16px 40px;
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    padding: 24px 16px 48px;
     -webkit-font-smoothing: antialiased;
-    transition: background-color 0.2s;
+    font-variant-numeric: tabular-nums;
   }
-  /* Faint dot grid fading out down the page - fixed, behind everything. */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
-    background-size: 22px 22px;
-    -webkit-mask-image: linear-gradient(to bottom, #000, transparent 70%);
-    mask-image: linear-gradient(to bottom, #000, transparent 70%);
-  }
-  main {
-    max-width: 760px;
-    margin: 0 auto;
-  }
+  main { max-width: 1120px; margin: 0 auto; }
+  ::selection { background: var(--accent); color: var(--accent-text); }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  a { color: var(--accent); text-underline-offset: 0.18em; }
+  html { scrollbar-color: var(--rule) var(--bg); }
   .sr-only {
     position: absolute;
     width: 1px;
@@ -117,130 +92,113 @@
     clip: rect(0 0 0 0);
     white-space: nowrap;
   }
+  code { font-family: var(--mono); }
 
-  /* Header: a terminal window echoing the CLI's own banner (logo from
-     src/artwork.py, same amber, same version line). Deliberately dark in
-     both themes - it's the tool's identity, not a themed surface - so its
-     colors are fixed tokens; only the accent follows the AI/Base mode. */
-  :root {
-    --term-bg: #121216;
-    --term-bar: #1c1c22;
-    --term-border: #2c2c34;
-    --term-text: #d8d8e0;
-    --term-dim: #8a8a96;
-    --term-amber: #f0a830;
-    --term-accent: #aaa2ff;
-    --term-ok: #5fd6a4;
-    --term-err: #ff8a80;
-    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  }
-  body.mode-base { --term-accent: #4fd1bf; }
-  /* Banner and search form are one window: the terminal is its dark top,
-     the form its body - one frame, one shadow, joined by a thin accent line. */
-  :root { --radius: 14px; }
-  .app-window {
-    border-radius: calc(var(--radius) + 2px);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 18px 44px -12px rgba(10, 10, 20, 0.28);
-  }
-  .terminal {
-    border: 1px solid var(--term-border);
-    border-bottom: 0;
-    border-radius: calc(var(--radius) + 2px) calc(var(--radius) + 2px) 0 0;
-    overflow: hidden;
-    background: var(--term-bg);
-    color: var(--term-text);
-  }
-  .terminal::after {
-    content: "";
-    display: block;
-    height: 3px;
-    background: var(--accent-gradient);
-  }
-  .terminal-bar {
+  /* ---- masthead ---- */
+  .masthead {
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 9px 14px;
-    background: var(--term-bar);
-    border-bottom: 1px solid var(--term-border);
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    padding: 0 0 14px;
+    border-bottom: 2px solid var(--text);
   }
-  .terminal-dots { display: flex; gap: 7px; flex: none; }
-  .terminal-dots i { display: block; width: 12px; height: 12px; border-radius: 50%; }
-  .terminal-dots i:nth-child(1) { background: #ff5f57; }
-  .terminal-dots i:nth-child(2) { background: #febc2e; }
-  .terminal-dots i:nth-child(3) { background: #28c840; }
-  .terminal-title {
-    flex: 1;
-    min-width: 0;
-    text-align: center;
-    font: 500 0.78rem var(--mono);
-    color: var(--term-dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .terminal-body { padding: 18px 22px 16px; }
-  .ascii-logo {
+  .mast-id { flex: 1 1 280px; min-width: 0; }
+  .mast-id h1 {
     margin: 0;
-    font-family: var(--mono);
-    /* Scaled with the viewport so it always fits on one line (down to phone
-       width), capped for large screens: (viewport - page gutters - terminal
-       padding) / its width in columns (--logo-cols, set by the script from
-       the art itself) at ~0.6em per monospace glyph, plus some slack for
-       wider fonts. */
-    --logo-cols: 71;
-    font-size: clamp(6px, calc((100vw - 80px) / (var(--logo-cols) * 0.625)), 15px);
-    line-height: 1.15;
-    min-height: calc(6 * 1.15em); /* reserve its 6 lines before it loads */
-    white-space: pre;
-    overflow-x: auto;
-    color: var(--term-amber);
-    text-shadow: 0 0 14px rgba(240, 168, 48, 0.35);
+    font-family: var(--serif);
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
   }
-  .terminal-line { margin: 0; font: 0.82rem/1.55 var(--mono); overflow-wrap: anywhere; }
-  .terminal-line.version { margin-top: 12px; color: var(--term-amber); }
-  @media (max-width: 520px) {
-    .terminal-title { visibility: hidden; }
-    .terminal-body { padding: 14px 14px 12px; }
+  .mast-sub { margin: 2px 0 0; font-size: 0.82rem; color: var(--muted); }
+  .mast-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+  .balance-chip {
+    padding: 4px 10px;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    font: 600 0.78rem var(--mono);
+    color: var(--text);
+    background: var(--panel);
+    white-space: nowrap;
   }
+  .balance-chip.low { background: var(--error-soft); }
+  .key-chip {
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    color: var(--text);
+    font: 600 0.78rem var(--mono);
+    cursor: pointer;
+    min-height: 30px;
+  }
+  .key-chip:hover { border-color: var(--accent); }
+  .key-chip.missing { color: var(--error); border-color: var(--error); }
 
+  /* Mode switch: one segmented control, two words, the active one filled. */
   .mode-switch {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    display: inline-flex;
+    position: relative;
+    border: 1px solid var(--text);
+    border-radius: var(--radius);
+    overflow: hidden;
     cursor: pointer;
     user-select: none;
-    font: 600 0.78rem var(--mono);
-    color: var(--term-dim);
-    flex: none;
+    font: 700 0.85rem var(--sans);
+    min-height: 36px;
   }
-  .mode-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-  .mode-switch .track {
-    position: relative;
-    width: 40px;
-    height: 22px;
-    border-radius: 999px;
-    background: var(--term-accent);
-    transition: background 0.2s;
-  }
-  .mode-switch .thumb {
-    position: absolute;
-    top: 3px;
-    left: 3px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-    transition: transform 0.2s;
-  }
-  .mode-switch input:checked + .track .thumb { transform: translateX(18px); }
-  .mode-switch input:focus-visible + .track { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.28); }
-  .mode-switch input:disabled ~ * { opacity: 0.55; cursor: default; }
-  .mode-switch .side { transition: color 0.2s; }
+  .mode-switch input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .mode-switch .track, .mode-switch .thumb { display: none; }
+  .mode-switch .side { padding: 6px 14px; color: var(--text); background: transparent; display: flex; align-items: center; }
   body:not(.mode-base) .mode-switch .side-ai,
-  body.mode-base .mode-switch .side-base { color: var(--term-accent); }
+  body.mode-base .mode-switch .side-base { background: var(--text); color: var(--bg); }
+  .mode-switch:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .mode-switch input:disabled ~ * { opacity: 0.55; cursor: default; }
 
+  /* ---- key panel ---- */
+  .key-panel {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--panel);
+  }
+  .key-panel-head { display: flex; align-items: baseline; gap: 10px; }
+  .key-panel-title { font-size: 0.85rem; font-weight: 700; }
+  .key-panel-head .link-btn { margin-left: auto; }
+  .key-panel-note { margin: 6px 0 10px; font-size: 0.85rem; color: var(--muted); }
+  .key-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .key-input {
+    flex: 1 1 260px;
+    min-width: 0;
+    padding: 9px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
+    background: var(--bg);
+    color: var(--text);
+    font: 0.88rem var(--mono);
+  }
+  .key-remember { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 7px; margin-top: 9px; font-size: 0.82rem; color: var(--muted); }
+  .key-remember code { font-size: 0.78rem; }
+  .key-status { margin: 10px 0 0; font-size: 0.85rem; }
+  .key-status.ok { color: var(--ok); }
+  .key-status.err { color: var(--error); }
+
+  /* ---- the form: a register page. Left: who and what. Right: the run sheet
+     (limits, cache, cost, Run), sticky so cost stays in view. ---- */
+  form {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  @media (min-width: 900px) {
+    form { grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: auto auto 1fr; align-items: start; }
+    form > .row, form > .mode-fields { grid-column: 1; }
+    form > .run-sheet { grid-column: 2; grid-row: 1 / span 3; position: sticky; top: 16px; }
+  }
   fieldset.mode-fields {
     border: 0;
     margin: 0;
@@ -251,439 +209,258 @@
     gap: 8px;
   }
   #ai-fields { display: block; }
-  .cmd-toolbar {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    flex-wrap: wrap;
+  .field label, .field legend, form .hero-field > label {
+    display: block;
+    margin: 0 0 6px;
+    padding: 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
+  form .hero-field > label .hint {
+    margin-left: 8px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 14px; }
+  .row > .field { flex: 1 1 220px; min-width: 0; }
+  .input-shell { position: relative; }
+  .input-icon {
+    position: absolute;
+    z-index: 1;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    font: 700 1.05rem var(--mono);
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .input-shell.multiline .input-icon { top: 14px; transform: none; }
+  input[type="text"], input[type="search"], input[type="password"], textarea, input:not([type]) {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+  }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.85; }
+  input:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; border-color: var(--focus); }
+  .input-shell textarea.hero-input { padding-left: 14px; }
+  .input-shell .hero-input { padding: 12px 14px 12px 38px; font-size: 1.05rem; border-color: var(--text); }
+  .input-shell textarea.hero-input { min-height: 104px; line-height: 1.5; resize: vertical; }
+  .suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
+  .suggestions > span { font-size: 0.8rem; color: var(--muted); margin-right: 2px; }
+  .suggestions button {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 0.82rem;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .suggestions button:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* ---- command register (Base mode) ---- */
+  .cmd-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .cmd-toolbar label { margin: 0; }
-  .cmd-count { font-size: 0.78rem; color: var(--muted); }
+  .cmd-count { font: 600 0.8rem var(--mono); color: var(--muted); }
   .link-btn {
     margin-left: auto;
     background: none;
     border: none;
-    padding: 0;
+    padding: 4px 0;
     color: var(--accent);
-    font-family: inherit;
-    font-size: 0.78rem;
-    cursor: pointer;
-  }
-  .cmd-search {
-    flex: 1 1 160px;
-    min-width: 0;
-    max-width: 240px;
-    padding: 5px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--panel-2);
-    color: var(--text);
     font: inherit;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
   }
-  .cmd-search:focus { outline: none; border-color: var(--accent); }
-  .cmd-groups { display: flex; flex-direction: column; gap: 4px; }
+  .cmd-search { flex: 1 1 160px; min-width: 0; max-width: 260px; padding: 6px 10px; font-size: 0.85rem; }
+  .cmd-groups { display: flex; flex-direction: column; padding: 2px 0; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); }
   .cmd-group { border-bottom: 1px solid var(--border); }
   .cmd-group:last-child { border-bottom: 0; }
   .cmd-group-title {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 2px;
+    padding: 9px 12px;
     margin: 0;
-    font-size: 0.72rem;
-    font-weight: 600;
-    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text);
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.06em;
     cursor: pointer;
     user-select: none;
     list-style: none;
+    min-height: 40px;
   }
   .cmd-group-title::-webkit-details-marker { display: none; }
-  /* Own disclosure triangle: the native one can't be positioned reliably. */
   .cmd-group-title::before {
-    content: "▸";
+    content: "";
     flex: none;
-    font-size: 0.7rem;
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
     transition: transform 0.15s;
   }
-  .cmd-group[open] > .cmd-group-title::before { transform: rotate(90deg); }
+  .cmd-group[open] > .cmd-group-title::before { transform: rotate(45deg); }
   .cmd-group-name { flex: 1 1 auto; }
-  .cmd-group-count {
-    flex: none;
-    font-variant-numeric: tabular-nums;
-    font-weight: 500;
-    opacity: 0.7;
-  }
-  .cmd-group-count.has-picked { color: var(--accent); opacity: 1; }
-  /* Multi-column rather than grid: a selected command grows to show its
-     parameters, and in a grid that would stretch the whole row, leaving two
-     empty cells beside it. Columns just reflow. */
-  .cmd-grid {
-    columns: 210px 3;
-    column-gap: 4px;
-    padding: 2px 0 10px;
-  }
-  .cmd {
-    break-inside: avoid;
-    margin-bottom: 4px;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    background: var(--panel-2);
-    transition: border-color 0.15s, background 0.15s;
-  }
-  .cmd:hover { border-color: var(--border); }
-  .cmd.selected { border-color: var(--accent); background: var(--accent-soft); }
-  .cmd-head {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 9px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .cmd-head input { margin: 0; flex: none; accent-color: var(--accent); }
-  .cmd-icon { flex: none; font-size: 0.9rem; }
-  .cmd-title {
-    flex: 1 1 auto;
-    min-width: 0;
-    font-weight: 500;
-    font-size: 0.82rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .cmd-group-count { flex: none; font: 600 0.78rem var(--mono); color: var(--muted); }
+  .cmd-group-count.has-picked { color: var(--accent); }
+  .cmd-grid { display: block; padding: 0 0 6px; }
+  @media (min-width: 760px) { .cmd-grid { display: block; columns: 2; column-gap: 0; } .cmd-grid .cmd { break-inside: avoid; border-left: 0; } .cmd-grid .cmd:nth-child(n) { border-top: 1px solid var(--border); } }
+  .cmd { border-top: 1px solid var(--border); }
+  .cmd:hover { background: var(--panel-2); }
+  .cmd.selected { background: var(--accent-soft); }
+  .cmd-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; user-select: none; min-height: 40px; }
+  .cmd-head input { margin: 0; flex: none; width: 16px; height: 16px; accent-color: var(--accent); }
+  .cmd-icon { display: none; }
+  .cmd-title { flex: 1 1 auto; min-width: 0; font-weight: 600; font-size: 0.9rem; }
   /* Marks a command that has parameters to set once it's selected. */
-  .cmd-gear { flex: none; font-size: 0.78rem; opacity: 0.45; line-height: 1; }
-  .cmd.selected .cmd-gear { opacity: 0; }
-  .cmd-params { display: flex; flex-direction: column; gap: 6px; padding: 0 9px 9px 31px; }
+  .cmd-gear { flex: none; font: 600 0.72rem var(--mono); color: var(--muted); }
+  .cmd-gear::after { content: "params"; }
+  .cmd-gear { font-size: 0; }
+  .cmd-gear::after { font-size: 0.72rem; }
+  .cmd.selected .cmd-gear { visibility: hidden; }
+  .cmd-params { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px 38px; }
   .param { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-  .param-name { flex: 1 1 120px; font-size: 0.8rem; }
-  .param input.param-value {
-    width: 96px;
+  .param-name { flex: 1 1 140px; font-size: 0.85rem; }
+  .param input.param-value, .param select.param-value {
     padding: 6px 8px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
     background: var(--panel);
     color: var(--text);
-    font-family: inherit;
-    font-size: 0.85rem;
+    font: inherit;
+    font-size: 0.88rem;
   }
-  .param input.param-value:disabled { opacity: 0.5; }
-  .param select.param-value {
-    padding: 6px 8px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    font-family: inherit;
-    font-size: 0.85rem;
-  }
-  .param select.param-value:disabled { opacity: 0.5; }
-  .param-all {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.75rem;
-    color: var(--muted);
-    cursor: pointer;
-  }
+  .param input.param-value { width: 100px; }
+  .param input.param-value:disabled, .param select.param-value:disabled { opacity: 0.5; }
+  .param-all { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--muted); cursor: pointer; }
   .param-all input { margin: 0; accent-color: var(--accent); }
-  form {
+
+  /* ---- run sheet ---- */
+  .run-sheet {
+    border: 1px solid var(--text);
+    border-radius: var(--radius);
     background: var(--panel);
-    border: 1px solid var(--border);
-    border-top: 0;
-    border-radius: 0 0 calc(var(--radius) + 2px) calc(var(--radius) + 2px);
-    padding: 22px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
   }
-
-  /* The two fields a search starts from (target, AI request): larger, with
-     an icon, and a gradient border + glow in the mode's accent on focus. */
-  /* "form" prefix: outranks the generic .field label rule further down. */
-  form .hero-field > label {
+  .run-sheet-title { margin: 0; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .options { display: flex; flex-direction: column; gap: 14px; }
+  .options-grid { display: flex; flex-direction: column; gap: 14px; }
+  fieldset.field { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .field-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+  .field-head legend, .field-head label { margin-bottom: 0 !important; }
+  .field-head .link-btn { margin-left: auto; }
+  .field-head .note { font-size: 0.78rem; color: var(--muted); }
+  .limit-group { display: flex; flex-wrap: wrap; gap: 0; }
+  /* Real radios, visually a segmented strip; the input stays focusable. */
+  .field .limit-pill {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    margin: 0 -1px 0 0;
+    padding: 6px 11px;
+    min-height: 36px;
+    font: 600 0.85rem var(--sans);
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--text);
-  }
-  form .hero-field > label .hint { margin-left: auto; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); }
-  .input-shell { position: relative; }
-  .input-icon {
-    position: absolute;
-    z-index: 1;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    font: 700 1.05rem var(--mono);
-    color: var(--accent);
-    pointer-events: none;
-  }
-  .input-shell.multiline .input-icon { top: 14px; transform: none; }
-  /* Scoped under .input-shell to outrank the generic input/textarea rules
-     further down the sheet. */
-  .input-shell .hero-input {
-    padding: 14px 16px 14px 42px;
-    border: 1.5px solid var(--field-border);
-    border-radius: 14px;
-    background: var(--panel);
-    font-size: 1.05rem;
-    box-shadow: 0 1px 2px rgba(20, 20, 30, 0.04);
-    transition: border-color 0.15s, box-shadow 0.2s;
-  }
-  .input-shell .hero-input::placeholder { color: var(--muted); opacity: 0.8; }
-  .input-shell .hero-input:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--field-border)); }
-  .input-shell .hero-input:focus {
-    border-color: transparent;
-    background: linear-gradient(var(--panel), var(--panel)) padding-box, var(--accent-gradient) border-box;
-    box-shadow: 0 0 0 4px var(--accent-soft), 0 12px 32px -12px var(--accent-glow);
-  }
-  .input-shell textarea.hero-input { min-height: 110px; line-height: 1.5; }
-  .suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 10px; }
-  .suggestions > span { font-size: 0.75rem; color: var(--muted); margin-right: 2px; }
-  .suggestions button {
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--panel-2);
-    color: var(--text);
-    font-family: inherit;
-    font-size: 0.78rem;
-    padding: 5px 11px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-  }
-  .suggestions button:hover, .suggestions button:focus-visible {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: var(--accent-soft);
-    outline: none;
-  }
-
-  /* Secondary settings: visually quieter than the search fields. */
-  .options {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding-top: 16px;
-    border-top: 1px dashed var(--border);
-  }
-  /* Side by side only when both pill rows fit unwrapped, else stacked. */
-  .options-grid { display: flex; flex-wrap: wrap; gap: 14px 28px; }
-  .options-grid > .field { flex: 0 1 auto; }
-  .options .field label { font-size: 0.7rem; }
-  .field label {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--muted);
-    display: block;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-  input[type="text"], textarea, input:not([type]) {
-    width: 100%;
-    padding: 11px 13px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--panel-2);
-    color: var(--text);
-    font-size: 0.95rem;
-    font-family: inherit;
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-  input:focus, textarea:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-soft);
-  }
-  textarea {
-    min-height: 88px;
-    resize: vertical;
-  }
-  .row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-  .row > .field {
-    flex: 1 1 220px;
-    min-width: 0;
-  }
-  .history-wrap { position: relative; }
-  .history-panel {
-    position: absolute;
-    z-index: 20;
-    top: calc(100% + 6px);
-    left: 0;
-    right: 0;
-    padding: 6px;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-  }
-  .history-head {
-    padding: 4px 8px 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-  .history-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    max-height: 264px;
-    overflow-y: auto;
-  }
-  .history-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 6px 6px 8px;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .history-item:hover, .history-item.active { background: var(--accent-soft); }
-  .history-item .avatar { width: 26px; height: 26px; font-size: 0.75rem; }
-  .history-name { flex: 1; min-width: 0; font-weight: 600; font-size: 0.9rem; overflow-wrap: anywhere; }
-  /* Requests can be long: two lines max in the list, the full text is
-     restored in the textarea on pick. */
-  #ai-fields .history-name {
-    font-weight: 500;
-    line-height: 1.35;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-  }
-  .history-when { flex: none; font-size: 0.75rem; color: var(--muted); }
-  .history-remove {
-    flex: none;
-    width: 26px;
-    height: 26px;
-    border: none;
-    border-radius: 50%;
+    border: 1px solid var(--rule);
     background: transparent;
-    color: var(--muted);
-    font-size: 1.1rem;
-    line-height: 1;
-    cursor: pointer;
-  }
-  .history-remove:hover, .history-remove:focus-visible { background: var(--error-soft); color: var(--error); outline: none; }
-  .limit-group {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-  }
-  .limit-pill {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.82rem;
-    color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 6px 12px;
-    cursor: pointer;
-    margin: 0;
-    transition: all 0.15s;
-    user-select: none;
-  }
-  .limit-pill input { display: none; }
-  .limit-pill.active {
-    border-color: var(--accent);
-    background: var(--accent-soft);
-    color: var(--accent);
-    font-weight: 600;
-  }
-  .toggle-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
-    color: var(--muted);
     cursor: pointer;
     user-select: none;
   }
-  .toggle-row input { width: auto; margin: 0; accent-color: var(--accent); }
+  .field .limit-pill input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .field .limit-pill:hover { background: var(--panel-2); }
+  .field .limit-pill.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); z-index: 1; }
+  .field .limit-pill:focus-within { outline: 2px solid var(--focus); outline-offset: 1px; z-index: 2; }
+  .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; color: var(--text); cursor: pointer; user-select: none; text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .toggle-row input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+  .btn-row { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
   button.primary {
-    align-self: flex-start;
-    background: var(--accent-gradient);
-    color: var(--accent-text);
-    border: none;
-    border-radius: 12px;
-    padding: 12px 26px;
-    font-size: 0.98rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
+    background: var(--text);
+    color: var(--bg);
+    border: 1px solid var(--text);
+    border-radius: var(--radius);
+    padding: 12px 22px;
+    font: 700 1rem var(--sans);
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    box-shadow: 0 8px 22px -8px var(--accent-glow);
-    transition: opacity 0.15s, transform 0.1s, box-shadow 0.2s, filter 0.2s;
+    min-height: 46px;
   }
-  button.primary:hover:not(:disabled) {
-    transform: translateY(-1px);
-    filter: brightness(1.06);
-    box-shadow: 0 12px 28px -8px var(--accent-glow);
-  }
-  button.primary:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--accent-soft), 0 8px 22px -8px var(--accent-glow); }
+  button.primary:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  button.primary:disabled { opacity: 0.6; cursor: default; }
   button.secondary {
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    border: 1px solid var(--text);
+    border-radius: var(--radius);
     background: transparent;
-    color: var(--muted);
-    font: 600 0.85rem var(--mono);
-    padding: 10px 16px;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  button.secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-  button.secondary:disabled { opacity: 0.6; cursor: default; }
-  .estimate-note { font-size: 0.78rem; color: var(--muted); }
-  .estimate-note strong { color: var(--text); }
-  .estimate-note.warn { color: var(--error); }
-  .btn-row .kbd-hint { margin-left: auto; font-size: 0.75rem; color: var(--muted); }
-  @media (max-width: 520px) { .btn-row .kbd-hint { display: none; } }
-  kbd {
-    display: inline-block;
-    padding: 1px 6px;
-    border: 1px solid var(--border);
-    border-bottom-width: 2px;
-    border-radius: 5px;
-    background: var(--panel-2);
-    font: 600 0.72rem var(--mono);
     color: var(--text);
+    font: 600 0.88rem var(--sans);
+    padding: 9px 14px;
+    cursor: pointer;
+    min-height: 40px;
   }
-  button.primary:disabled {
-    opacity: 0.65;
-    cursor: default;
-    transform: none;
-  }
-  .btn-row { display: flex; gap: 10px; align-items: center; }
+  button.secondary:hover:not(:disabled) { background: var(--accent-soft); }
+  button.secondary:disabled { opacity: 0.6; cursor: default; }
   button.stop {
     background: transparent;
     color: var(--error);
     border: 1px solid var(--error);
-    border-radius: 10px;
-    padding: 11px 18px;
-    font-size: 0.95rem;
-    font-weight: 600;
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    font: 700 0.9rem var(--sans);
     cursor: pointer;
-    transition: background 0.15s;
+    min-height: 40px;
   }
   button.stop:hover { background: var(--error-soft); }
+  /* The cost line: what this run will spend, always visible beside Run. */
+  .cost-line {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    border-top: 1px solid var(--rule);
+    padding-top: 12px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    min-height: 3.2em;
+  }
+  .cost-line strong { color: var(--text); font: 700 1.1rem var(--mono); }
+  .estimate-note { font-size: 0.85rem; color: var(--muted); }
+  .estimate-note strong { color: var(--text); }
+  .estimate-note.warn { color: var(--error); }
+  .btn-row .kbd-hint { font-size: 0.78rem; color: var(--muted); }
+  kbd {
+    display: inline-block;
+    padding: 1px 6px;
+    border: 1px solid var(--rule);
+    border-bottom-width: 2px;
+    border-radius: 3px;
+    background: var(--panel-2);
+    font: 600 0.74rem var(--mono);
+    color: var(--text);
+  }
   .spinner {
     width: 14px;
     height: 14px;
@@ -696,57 +473,141 @@
   button.primary.loading .spinner { display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  #progress-wrap { margin-top: 18px; }
-  /* The verbose log is literally CLI output - shown in a small terminal
-     matching the banner (same window chrome, colors and font). */
-  .terminal-log {
-    border: 1px solid var(--term-border);
+  /* ---- history dropdown ---- */
+  .history-wrap { position: relative; }
+  .history-panel {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    padding: 6px;
+    background: var(--panel);
+    border: 1px solid var(--text);
     border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--term-bg);
-    color: var(--term-text);
-    box-shadow: var(--shadow);
+    box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.35);
   }
-  .terminal-log .terminal-bar { padding: 7px 12px; }
-  .terminal-log .terminal-dots i { width: 10px; height: 10px; }
+  .history-head { padding: 4px 8px 6px; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .history-list { list-style: none; margin: 0; padding: 0; max-height: 264px; overflow-y: auto; }
+  .history-item { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 8px; border-radius: 3px; cursor: pointer; min-height: 40px; }
+  .history-item:hover, .history-item.active { background: var(--accent-soft); }
+  .history-item .avatar { width: 28px; height: 28px; font-size: 0.78rem; }
+  .history-name { flex: 1; min-width: 0; font-weight: 600; font-size: 0.92rem; overflow-wrap: anywhere; }
+  #ai-fields .history-name {
+    font-weight: 500;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+  .history-when { flex: none; font-size: 0.78rem; color: var(--muted); }
+  .history-remove {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .history-remove:hover, .history-remove:focus-visible { background: var(--error-soft); color: var(--error); }
+
+  /* ---- progress log: plain monospace, no window chrome ---- */
+  #progress-wrap { margin-top: 20px; }
+  .terminal-log { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); }
+  .terminal-log .terminal-bar { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .terminal-dots { display: none; }
+  .terminal-title { font: 700 0.78rem var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   #progress-list {
     list-style: none;
     margin: 0;
-    padding: 10px 14px 12px;
+    padding: 10px 12px 12px;
     display: flex;
     flex-direction: column;
     gap: 1px;
-    font: 0.76rem/1.5 var(--mono);
+    font: 0.8rem/1.5 var(--mono);
     max-height: 260px;
     overflow-y: auto;
   }
-  #progress-list li {
-    position: relative;
-    padding: 2px 0 2px 16px;
-    overflow-wrap: anywhere;
-  }
-  #progress-list li::before {
-    content: "❯";
-    position: absolute;
-    left: 0;
-    color: var(--term-accent);
-  }
-  #progress-list li.step-result { color: var(--term-dim); }
-  #progress-list li.step-result::before { color: var(--term-ok); }
-  #progress-list li.step-error { color: var(--term-err); }
-  #progress-list li.step-error::before { color: var(--term-err); }
+  #progress-list li { padding: 2px 0; overflow-wrap: anywhere; }
+  #progress-list li.step-result { color: var(--muted); }
+  #progress-list li.step-error { color: var(--error); }
 
-  #output { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
-  #output[hidden] { display: none; }
+  /* ---- results ---- */
+  #output { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
   #output-cards { display: flex; flex-direction: column; gap: 16px; }
+  /* Case line: who, via which backend, and the one File menu. */
+  .details-heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: 8px 0;
+    border-top: 2px solid var(--text);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .details-heading .n { color: var(--muted); font-family: var(--mono); }
+  .file-menu { margin-left: auto; position: relative; }
+  .file-menu > summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 12px;
+    border: 1px solid var(--text);
+    border-radius: var(--radius);
+    font: 700 0.8rem var(--sans);
+    letter-spacing: 0.04em;
+    text-transform: none;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+  }
+  .file-menu > summary::-webkit-details-marker { display: none; }
+  .file-menu > summary::after { content: ""; width: 6px; height: 6px; margin-left: 8px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); }
+  .file-menu[open] > summary { background: var(--text); color: var(--bg); }
+  .file-menu-items {
+    position: absolute;
+    z-index: 10;
+    right: 0;
+    top: calc(100% + 4px);
+    min-width: 230px;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--text);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.35);
+    padding: 4px;
+  }
+  .file-menu-items .export-btn { display: block; width: 100%; text-align: left; padding: 9px 10px; margin: 0; font: 600 0.88rem var(--sans); text-transform: none; letter-spacing: 0; color: var(--text); border-radius: 3px; min-height: 38px; }
+  .file-menu-items .export-btn:hover { background: var(--accent-soft); text-decoration: none; }
+
+  /* Run ledger: a single quiet line, not a wall of tiles. */
+  .summary-bar { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 0.82rem; color: var(--muted); }
+  .summary-tile { display: inline-flex; align-items: baseline; gap: 6px; padding: 0; background: none; border: 0; }
+  .summary-tile .n { font: 700 0.95rem var(--mono); color: var(--text); order: 0; }
+  .summary-tile .l { font: 600 0.74rem var(--sans); text-transform: uppercase; letter-spacing: 0.06em; }
+  .summary-tile.err .n { color: var(--error); }
+  .summary-tile.ok .n { color: var(--ok); }
+  .summary-tile.api .n { color: var(--accent); }
+
   .answer-card {
     background: var(--panel);
-    border: 1px solid var(--border);
+    border: 1px solid var(--text);
     border-radius: var(--radius);
     padding: 18px 20px;
-    box-shadow: var(--shadow);
-    line-height: 1.55;
-    font-size: 0.98rem;
+    line-height: 1.6;
+    font-family: var(--serif);
+    font-size: 1.08rem;
     overflow-wrap: anywhere;
   }
   .answer-card.error { border-color: var(--error); background: var(--error-soft); }
@@ -754,708 +615,544 @@
   .answer-card p:last-child { margin-bottom: 0; }
   .answer-card ul { margin: 0 0 10px; padding-left: 20px; }
   .answer-card strong { font-weight: 700; }
-
-  .summary-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .summary-tile {
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 8px 14px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 64px;
-  }
-  .summary-tile .n { font-size: 1.05rem; font-weight: 700; }
-  .summary-tile .l { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
-  .summary-tile.ok .n { color: var(--ok); }
-  .summary-tile.err .n { color: var(--error); }
-  .summary-tile.cache .n { color: var(--accent); }
-  .summary-tile.api { border-color: var(--accent); }
-  .summary-tile.api .n { color: var(--accent); }
-
-  @keyframes flash-update {
-    0% { box-shadow: 0 0 0 3px var(--accent); }
-    100% { box-shadow: var(--shadow); }
-  }
+  @keyframes flash-update { 0% { background-color: var(--accent-soft); } 100% { background-color: var(--panel); } }
   .flash-update { animation: flash-update 0.9s ease-out; }
 
-  .details-heading {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin: 4px 2px;
-  }
+  /* Exhibit: one lookup, numbered, with its source and cost. */
   .tool-card {
     background: var(--panel);
-    border: 1px solid var(--border);
+    border: 1px solid var(--rule);
     border-radius: var(--radius);
-    padding: 14px 16px;
-    box-shadow: var(--shadow);
+    padding: 0 16px 14px;
   }
   .tool-head {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    align-items: baseline;
+    gap: 8px 12px;
     flex-wrap: wrap;
+    padding: 12px 0 10px;
+    border-bottom: 1px solid var(--border);
   }
-  .tool-icon { font-size: 1.1rem; }
-  .tool-title { font-weight: 700; font-size: 0.92rem; }
-  .tool-meta { color: var(--muted); font-size: 0.78rem; }
+  .tool-icon { display: none; }
+  .acc {
+    font: 700 0.78rem var(--mono);
+    color: var(--stamp);
+    border: 1px solid var(--stamp);
+    border-radius: 3px;
+    padding: 1px 6px;
+    letter-spacing: 0.04em;
+  }
+  .tool-title { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; }
+  .tool-meta { color: var(--muted); font: 0.8rem var(--mono); }
   .badge {
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 999px;
+    font: 600 0.74rem var(--mono);
+    padding: 1px 7px;
+    border-radius: 3px;
     background: var(--panel-2);
     color: var(--muted);
     border: 1px solid var(--border);
   }
+  .tool-head .badge:first-of-type { margin-left: auto; }
+  .badge.cost { color: var(--text); }
   .badge.cache { color: var(--ok); border-color: var(--ok); }
-  .badge.err { color: var(--error); border-color: var(--error); }
-  .tool-body { margin-top: 10px; }
+  .badge.err { color: var(--bg); background: var(--error); border-color: var(--error); font-family: var(--sans); text-transform: uppercase; letter-spacing: 0.05em; }
+  .tool-body { margin-top: 12px; }
   .json-toggle {
-    font-size: 0.75rem;
+    font: inherit;
+    min-height: 36px;
+    font-size: 0.85rem;
+    font-weight: 600;
     color: var(--accent);
     cursor: pointer;
-    margin-top: 8px;
-    display: inline-block;
     background: none;
     border: none;
-    padding: 0;
-    font-family: inherit;
+    padding: 4px 0;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
   }
   pre.json {
     margin-top: 8px;
     overflow-x: auto;
     background: var(--panel-2);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius);
     padding: 10px 12px;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
   }
+  .card-actions { display: flex; align-items: center; gap: 14px; margin-top: 10px; flex-wrap: wrap; }
+  .card-actions .export-btn:first-of-type { margin-left: auto; }
+  .export-btn {
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    font: 600 0.85rem var(--sans);
+    min-height: 36px;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .export-btn:hover { text-decoration: underline; }
 
+  /* Attribute table: a ruled register, not a wall of boxes. */
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0 24px;
+    border-top: 1px solid var(--border);
   }
-  .stat-tile {
-    background: var(--panel-2);
-    border-radius: 10px;
-    padding: 10px 12px;
-  }
-  .stat-tile .k { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; }
-  .stat-tile .v { font-size: 1.05rem; font-weight: 700; margin-top: 2px; word-break: break-word; }
-  .stat-tile .v.small { font-size: 0.85rem; font-weight: 500; }
-  /* Never split a figure across two lines - it stops reading as one number. */
-  .stat-tile .v.num { word-break: normal; overflow-wrap: normal; }
-  /* Identifiers are meant to be read digit by digit and copied out. */
-  .stat-tile .v.id {
-    font-family: var(--mono);
-    font-size: 0.85rem;
-    font-weight: 500;
-    letter-spacing: -0.01em;
-    user-select: all;
-  }
-  .stat-tile a { color: var(--accent); text-decoration: none; }
+  .stat-tile { padding: 8px 0; border-bottom: 1px solid var(--border); background: none; }
+  .stat-tile .k { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-tile .v { font-size: 1.05rem; font-weight: 600; margin-top: 1px; word-break: break-word; }
+  .stat-tile .v.small { font-size: 0.9rem; font-weight: 500; }
+  .stat-tile .v.num { word-break: normal; overflow-wrap: normal; font-family: var(--mono); }
+  .stat-tile .v.id { font-family: var(--mono); font-size: 0.9rem; font-weight: 500; user-select: all; }
+  .stat-tile a { color: var(--accent); }
+  .sub-label { margin: 16px 0 6px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 
-  .user-list { display: flex; flex-direction: column; gap: 2px; max-height: 340px; overflow-y: auto; }
-  .user-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 7px 4px;
-    border-bottom: 1px solid var(--border);
-  }
-  .user-row:last-child { border-bottom: none; }
+  .user-list { display: flex; flex-direction: column; max-height: 360px; overflow-y: auto; border-top: 1px solid var(--border); }
+  .user-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border); }
   .avatar {
-    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    width: 32px; height: 32px; border-radius: var(--radius); flex: none;
     background: var(--accent-soft); color: var(--accent);
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.8rem; font-weight: 700;
-    text-decoration: none;
+    font-size: 0.82rem; font-weight: 700; text-decoration: none;
   }
-  a.avatar:hover { filter: brightness(0.95); }
   .user-info { min-width: 0; flex: 1; overflow-wrap: anywhere; }
-  .user-info .uname { font-weight: 600; font-size: 0.88rem; }
-  .user-info .fname { color: var(--muted); font-size: 0.78rem; }
+  .user-info .uname { font-weight: 600; font-size: 0.9rem; }
+  .user-info .fname { color: var(--muted); font-size: 0.82rem; }
   .user-info .fname.ctx { color: var(--accent); }
   .user-extra { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
 
-  /* Story Highlights: horizontal covers with title + count. */
-  .highlight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 12px; }
+  .highlight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 12px; }
   .highlight { text-decoration: none; color: inherit; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-  .highlight .hl-cover {
-    width: 66px; height: 66px; border-radius: 50%;
-    border: 2px solid var(--accent); padding: 2px;
-    overflow: hidden; background: var(--panel-2);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .highlight .hl-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-  .highlight .hl-title { font-size: 0.76rem; font-weight: 600; overflow-wrap: anywhere; }
-  .highlight .hl-count { font-size: 0.68rem; color: var(--muted); }
-  a.highlight:hover .hl-cover { filter: brightness(0.95); }
-
+  .highlight .hl-cover { width: 66px; height: 66px; border-radius: var(--radius); border: 1px solid var(--rule); padding: 2px; overflow: hidden; background: var(--panel-2); display: flex; align-items: center; justify-content: center; }
+  .highlight .hl-cover img { width: 100%; height: 100%; object-fit: cover; border-radius: 2px; }
+  .highlight .hl-title { font-size: 0.8rem; font-weight: 600; overflow-wrap: anywhere; }
+  .highlight .hl-count { font-size: 0.74rem; color: var(--muted); }
   .compare-section + .compare-section { margin-top: 16px; }
 
-  /* Address map (lazy-loaded Leaflet) */
   .addr-name { font-weight: 600; }
   a.pin { text-decoration: none; }
   .map-details { margin-top: 10px; }
-  .map-details > summary {
-    cursor: pointer; user-select: none; list-style: none;
-    font: 600 0.82rem var(--mono); color: var(--accent);
-  }
-  .map-details > summary::-webkit-details-marker { display: none; }
-  .map-details .map { height: 300px; margin-top: 10px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .map-details > summary { cursor: pointer; user-select: none; font: 700 0.85rem var(--sans); color: var(--accent); }
+  .map-details .map { height: 320px; margin-top: 10px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--rule); }
   .map-details .map .empty { padding: 16px; }
   .leaflet-container { font: inherit; background: var(--panel-2); }
 
   .pill-list { display: flex; flex-wrap: wrap; gap: 6px; }
-  /* Heading for a list rendered underneath a stat grid (bio links, former usernames). */
-  .sub-label {
-    margin: 14px 0 6px;
-    font-size: 0.72rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
   a.pill-list, .pill-list a.pill { text-decoration: none; }
-  .pill-list a.pill:hover { filter: brightness(1.15); text-decoration: underline; }
+  .pill-list a.pill:hover { text-decoration: underline; }
   .pill-list .pill {
     background: var(--accent-soft);
     color: var(--accent);
-    border-radius: 999px;
-    padding: 4px 10px;
-    font-size: 0.8rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    padding: 3px 9px;
+    font-size: 0.85rem;
     font-weight: 600;
     overflow-wrap: anywhere;
   }
-  .pill-list .pill .n { opacity: 0.7; font-weight: 500; margin-left: 4px; }
+  .pill-list .pill .n { color: var(--muted); font: 500 0.78rem var(--mono); margin-left: 6px; }
 
-  .addr-list, .quote-list, .comment-list { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; }
-  .addr-item { display: flex; gap: 8px; font-size: 0.88rem; }
+  .addr-list, .quote-list, .comment-list { display: flex; flex-direction: column; gap: 8px; max-height: 360px; overflow-y: auto; }
+  .addr-item { display: flex; gap: 8px; font-size: 0.9rem; }
   .addr-item .pin { flex: none; }
   .addr-item > div { min-width: 0; overflow-wrap: anywhere; }
-  .addr-item .t { color: var(--muted); font-size: 0.75rem; }
-  .quote-item {
-    background: var(--panel-2);
-    border-left: 3px solid var(--accent);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-size: 0.86rem;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-  .comment-item {
-    background: var(--panel-2);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 0.86rem;
-    overflow-wrap: anywhere;
-  }
+  .addr-item .t { color: var(--muted); font-size: 0.8rem; }
+  .quote-item { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; font-size: 0.9rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .comment-item { background: var(--panel-2); border-radius: var(--radius); padding: 8px 12px; font-size: 0.9rem; overflow-wrap: anywhere; }
   .comment-item .who { font-weight: 700; margin-right: 4px; }
 
-  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-  .gallery a {
-    display: block;
-    aspect-ratio: 1;
-    border-radius: 10px;
-    overflow: hidden;
-    background: var(--panel-2);
-  }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+  .gallery a { display: block; aspect-ratio: 1; border-radius: var(--radius); overflow: hidden; background: var(--panel-2); }
   .gallery img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  /* ---- HikerAPI balance (terminal bar) ---- */
-  .balance-chip {
-    flex: none;
-    padding: 2px 9px;
-    border: 1px solid var(--term-border);
-    border-radius: 999px;
-    font: 600 0.7rem var(--mono);
-    color: var(--term-dim);
-    white-space: nowrap;
-  }
-  .balance-chip.low { color: var(--term-err); border-color: color-mix(in srgb, var(--term-err) 45%, transparent); }
-  @media (max-width: 520px) { .balance-chip .amount { display: none; } }
-  .key-chip {
-    flex: none;
-    padding: 3px 9px;
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--term-fg) 30%, transparent);
-    background: none;
-    color: var(--term-fg);
-    font: inherit;
-    font-size: 0.72rem;
-    cursor: pointer;
-  }
-  .key-chip:hover { border-color: var(--term-fg); }
-  .key-chip.missing { color: var(--term-err); border-color: color-mix(in srgb, var(--term-err) 55%, transparent); }
-
-  .key-panel {
-    padding: 14px 18px 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--panel-2);
-  }
-  .key-panel-head { display: flex; align-items: baseline; gap: 10px; }
-  .key-panel-title { font-size: 0.8rem; font-weight: 600; }
-  .key-panel-head .link-btn { margin-left: auto; }
-  .key-panel-note { margin: 6px 0 10px; font-size: 0.8rem; color: var(--muted); }
-  .key-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .key-input {
-    flex: 1 1 260px;
-    min-width: 0;
-    padding: 9px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--panel);
-    color: var(--text);
-    font: inherit;
-    font-family: var(--mono);
-    font-size: 0.85rem;
-  }
-  .key-input:focus { outline: none; border-color: var(--accent); }
-  .key-remember { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 0.78rem; color: var(--muted); }
-  .key-remember code { font-size: 0.74rem; }
-  .key-status { margin: 10px 0 0; font-size: 0.8rem; }
-  .key-status.ok { color: var(--accent); }
-  .key-status.err { color: var(--term-err); }
-
-  /* ---- field heading with an inline action (e.g. "Clear cache") ---- */
-  .field-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
-  .field-head label { margin-bottom: 0 !important; }
-  .field-head .link-btn { margin-left: auto; }
-  .field-head .note { font-size: 0.72rem; color: var(--muted); }
-
-  /* ---- export ---- */
-  .card-actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
-  .card-actions .json-toggle { margin-top: 0; }
-  .export-btn {
-    padding: 0;
-    border: 0;
-    background: none;
-    font: 600 0.75rem var(--mono);
-    color: var(--accent);
-    cursor: pointer;
-  }
-  .card-actions .export-btn:first-of-type { margin-left: auto; }
-  .export-btn:hover, .export-btn:focus-visible { text-decoration: underline; outline: none; }
-  .details-heading { display: flex; align-items: baseline; gap: 8px; }
-  .details-heading .export-btn { margin-left: auto; text-transform: none; letter-spacing: 0; }
-
-  /* ---- posting times heatmap ---- */
-  .tz-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
+  /* ---- posting-times heatmap: one ink, intensity = share ---- */
+  .tz-toggle { display: flex; flex-wrap: wrap; gap: 0; margin: 12px 0 8px; }
   .tz-toggle button {
-    border: 1px solid var(--border);
-    border-radius: 999px;
+    border: 1px solid var(--rule);
+    margin-right: -1px;
     background: transparent;
-    color: var(--muted);
-    font: 0.72rem var(--mono);
-    padding: 3px 10px;
+    color: var(--text);
+    font: 600 0.82rem var(--sans);
+    padding: 5px 11px;
+    min-height: 32px;
     cursor: pointer;
   }
-  .tz-toggle button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .tz-toggle button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
   .heatmap-wrap { overflow-x: auto; }
   .heatmap {
     display: grid;
-    grid-template-columns: 34px repeat(24, minmax(9px, 1fr));
+    grid-template-columns: 38px repeat(24, minmax(12px, 1fr));
     gap: 2px;
-    min-width: 280px;
-    font: 0.62rem var(--mono);
+    min-width: 360px;
+    font: 0.7rem var(--mono);
     color: var(--muted);
   }
   .heatmap .hm-hour { text-align: center; }
   .heatmap .hm-day { align-self: center; }
-  .heatmap .hm-cell {
-    aspect-ratio: 1;
-    border-radius: 3px;
-    background: color-mix(in srgb, var(--accent) var(--p, 0%), var(--panel-2));
-  }
-  .heatmap-summary { margin: 10px 0 0; font-size: 0.85rem; }
+  .heatmap .hm-cell { aspect-ratio: 1; border-radius: 2px; background: color-mix(in srgb, var(--accent) var(--p, 0%), var(--panel-2)); }
+  .heatmap-summary { margin: 10px 0 0; font-size: 0.9rem; }
   .heatmap-summary strong { color: var(--accent); }
 
-  /* ---- photo descriptions ---- */
-  .tool-body .hint { margin: 6px 0 10px; font-size: 0.8rem; color: var(--muted); line-height: 1.45; }
+  .tool-body .hint { margin: 6px 0 10px; font-size: 0.85rem; color: var(--muted); line-height: 1.45; }
   .desc-list { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
   .desc-item { display: flex; gap: 12px; align-items: flex-start; }
-  .desc-item .thumb {
-    flex: none;
-    width: 56px;
-    height: 70px;
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--panel-2);
-  }
+  .desc-item .thumb { flex: none; width: 56px; height: 70px; border-radius: var(--radius); overflow: hidden; background: var(--panel-2); }
   .desc-item .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .desc-item p { margin: 0; font-size: 0.88rem; line-height: 1.45; overflow-wrap: anywhere; }
-  .desc-item .t { display: block; margin-top: 2px; font: 0.7rem var(--mono); color: var(--muted); }
+  .desc-item p { margin: 0; font-size: 0.9rem; line-height: 1.45; overflow-wrap: anywhere; }
+  .desc-item .t { display: block; margin-top: 2px; font: 0.75rem var(--mono); color: var(--muted); }
 
-  /* ---- post tile flags (collab / paid partnership) ---- */
   .post-tile .post-flags { position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; }
-  .post-tile .post-flags span {
-    font-size: 0.62rem;
-    font-weight: 700;
-    padding: 2px 5px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.55);
-  }
+  .post-tile .post-flags span { font-size: 0.68rem; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.7); }
 
-  /* ---- terminal typography ----
-     Labels, headings, counters and controls use the banner's monospace, so
-     the whole page reads as one tool; prose (descriptions, answers,
-     captions, the request itself) stays in the UI font for readability. */
-  .field label,
-  form .hero-field > label,
-  .cmd-group-title,
-  .cmd-count,
-  .link-btn,
-  .suggestions > span,
-  .limit-pill,
-  .post-filter button,
-  .history-head,
-  .details-heading,
-  .summary-tile .n,
-  .summary-tile .l,
-  .badge,
-  .tool-meta,
-  button.primary,
-  button.stop,
-  .site-footer h2 {
-    font-family: var(--mono);
-    letter-spacing: 0.02em;
-  }
-  .limit-pill { font-size: 0.74rem; }
-  .details-heading::before { content: "❯"; color: var(--accent); }
-
-  /* ---- filter box above a long list ---- */
   .filterable { display: flex; flex-direction: column; }
-  .filterable .list-filter {
-    align-self: flex-start;
-    width: min(100%, 260px);
-    margin-bottom: 8px;
-    padding: 6px 10px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: var(--panel-2);
-    color: var(--text);
-    font-family: inherit;
-    font-size: 0.82rem;
-  }
-  .filterable .list-filter-count { font: 0.72rem var(--mono); color: var(--muted); margin-bottom: 6px; }
+  .filterable .list-filter { align-self: flex-start; width: min(100%, 280px); margin-bottom: 8px; padding: 6px 10px; font-size: 0.88rem; }
+  .filterable .list-filter-count { font: 0.78rem var(--mono); color: var(--muted); margin-bottom: 6px; }
 
-  /* ---- saved searches (dossier) ---- */
-  .dossier-panel {
-    margin-top: 18px;
-    padding: 12px 16px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--panel);
-    box-shadow: var(--shadow);
-  }
-  .dossier-panel > summary {
-    cursor: pointer;
-    user-select: none;
-    list-style: none;
-    font: 600 0.82rem var(--mono);
-    color: var(--accent);
-  }
-  .dossier-panel > summary::-webkit-details-marker { display: none; }
-  .dossier-panel > summary .n { color: var(--muted); font-weight: 500; }
-  .dossier-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
+  /* ---- dossiers ---- */
+  .dossier-panel { margin-top: 20px; padding: 10px 14px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--panel); }
+  .dossier-panel > summary { cursor: pointer; user-select: none; font: 700 0.85rem var(--sans); color: var(--text); min-height: 32px; display: flex; align-items: center; }
+  .dossier-panel > summary .n { color: var(--muted); font: 500 0.82rem var(--mono); margin-left: 8px; }
+  .dossier-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .dossier-row:last-child { border-bottom: none; }
   .dossier-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .dossier-when { font: 0.72rem var(--mono); color: var(--muted); }
-  .dossier-what { font-size: 0.85rem; overflow-wrap: anywhere; }
+  .dossier-when { font: 0.78rem var(--mono); color: var(--muted); }
+  .dossier-what { font-size: 0.9rem; overflow-wrap: anywhere; }
   .dossier-row .link-btn { margin-left: 0; flex: none; }
-
-  /* ---- what changed between two dossiers ---- */
   .diff-command + .diff-command { margin-top: 14px; }
-  .diff-title { font: 700 0.8rem var(--mono); letter-spacing: 0.02em; }
-  .diff-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 0.86rem; }
+  .diff-title { font: 700 0.85rem var(--sans); }
+  .diff-list { list-style: none; margin: 6px 0 0; padding: 0; font-size: 0.9rem; }
   .diff-list li { padding: 2px 0; overflow-wrap: anywhere; }
   .diff-list .added { color: var(--ok); }
   .diff-list .removed { color: var(--error); }
   .diff-list .changed s { color: var(--muted); }
 
-  /* ---- footer ---- */
-  .site-footer {
-    margin-top: 48px;
-    padding-top: 24px;
-    border-top: 1px solid var(--border);
-    font-size: 0.8rem;
-    color: var(--muted);
-    line-height: 1.55;
-  }
-  .site-footer h2 {
-    margin: 0 0 8px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--text);
-  }
-  .site-footer a { color: var(--accent); text-decoration: none; }
-  .site-footer a:hover { text-decoration: underline; }
-  .site-footer code {
-    font: 0.74rem var(--mono);
-    padding: 1px 5px;
-    border-radius: 5px;
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    color: var(--text);
-  }
-  .disclaimer {
-    padding: 14px 16px;
-    border: 1px solid var(--warn-border);
-    border-radius: var(--radius);
-    background: var(--warn-soft);
-    color: var(--text);
-  }
+  /* ---- footer: demoted, but the security notice stays visible ---- */
+  .site-footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 0.82rem; color: var(--muted); line-height: 1.55; }
+  .site-footer h2 { margin: 0 0 8px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
+  .site-footer a { color: var(--accent); }
+  .site-footer code { font: 0.78rem var(--mono); padding: 1px 5px; border-radius: 3px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text); }
+  .disclaimer { padding: 14px 16px; border: 1px solid var(--warn-border); border-radius: var(--radius); background: var(--warn-soft); color: var(--text); }
   .disclaimer h2 { color: var(--warn); }
   .disclaimer p { margin: 0 0 8px; }
   .disclaimer .original { color: var(--muted); font-style: italic; }
   .disclaimer ul { margin: 0; padding-left: 18px; }
   .disclaimer li + li { margin-top: 3px; }
-  .footer-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
-    gap: 22px 28px;
-    margin-top: 24px;
-  }
+  .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 22px 28px; margin-top: 24px; }
   .footer-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
   .footer-list.libs li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
-  .footer-list .ver, .footer-list .lic {
-    font: 0.68rem var(--mono);
-    padding: 0 5px;
-    border-radius: 5px;
-    border: 1px solid var(--border);
-  }
-  .footer-list .ver.off { opacity: 0.7; font-style: italic; }
-  .footer-list .role { flex-basis: 100%; font-size: 0.74rem; }
-  .footer-bottom {
-    margin: 24px 0 0;
-    padding-top: 16px;
-    border-top: 1px dashed var(--border);
-    font-size: 0.74rem;
-    text-align: center;
-  }
+  .footer-list .ver, .footer-list .lic { font: 0.72rem var(--mono); padding: 0 5px; border-radius: 3px; border: 1px solid var(--border); }
+  .footer-list .ver.off { opacity: 0.8; font-style: italic; }
+  .footer-list .role { flex-basis: 100%; font-size: 0.78rem; }
+  .footer-bottom { margin: 24px 0 0; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.78rem; text-align: center; }
   .noscript { max-width: 760px; margin: 16px auto; text-align: center; color: var(--error); }
 
-  /* Post previews: collapsed under a summary card by default, built (and
-     thumbnails fetched) only the first time it's opened. */
+  /* ---- post previews ---- */
   .post-previews { margin-top: 12px; }
   .post-previews > summary {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     margin: 0;
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.88rem;
+    font-weight: 700;
     color: var(--accent);
     list-style: none;
     user-select: none;
+    min-height: 32px;
   }
   .post-previews > summary::-webkit-details-marker { display: none; }
-  .post-previews > summary::before { content: "▸"; transition: transform 0.15s; }
-  .post-previews[open] > summary::before { transform: rotate(90deg); }
-  .post-previews > summary .n { color: var(--muted); font-weight: 500; }
-  .post-filter { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .post-filter button {
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--muted);
-    font-family: inherit;
-    font-size: 0.75rem;
-    padding: 4px 10px;
-    cursor: pointer;
-  }
-  .post-filter button.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-  .post-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
-    grid-auto-flow: dense;
-    gap: 8px;
-    margin-top: 10px;
-  }
-  button.post-tile {
-    width: 100%;
-    padding: 0;
-    border: 0;
-    font: inherit;
-    cursor: pointer;
-  }
-  button.post-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  button.post-tile:hover img { transform: scale(1.04); }
-  .post-tile.expanded { box-shadow: 0 0 0 3px var(--accent); }
-  .post-slides {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-    gap: 6px;
-    padding: 8px;
-    border-radius: 10px;
-    background: var(--accent-soft);
-  }
-  .post-tile {
-    position: relative;
-    display: block;
-    aspect-ratio: 3 / 4;
-    max-width: 100%;
-    border-radius: 10px;
-    overflow: hidden;
-    background: var(--panel-2);
-    color: #fff;
-    text-decoration: none;
-  }
-  .post-tile img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.2s;
-  }
-  a.post-tile:hover img { transform: scale(1.04); }
-  a.post-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .post-tile .post-type {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    font-size: 0.68rem;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.55);
-  }
-  .post-tile .post-stats {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 2px 8px;
-    padding: 18px 8px 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-  }
+  .post-previews > summary::before { content: ""; width: 6px; height: 6px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 0.15s; }
+  .post-previews[open] > summary::before { transform: rotate(45deg); }
+  .post-previews > summary .n { color: var(--muted); font: 500 0.82rem var(--mono); }
+  .post-filter { display: flex; flex-wrap: wrap; gap: 0; margin-top: 10px; }
+  .post-filter button { border: 1px solid var(--rule); margin-right: -1px; background: transparent; color: var(--text); font: 600 0.8rem var(--sans); padding: 5px 11px; min-height: 32px; cursor: pointer; }
+  .post-filter button.active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  .post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); grid-auto-flow: dense; gap: 8px; margin-top: 10px; }
+  button.post-tile { width: 100%; padding: 0; border: 0; font: inherit; cursor: pointer; }
+  button.post-tile:hover img { transform: scale(1.03); }
+  .post-tile.expanded { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .post-slides { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 6px; padding: 8px; border-radius: var(--radius); background: var(--accent-soft); }
+  .post-tile { position: relative; display: block; aspect-ratio: 3 / 4; max-width: 100%; border-radius: var(--radius); overflow: hidden; background: var(--panel-2); color: #fff; text-decoration: none; }
+  .post-tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s; }
+  a.post-tile:hover img { transform: scale(1.03); }
+  .post-tile .post-type { position: absolute; top: 6px; right: 6px; font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 3px; background: rgba(0, 0, 0, 0.7); }
+  .post-tile .post-stats { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-wrap: wrap; gap: 2px 8px; padding: 18px 8px 6px; font: 600 0.74rem var(--mono); background: linear-gradient(transparent, rgba(0, 0, 0, 0.78)); }
   .post-tile .post-stats span { white-space: nowrap; }
-  .post-tile .post-missing {
-    display: none;
-    position: absolute;
-    inset: 0;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    color: var(--muted);
-  }
+  .post-tile .post-missing { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--muted); }
   .post-tile.broken img { display: none; }
   .post-tile.broken .post-missing { display: flex; }
 
-  /* Stories: native vertical 9:16 frame, shown whole (contain) on black. */
-  .story-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-  .story {
-    position: relative;
-    aspect-ratio: 9 / 16;
-    max-width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #000;
-  }
+  .story-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .story { position: relative; aspect-ratio: 9 / 16; max-width: 100%; border-radius: var(--radius); overflow: hidden; background: #000; }
   .story-link { display: block; width: 100%; height: 100%; }
   .story img, .story video { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .story-badge, .story-open {
-    position: absolute;
-    top: 6px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 2px 7px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    text-decoration: none;
-  }
+  .story-badge, .story-open { position: absolute; top: 6px; font-size: 0.74rem; font-weight: 700; padding: 2px 7px; border-radius: 3px; background: rgba(0, 0, 0, 0.72); color: #fff; text-decoration: none; }
   .story-badge { left: 6px; pointer-events: none; }
   .story-open { right: 6px; }
-  .story-fallback {
-    display: none;
-    position: absolute;
-    inset: 0;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px;
-    text-align: center;
-    font-size: 0.78rem;
-    color: #ccc;
-  }
+  .story-fallback { display: none; position: absolute; inset: 0; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px; text-align: center; font-size: 0.82rem; color: #ddd; }
   .story-fallback a { color: #fff; }
   .story.broken img, .story.broken video, .story.broken .story-open { display: none; }
   .story.broken .story-fallback { display: flex; }
 
-  .empty { color: var(--muted); font-size: 0.85rem; font-style: italic; }
-  details > summary { cursor: pointer; font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+  .empty { color: var(--muted); font-size: 0.9rem; font-style: italic; }
+  details > summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); margin-top: 4px; }
 
-  /* ---- standalone report ("📄 Report") ----
-     These rules ship inside the exported file (the whole stylesheet is
-     copied into it), and do nothing on the app page itself, which never
-     carries .report-page. */
+  /* ---- standalone report: these rules ship inside the exported file ---- */
   .report-page { padding: 24px 16px 60px; }
   .report-page #output { display: block; }
-  .report-header {
-    border-bottom: 2px solid var(--accent);
-    padding-bottom: 16px;
-    margin-bottom: 24px;
-  }
-  .report-header h1 {
-    font: 700 1.4rem var(--mono);
-    color: var(--accent);
-    margin: 0 0 12px;
-    letter-spacing: 0.04em;
-  }
+  .report-header { border-bottom: 2px solid var(--text); padding-bottom: 16px; margin-bottom: 24px; }
+  .report-header h1 { font: 700 1.5rem var(--sans); margin: 0 0 12px; letter-spacing: -0.01em; }
   .report-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 20px; margin: 0; }
-  .report-meta dt { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-  .report-meta dd { margin: 2px 0 0; font-size: 0.9rem; word-break: break-word; }
+  .report-meta dt { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .report-meta dd { margin: 2px 0 0; font-size: 0.92rem; word-break: break-word; }
   .report-json { margin-top: 10px; }
-  .report-footer {
-    margin-top: 40px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-    font-size: 0.78rem;
-    color: var(--muted);
-  }
+  .report-footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--rule); font-size: 0.82rem; color: var(--muted); }
   .report-footer p { margin: 6px 0; }
 
-  /* ---- print / "save as PDF" ----
-     Applies both to the app page and to the exported report, so either can be
-     printed without the form, the buttons or the live progress log. */
+
+  /* ---- colour pass: the CLI's own palette. Warm neutral grounds, the banner's
+     amber as the single action colour, and one ANSI hue per command group
+     that follows a lookup from the command list to its exhibit. ---- */
+  :root {
+    --bg: #e9e6df;
+    --panel: #f6f4ef;
+    --panel-2: #e0dcd2;
+    --field: #fbfaf7;
+    --text: #24211c;
+    --muted: #5a554b;
+    --border: #d2cdc0;
+    --rule: #b4ad9d;
+    --accent: #9a5d08;
+    --accent-soft: #f1dfbd;
+    --accent-text: #ffffff;
+    --stamp: #b23a30;
+    --error: #b23a30;
+    --error-soft: #f6dedb;
+    --ok: #3f7d3a;
+    --warn: #7a5200;
+    --warn-soft: #f6ecd2;
+    --warn-border: #d9c48c;
+    --focus: #1f5aa6;
+    --mast: #17171c;
+    --mast-text: #e6e3da;
+    --amber: #f0a830;
+    --g-profile: #2f6aa3;
+    --g-network: #1f7a72;
+    --g-content: #8a4f98;
+    --g-contacts: #b0541e;
+    --g-search: #4a7a2c;
+    --g-other: #5d6068;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1f;
+      --panel: #23232a;
+      --panel-2: #2c2c35;
+      --field: #16161b;
+      --text: #e8e6df;
+      --muted: #a5a29a;
+      --border: #34343d;
+      --rule: #484852;
+      --accent: #f0a830;
+      --accent-soft: #3a2f17;
+      --accent-text: #1a1a1f;
+      --stamp: #ff8a80;
+      --error: #ff8a80;
+      --error-soft: #3d2423;
+      --ok: #5fd6a4;
+      --warn: #f5c56b;
+      --warn-soft: #2b2415;
+      --warn-border: #55431f;
+      --focus: #8fc1ff;
+      --mast: #121216;
+      --mast-text: #e6e3da;
+      --g-profile: #7fb2e5;
+      --g-network: #6fcfc4;
+      --g-content: #c99ad6;
+      --g-contacts: #f0a060;
+      --g-search: #a2d27a;
+      --g-other: #a5a29a;
+    }
+  }
+  body { padding-top: 0; }
+  .masthead {
+    padding: 22px 0 18px;
+    border-bottom: 0;
+    background: var(--mast);
+    color: var(--mast-text);
+    box-shadow: 0 0 0 100vmax var(--mast);
+    clip-path: inset(0 -100vmax);
+    margin-bottom: 24px;
+  }
+  .mast-id h1 { color: var(--mast-text); }
+  .mast-sub { color: color-mix(in srgb, var(--mast-text) 70%, transparent); }
+  .masthead .balance-chip, .masthead .key-chip {
+    background: transparent;
+    color: var(--mast-text);
+    border-color: color-mix(in srgb, var(--mast-text) 45%, transparent);
+  }
+  .masthead .balance-chip.low { background: var(--stamp); border-color: var(--stamp); }
+  .masthead .key-chip.missing { background: var(--stamp); border-color: var(--stamp); color: #fff; }
+  .masthead .mode-switch { border-color: var(--mast-text); }
+  .masthead .mode-switch .side { color: var(--mast-text); }
+  body:not(.mode-base) .masthead .mode-switch .side-ai,
+  body.mode-base .masthead .mode-switch .side-base { background: var(--mast-text); color: var(--mast); }
+  .masthead .mode-switch:focus-within { outline-color: var(--mast-text); }
+
+  form .hero-field > label { color: var(--text); }
+  .input-shell .hero-input { background: var(--panel); border-width: 2px; }
+  .run-sheet { border: 0; padding: 0; overflow: hidden; background: var(--panel); box-shadow: 0 0 0 1px var(--rule); }
+  .run-sheet > * { margin-left: 16px; margin-right: 16px; }
+  .run-sheet > .run-sheet-title { margin: 0; padding: 10px 16px; background: var(--accent); color: var(--accent-text); letter-spacing: 0.08em; }
+  .run-sheet > .options { margin-top: 4px; }
+  .run-sheet > .cost-line { margin: 0; padding: 14px 16px 16px; background: var(--accent-soft); border-top: 1px solid var(--rule); color: var(--text); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+  button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 82%, #000); border-color: transparent; }
+  .suggestions button { background: var(--panel); }
+
+  /* group hues */
+  .cmd-group { --g: var(--g-other); }
+  .cmd-group[data-group="Profile"] { --g: var(--g-profile); }
+  .cmd-group[data-group="Network"] { --g: var(--g-network); }
+  .cmd-group[data-group="Content"] { --g: var(--g-content); }
+  .cmd-group[data-group="Contacts"] { --g: var(--g-contacts); }
+  .cmd-group[data-group^="Search"] { --g: var(--g-search); }
+  .cmd-group-title { background: color-mix(in srgb, var(--g) 16%, var(--panel)); }
+  .cmd-group-name { display: flex; align-items: center; gap: 8px; }
+  .cmd-group-name::before { content: ""; width: 12px; height: 12px; border-radius: 2px; background: var(--g); flex: none; }
+  .cmd-group-count.has-picked { color: var(--g); }
+  .cmd.selected { background: color-mix(in srgb, var(--g) 13%, var(--panel)); }
+  .cmd-head input { accent-color: var(--g); }
+
+  .tool-card { --g: var(--g-other); padding: 0; overflow: hidden; box-shadow: 0 1px 0 var(--rule); }
+  .tool-card[data-grp="profile"] { --g: var(--g-profile); }
+  .tool-card[data-grp="network"] { --g: var(--g-network); }
+  .tool-card[data-grp="content"] { --g: var(--g-content); }
+  .tool-card[data-grp="contacts"] { --g: var(--g-contacts); }
+  .tool-card[data-grp="search"] { --g: var(--g-search); }
+  .tool-head { padding: 11px 16px; border-bottom: 1px solid var(--rule); background: color-mix(in srgb, var(--g) 17%, var(--panel)); }
+  .tool-body, .card-actions, pre.json { margin-left: 16px; margin-right: 16px; }
+  .tool-body { margin-top: 14px; }
+  .card-actions { margin-bottom: 14px; }
+  .acc { background: var(--g); color: var(--panel); border-color: var(--g); }
+  .stat-grid { border-top-color: var(--rule); }
+  .stat-tile .k { color: color-mix(in srgb, var(--g) 70%, var(--text)); }
+  .pill-list .pill { background: color-mix(in srgb, var(--g) 14%, var(--panel)); color: color-mix(in srgb, var(--g) 75%, var(--text)); }
+  .heatmap .hm-cell { background: color-mix(in srgb, var(--g, var(--accent)) var(--p, 0%), var(--panel-2)); }
+  .badge.cost { background: color-mix(in srgb, var(--g) 16%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--g) 40%, var(--border)); }
+
+  /* results: a coloured case bar, a lead answer, a tinted ledger */
+  .details-heading { background: var(--accent); color: var(--accent-text); border-top: 0; padding: 10px 14px; border-radius: var(--radius); }
+  .details-heading .n { color: color-mix(in srgb, var(--accent-text) 80%, transparent); }
+  .file-menu > summary { border-color: var(--accent-text); color: var(--accent-text); }
+  .file-menu[open] > summary { background: var(--accent-text); color: var(--accent); }
+  .file-menu-items { color: var(--text); }
+  .answer-card { background: var(--accent-soft); border: 0; box-shadow: 0 0 0 1px var(--rule); border-top: 3px solid var(--accent); }
+  .answer-card.error { background: var(--error-soft); border-top-color: var(--error); }
+  .summary-bar { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); padding: 8px 14px; }
+  .dossier-panel, .key-panel { background: var(--panel); }
+  .site-footer { border-top-color: var(--rule); }
+
+
+  /* ---- terminal pass: monospace chrome, prompt glyphs, the amber banner.
+     Prose (answers, notes) stays in the sans for reading. ---- */
+  body { font-family: var(--mono); font-size: 14px; }
+  .answer-card, .quote-item, .comment-item, .desc-item p, .disclaimer, .site-footer p,
+  .site-footer li, .key-panel-note, .tool-body .hint, .addr-item, .empty, .heatmap-summary {
+    font-family: var(--sans);
+  }
+  .masthead { display: block; padding: 0 0 16px; margin-bottom: 22px; }
+  .masthead .mast-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--mast-text) 18%, transparent);
+  }
+  .mast-host { font: 600 0.82rem var(--mono); color: color-mix(in srgb, var(--mast-text) 72%, transparent); }
+  .mast-host::before { content: "●"; color: var(--ok); margin-right: 8px; font-size: 0.7rem; }
+  .masthead .ascii-logo {
+    display: block;
+    margin: 18px 0 0;
+    font-family: var(--mono);
+    --logo-cols: 71;
+    font-size: clamp(6px, calc((100vw - 80px) / (var(--logo-cols) * 0.625)), 15px);
+    line-height: 1.15;
+    min-height: calc(6 * 1.15em);
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--amber);
+  }
+  .masthead .mast-sub { margin: 10px 0 0; font: 0.82rem var(--mono); color: var(--amber); }
+  .masthead .mast-sub::before { content: "$ "; color: color-mix(in srgb, var(--mast-text) 60%, transparent); }
+
+  .field label::before, form .hero-field > label::before { content: "› "; color: var(--accent); }
+  .field .limit-pill::before, .toggle-row::before { content: none; }
+  .field legend::before { content: "› "; color: var(--accent); }
+  input[type="text"], input[type="search"], input[type="password"], textarea, input:not([type]),
+  .param input.param-value, .param select.param-value, .key-input {
+    background: var(--field);
+    font-family: var(--mono);
+    caret-color: var(--accent);
+  }
+  .input-shell .hero-input { border-color: var(--accent); }
+  .input-icon { color: var(--accent); }
+  button.primary { font-family: var(--mono); text-transform: lowercase; letter-spacing: 0.02em; }
+  button.primary .label::before { content: "▸ "; }
+  button.secondary, button.stop, .file-menu > summary { font-family: var(--mono); }
+  .cmd-group-title { font-family: var(--mono); }
+  .cmd-title { font-family: var(--mono); font-weight: 600; font-size: 0.88rem; }
+  .details-heading { font-family: var(--mono); letter-spacing: 0.04em; text-transform: none; }
+  .details-heading > span:first-child::before { content: "$ "; opacity: 0.7; }
+  .tool-title { font-family: var(--mono); font-size: 0.98rem; }
+  .acc { font-family: var(--mono); border-radius: 2px; }
+  .badge { font-family: var(--mono); }
+  .badge.cost::before { content: "["; }
+  .badge.cost::after { content: "]"; }
+  .summary-bar { font-family: var(--mono); background: var(--panel-2); border-color: var(--rule); }
+  .summary-tile .l { font-family: var(--mono); text-transform: lowercase; letter-spacing: 0; }
+  .answer-card { font-size: 1rem; }
+  .stat-tile .k, .sub-label, .run-sheet-title, .history-head, .report-meta dt { font-family: var(--mono); }
+  .stat-tile .v { font-family: var(--mono); font-size: 0.95rem; }
+  .stat-tile .v.small { font-size: 0.85rem; }
+  .cost-line, .estimate-note, .kbd-hint { font-family: var(--mono); font-size: 0.82rem; }
+  .limit-pill, .mode-switch, .tz-toggle button, .post-filter button, .export-btn, .json-toggle, .link-btn,
+  .suggestions button { font-family: var(--mono); font-size: 0.82rem; }
+  .pill-list .pill { font-family: var(--mono); font-size: 0.82rem; }
+  .user-info .uname { font-family: var(--mono); }
+  .cmd-gear::after { font-family: var(--mono); }
+  .masthead .key-chip, .masthead .balance-chip { font-family: var(--mono); }
+
+  .cmd-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .cmd-head { align-items: flex-start; }
+  .cmd-head input { margin-top: 3px; }
+  .cmd-gear { margin-top: 3px; }
+  .cmd-desc { font-family: var(--sans); font-size: 0.8rem; line-height: 1.4; color: var(--muted); font-weight: 400; }
+  @media (max-width: 520px) {
+    body { padding: 16px 12px 40px; }
+    .mast-id h1 { font-size: 1.4rem; }
+    .btn-row .kbd-hint { display: none; }
+    .balance-chip .amount { display: none; }
+    .cmd-params { padding-left: 12px; }
+  }
+  /* Motion is a single quiet cue (the flash on update); drop it entirely
+     when the system asks for less. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  }
   @media print {
-    :root { --bg: #fff; --panel: #fff; --panel-2: #fff; --text: #111; --muted: #555; --border: #bbb; }
+    :root { --bg: #fff; --panel: #fff; --panel-2: #fff; --text: #111; --muted: #555; --border: #bbb; --rule: #999; }
     body { background: #fff; color: #111; }
-    .terminal, form, .site-footer, .progress-wrap, #dossier-panel,
+    .masthead, form, .site-footer, .progress-wrap, #dossier-panel,
     .card-actions, .export-btn, .json-toggle, .post-filter, .list-filter,
-    .list-filter-count, .map-details, .mode-switch, .balance-chip { display: none !important; }
-    main, .app-window { max-width: none; margin: 0; padding: 0; border: 0; box-shadow: none; }
-    /* Keep a result and its heading on the same sheet where possible. */
+    .list-filter-count, .map-details, .file-menu, .mode-switch, .balance-chip { display: none !important; }
+    main { max-width: none; margin: 0; padding: 0; }
+    .details-heading, .answer-card, .tool-head, .summary-bar { background: #fff !important; color: #111 !important; }
     .tool-card { break-inside: avoid; border: 1px solid #bbb; }
     .stat-tile, .post-tile, .story, .user-row { break-inside: avoid; }
-    /* Paper has no hover: spell links out so a printed report stays usable. */
     .addr-list a[href]::after, .report-footer a[href]::after { content: " (" attr(href) ")"; font-size: 0.75em; word-break: break-all; }
     a { color: #111; text-decoration: underline; }
   }
@@ -1464,36 +1161,35 @@
 <body>
 <main>
   <section class="app-window">
-    <header class="terminal">
-      <div class="terminal-bar">
-        <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="terminal-title" id="terminal-title">osintgram — web</span>
-        <span class="balance-chip" id="balance-chip" hidden title="Remaining HikerAPI credit (free check, spends no requests)"></span>
-        <button type="button" class="key-chip" id="key-chip" hidden title="HikerAPI key"></button>
-        <label class="mode-switch" title="AI mode: describe your request and the model picks the commands. Base mode: you pick the commands and their parameters.">
-          <span class="side side-base">Base</span>
-          <input type="checkbox" id="ai-mode" checked>
-          <span class="track"><span class="thumb"></span></span>
-          <span class="side side-ai">AI ✨</span>
-        </label>
+    <header class="masthead">
+      <div class="mast-bar">
+        <span class="mast-host" id="terminal-title"></span>
+        <div class="mast-tools">
+          <span class="balance-chip" id="balance-chip" hidden title="Remaining HikerAPI credit (free check, spends no requests)"></span>
+          <button type="button" class="key-chip" id="key-chip" hidden title="HikerAPI key"></button>
+          <label class="mode-switch" title="AI mode: describe your request and the model picks the commands. Base mode: you pick the commands and their parameters.">
+            <span class="side side-base">Base</span>
+            <input type="checkbox" id="ai-mode" role="switch" aria-label="AI mode (off: Base mode, you pick the commands)" checked>
+            <span class="track"><span class="thumb"></span></span>
+            <span class="side side-ai">AI</span>
+          </label>
+        </div>
       </div>
-      <div class="terminal-body">
-        <h1 class="sr-only">Osintgram Web</h1>
-        <pre class="ascii-logo" id="ascii-logo" aria-hidden="true"></pre>
-        <p class="terminal-line version" id="version-line"></p>
-      </div>
+      <h1 class="sr-only">Osintgram</h1>
+      <pre class="ascii-logo" id="ascii-logo" aria-hidden="true"></pre>
+      <p class="mast-sub" id="version-line"></p>
     </header>
 
     <!-- Shown on its own only when no key is configured at all; otherwise it
-         is collapsed behind the 🔑 chip in the terminal bar. -->
+         is collapsed behind the key chip in the masthead. -->
     <section class="key-panel" id="key-panel" hidden>
       <div class="key-panel-head">
-        <span class="key-panel-title">🔑 HikerAPI key</span>
+        <span class="key-panel-title">HikerAPI key</span>
         <button type="button" class="link-btn" id="key-close" hidden>Close</button>
       </div>
       <p class="key-panel-note" id="key-note">
         A key is needed to query Instagram. Get one at
-        <a href="https://hikerapi.com" target="_blank" rel="noopener">hikerapi.com ↗</a> and paste it here.
+        <a href="https://hikerapi.com" target="_blank" rel="noopener">hikerapi.com</a> and paste it here.
       </p>
       <div class="key-row">
         <input type="password" id="key-input" class="key-input" placeholder="paste your HikerAPI key"
@@ -1522,7 +1218,6 @@
       <fieldset class="mode-fields field hero-field" id="ai-fields">
         <label for="message">Request <span class="hint">in plain language</span></label>
         <div class="input-shell multiline">
-          <span class="input-icon" aria-hidden="true">❯</span>
           <textarea class="hero-input" id="message" name="message" placeholder="What do you want to know? e.g. how many followers do they have and which hashtags do they use most?" required></textarea>
         </div>
         <div class="suggestions" id="suggestions">
@@ -1543,31 +1238,33 @@
         </div>
         <div class="cmd-groups" id="cmd-groups"><p class="empty">Loading commands...</p></div>
       </fieldset>
+      <aside class="run-sheet" aria-label="Run settings">
+      <h2 class="run-sheet-title">Run sheet</h2>
       <div class="options">
         <div class="options-grid">
-          <div class="field">
-            <label>Request limit</label>
+          <fieldset class="field">
+            <div class="field-head"><legend>Request limit</legend><span class="note">hard cap for the whole run</span></div>
             <div class="limit-group" id="limit-group">
-              <label class="limit-pill active"><input type="checkbox" class="limit-option" data-value="" checked> No limit</label>
-              <label class="limit-pill"><input type="checkbox" class="limit-option" data-value="10"> 10</label>
-              <label class="limit-pill"><input type="checkbox" class="limit-option" data-value="50"> 50</label>
-              <label class="limit-pill"><input type="checkbox" class="limit-option" data-value="100"> 100</label>
+              <label class="limit-pill active"><input type="radio" name="request-limit" class="limit-option" data-value="" checked> No limit</label>
+              <label class="limit-pill"><input type="radio" name="request-limit" class="limit-option" data-value="10"> 10</label>
+              <label class="limit-pill"><input type="radio" name="request-limit" class="limit-option" data-value="50"> 50</label>
+              <label class="limit-pill"><input type="radio" name="request-limit" class="limit-option" data-value="100"> 100</label>
             </div>
-          </div>
-          <div class="field">
+          </fieldset>
+          <fieldset class="field">
             <div class="field-head">
-              <label>Cache lifetime</label>
+              <legend>Cache lifetime</legend>
               <span class="note" id="cache-note"></span>
               <button class="link-btn" id="cache-clear" type="button">Clear cache</button>
             </div>
             <div class="limit-group" id="cache-ttl-group">
-              <label class="limit-pill active"><input type="checkbox" class="cache-ttl-option" data-value="" checked> Default</label>
-              <label class="limit-pill"><input type="checkbox" class="cache-ttl-option" data-value="3600"> 1 hour</label>
-              <label class="limit-pill"><input type="checkbox" class="cache-ttl-option" data-value="21600"> 6 hours</label>
-              <label class="limit-pill"><input type="checkbox" class="cache-ttl-option" data-value="86400"> 24 hours</label>
-              <label class="limit-pill"><input type="checkbox" class="cache-ttl-option" data-value="0"> Off</label>
+              <label class="limit-pill active"><input type="radio" name="cache-ttl" class="cache-ttl-option" data-value="" checked> Default</label>
+              <label class="limit-pill"><input type="radio" name="cache-ttl" class="cache-ttl-option" data-value="3600"> 1 hour</label>
+              <label class="limit-pill"><input type="radio" name="cache-ttl" class="cache-ttl-option" data-value="21600"> 6 hours</label>
+              <label class="limit-pill"><input type="radio" name="cache-ttl" class="cache-ttl-option" data-value="86400"> 24 hours</label>
+              <label class="limit-pill"><input type="radio" name="cache-ttl" class="cache-ttl-option" data-value="0"> Off</label>
             </div>
-          </div>
+          </fieldset>
         </div>
         <label class="toggle-row">
           <input type="checkbox" id="verbose">
@@ -1577,19 +1274,22 @@
       <div class="btn-row">
         <button class="primary" id="submit" type="submit">
           <span class="spinner"></span>
-          <span class="label">Search</span>
+          <span class="label">Run</span>
         </button>
-        <button class="stop" id="stop-btn" type="button" hidden>⏹ Stop</button>
-        <button class="secondary" id="estimate-btn" type="button" hidden
-                title="Estimate how many HikerAPI/instagrapi requests the selected commands will cost">≈ Estimate requests</button>
-        <span class="estimate-note" id="estimate-note"></span>
+        <button class="stop" id="stop-btn" type="button" hidden>Stop</button>
         <span class="kbd-hint" id="kbd-hint"></span>
       </div>
+      <div class="cost-line" aria-live="polite">
+        <span class="estimate-note" id="estimate-note"></span>
+        <button class="secondary" id="estimate-btn" type="button" hidden
+                title="Estimate how many HikerAPI/instagrapi requests the selected commands will cost. Needs the target's profile (one request, then cached).">Estimate cost</button>
+      </div>
+      </aside>
     </form>
   </section>
 
   <details class="dossier-panel" id="dossier-panel" hidden>
-    <summary>💾 Saved dossiers <span class="n" id="dossier-count"></span></summary>
+    <summary>Saved dossiers <span class="n" id="dossier-count"></span></summary>
     <div id="dossier-list"></div>
   </details>
 
@@ -1604,24 +1304,23 @@
   </div>
 
   <div id="output" hidden>
-    <div id="output-summary" class="summary-bar" hidden></div>
-    <div id="output-answer" class="answer-card"></div>
     <div id="output-details-heading" class="details-heading" hidden>Request details</div>
+    <div id="output-answer" class="answer-card"></div>
+    <div id="output-summary" class="summary-bar" hidden></div>
     <div id="output-cards"></div>
   </div>
 
   <footer class="site-footer">
     <section class="disclaimer" aria-labelledby="disclaimer-title">
-      <h2 id="disclaimer-title">⚠️ Disclaimer</h2>
+      <h2 id="disclaimer-title">Disclaimer</h2>
       <p>
-        <strong>For educational purposes only.</strong> The contributors do not assume any responsibility for the 'uso di questo strumento.
-        <span class="original" lang="en">— FOR EDUCATIONAL PURPOSE ONLY! The contributors do not assume any responsibility for the use of this tool.</span>
+        <strong>For educational purposes only.</strong> The contributors do not assume any responsibility for the use of this tool.
       </p>
       <ul>
         <li>It's advisable to <strong>non</strong> use your own personal or primary account with this tool.</li>
         <li>Never upload your credentials (<code>config/credentials.ini</code>, HikerAPI token, instagrapi session) to a public repository.</li>
         <li>The web interface <strong>has no authentication</strong>: keep it on <code>127.0.0.1</code> and do not expose it on a network without adding an authentication layer first.</li>
-        <li>Results can contain third parties' personal data: handle them in line with data-protection law (e.g. GDPR) and Instagram's Terms of 'uso di Instagram.</li>
+        <li>Results can contain third parties' personal data: handle them in line with data-protection law (e.g. GDPR) and Instagram's Terms of Use.</li>
       </ul>
     </section>
 
@@ -1631,9 +1330,9 @@
         <ul class="footer-list">
           <li><strong>Osintgram</strong> <span class="badge" id="footer-version">v–</span></li>
           <li id="footer-author">Developed by Giuseppe Criscione</li>
-          <li><a id="footer-repo" href="https://github.com/Datalux/Osintgram" target="_blank" rel="noopener">Source code on GitHub ↗</a></li>
-          <li><a id="footer-issues" href="https://github.com/Datalux/Osintgram/issues" target="_blank" rel="noopener">Report an issue ↗</a></li>
-          <li>Licence <a id="footer-license" href="https://github.com/Datalux/Osintgram/blob/master/LICENSE" target="_blank" rel="noopener">GPL-3.0 ↗</a></li>
+          <li><a id="footer-repo" href="https://github.com/Datalux/Osintgram" target="_blank" rel="noopener">Source code on GitHub</a></li>
+          <li><a id="footer-issues" href="https://github.com/Datalux/Osintgram/issues" target="_blank" rel="noopener">Report an issue</a></li>
+          <li>Licence <a id="footer-license" href="https://github.com/Datalux/Osintgram/blob/master/LICENSE" target="_blank" rel="noopener">GPL-3.0</a></li>
         </ul>
       </section>
       <section aria-labelledby="footer-libs">
@@ -1643,16 +1342,16 @@
       <section aria-labelledby="footer-data">
         <h2 id="footer-data">Data &amp; services</h2>
         <ul class="footer-list">
-          <li>Instagram data via <a href="https://hikerapi.com" target="_blank" rel="noopener">HikerAPI ↗</a> o <a href="https://github.com/subzeroid/instagrapi" target="_blank" rel="noopener">instagrapi ↗</a></li>
-          <li>Geocoding: <a href="https://nominatim.org" target="_blank" rel="noopener">Nominatim ↗</a> — data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors ↗</a>, ODbL licence</li>
-          <li id="footer-model">AI mode: local model via <a href="https://ollama.com" target="_blank" rel="noopener">Ollama ↗</a></li>
+          <li>Instagram data via <a href="https://hikerapi.com" target="_blank" rel="noopener">HikerAPI</a> or <a href="https://github.com/subzeroid/instagrapi" target="_blank" rel="noopener">instagrapi</a></li>
+          <li>Geocoding: <a href="https://nominatim.org" target="_blank" rel="noopener">Nominatim</a> — data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, ODbL licence</li>
+          <li id="footer-model">AI mode: local model via <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a></li>
         </ul>
       </section>
     </div>
 
     <p class="footer-bottom">
       © <span id="footer-year"></span> Osintgram contributors · Released under the GPL-3.0 ·
-      Instagram è un marchio di Meta Platforms, Inc.: questo progetto non è affiliato né approvato da Meta.
+      Instagram is a trademark of Meta Platforms, Inc.: this project is not affiliated with or endorsed by Meta.
     </p>
   </footer>
 </main>
@@ -1781,6 +1480,17 @@
   const getMaxItems = wirePillGroup("limit-option");
   const getCacheTtlSeconds = wirePillGroup("cache-ttl-option");
 
+  // The cost line beside Run: says what is (not) known about this run's
+  // spend. Estimating needs the target's profile (one request, then cached),
+  // so it is a button rather than something done on every keystroke.
+  function resetEstimateNote() {
+    const note = document.getElementById("estimate-note");
+    note.className = "estimate-note";
+    note.textContent = isAiMode()
+      ? "The model decides which commands run. Set a request limit to cap the spend."
+      : "Not estimated yet. Estimate cost before running a large run.";
+  }
+
   // ---- AI / Base mode switch ----
   // AI: free-text request, the local model picks which tools to run (/api/query).
   // Base: the user picks the tools and their parameters directly (/api/run).
@@ -1796,7 +1506,7 @@
   }
 
   function idleSubmitLabel() {
-    return isAiMode() ? "Search" : "Run";
+    return "Run";
   }
 
   function applyMode() {
@@ -1807,7 +1517,7 @@
     document.getElementById("kbd-hint").hidden = !ai; // the shortcut lives in the AI request field
     // Nothing to price in AI mode: the model picks the commands as it goes.
     document.getElementById("estimate-btn").hidden = ai;
-    document.getElementById("estimate-note").textContent = "";
+    resetEstimateNote();
     syncTargetRequirement();
     submitLabel.textContent = idleSubmitLabel();
     try { localStorage.setItem(MODE_STORAGE_KEY, ai ? "ai" : "base"); } catch (e) { /* storage unavailable - just don't remember */ }
@@ -1827,7 +1537,7 @@
     document.getElementById("footer-issues").href = `${data.repository}/issues`;
     const license = document.getElementById("footer-license");
     license.href = data.license.url;
-    license.textContent = `${data.license.name} ↗`;
+    license.textContent = data.license.name;
     document.getElementById("footer-libraries").innerHTML = data.libraries.map((lib) => `<li>
         <a href="${escapeHtml(lib.url)}" target="_blank" rel="noopener">${escapeHtml(lib.name)}</a>
         ${lib.version ? `<span class="ver">${escapeHtml(lib.version)}</span>` : `<span class="ver off">not installed</span>`}
@@ -1838,7 +1548,7 @@
     // visible "Built with Llama" wherever a Llama model powers a product.
     const isLlama = /^llama/i.test(data.ollama_model || "");
     document.getElementById("footer-model").innerHTML =
-      `AI mode: local model <code>${escapeHtml(data.ollama_model)}</code> via <a href="https://ollama.com" target="_blank" rel="noopener">Ollama ↗</a>` +
+      `AI mode: local model <code>${escapeHtml(data.ollama_model)}</code> via <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a>` +
       (isLlama ? ` · <strong>Built with Llama</strong>` : " · check the licence of the model you use");
   }
 
@@ -1879,7 +1589,7 @@
   function renderKeyState() {
     const { configured, preview, source, locked } = keyState;
     keyChip.hidden = false;
-    keyChip.textContent = configured ? `🔑 ${preview || "set"}` : "🔑 no key";
+    keyChip.textContent = configured ? `Key ${preview || "set"}` : "No key";
     keyChip.classList.toggle("missing", !configured);
     keyChip.title = configured
       ? `HikerAPI key da ${KEY_SOURCE_LABEL[source] || source}. Clicca per cambiarla.`
@@ -1895,7 +1605,7 @@
       keyNote.textContent = `Key active (${KEY_SOURCE_LABEL[source] || source}). Paste a new one to replace it.`;
     } else {
       keyNote.innerHTML = "A key is needed to query Instagram. Get one at "
-        + '<a href="https://hikerapi.com" target="_blank" rel="noopener">hikerapi.com ↗</a> and paste it here.';
+        + '<a href="https://hikerapi.com" target="_blank" rel="noopener">hikerapi.com</a> and paste it here.';
     }
   }
 
@@ -2071,7 +1781,7 @@
           ${avatar ? `<span class="avatar">${escapeHtml(initials(e.value))}</span>` : ""}
           <span class="history-name">${shown}</span>
           <span class="history-when">${escapeHtml(fmtWhen(e.last_searched_at))}</span>
-          <button type="button" class="history-remove" tabindex="-1" title="Rimuovi dallo storico" aria-label="Rimuovi ${shown} dallo storico">×</button>
+          <button type="button" class="history-remove" title="Remove from history" aria-label="Remove ${shown} from history">×</button>
         </li>`;
       }).join("");
       panel.hidden = false;
@@ -2191,7 +1901,7 @@
     }
   });
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-  document.getElementById("kbd-hint").innerHTML = `<kbd>${isMac ? "⌘" : "Ctrl"}</kbd> + <kbd>Invio</kbd> per cercare`;
+  document.getElementById("kbd-hint").innerHTML = `<kbd>${isMac ? "⌘" : "Ctrl"}</kbd> + <kbd>Enter</kbd> to run`;
 
   // ---- request-cost estimate (Base mode) ----
   // Only in Base mode: in AI mode the model decides which commands to run, so
@@ -2212,7 +1922,7 @@
       return;
     }
     estimateBtn.disabled = true;
-    estimateNote.textContent = "calcolo…";
+    estimateNote.textContent = "Calculating…";
     try {
       const response = await fetch("/api/estimate", {
         method: "POST",
@@ -2226,9 +1936,9 @@
         : `${fmtNumber(data.total_low)}–${fmtNumber(data.total_high)}`;
       const left = lastKnownBalance;
       const overBudget = typeof left === "number" && data.total_high > left;
-      estimateNote.innerHTML = `≈ <strong>${escapeHtml(range)}</strong> requests`
-        + (typeof left === "number" ? ` · available ${escapeHtml(fmtNumber(left))}` : "")
-        + (overBudget ? " ⚠️ may not be enough" : "");
+      estimateNote.innerHTML = `This run: ≈ <strong>${escapeHtml(range)}</strong> requests`
+        + (typeof left === "number" ? ` · ${escapeHtml(fmtNumber(left))} available` : "")
+        + (overBudget ? " · may not be enough" : "");
       estimateNote.classList.toggle("warn", overBudget);
       // Detail per command, for the curious - and to spot the expensive one.
       estimateNote.title = data.per_command
@@ -2286,7 +1996,10 @@
       <label class="cmd-head" title="${escapeHtml(hint)}">
         <input type="checkbox" class="cmd-check">
         <span class="cmd-icon">${icon}</span>
-        <span class="cmd-title">${escapeHtml(label)}</span>
+        <span class="cmd-text">
+          <span class="cmd-title">${escapeHtml(label)}</span>
+          ${hint ? `<span class="cmd-desc">${escapeHtml(hint)}</span>` : ""}
+        </span>
         ${params.length ? '<span class="cmd-gear" aria-hidden="true">⚙</span>' : ""}
       </label>
       ${params}
@@ -2418,9 +2131,7 @@
     syncCommand(cmd);
     updateCmdCount();
     // The selection changed, so any estimate on screen is stale.
-    const note = document.getElementById("estimate-note");
-    note.textContent = "";
-    note.className = "estimate-note";
+    resetEstimateNote();
   });
 
   document.getElementById("cmd-clear").addEventListener("click", () => {
@@ -2454,7 +2165,7 @@
     })
     .then(renderCommandList)
     .catch((err) => {
-      cmdGroups.innerHTML = `<p class="empty">⚠️ Could not load the command list: ${escapeHtml(err.message || String(err))}</p>`;
+      cmdGroups.innerHTML = `<p class="empty">Could not load the command list: ${escapeHtml(err.message || String(err))}</p>`;
     });
 
   // ---- stats / summary bar ----
@@ -2660,8 +2371,8 @@
       const id = `map${++mapSeq}`;
       mapStore.set(id, points);
       map = `<details class="map-details" data-map="${id}">
-        <summary>🗺️ Mostra mappa (${points.length})</summary>
-        <div class="map" aria-label="Mappa delle località"></div>
+        <summary>Show map (${points.length})</summary>
+        <div class="map" aria-label="Map of the locations"></div>
       </details>`;
     }
     return `<div class="addr-list">${rows.join("")}</div>${map}`;
@@ -2748,7 +2459,7 @@
         ${media}
         <span class="story-badge">${isVideo ? "▶ video" : "📷 photo"}</span>
         <a class="story-open" href="${url}" target="_blank" rel="noopener" title="Open in a new tab">↗</a>
-        <div class="story-fallback">Preview unavailable<a href="${url}" target="_blank" rel="noopener">Open ↗</a></div>
+        <div class="story-fallback">Preview unavailable<a href="${url}" target="_blank" rel="noopener">Open</a></div>
       </div>`;
     });
     return `<div class="story-grid">${cells.join("")}</div>`;
@@ -2823,7 +2534,7 @@
     const attrs = `class="post-tile${p.thumbnail_url ? "" : " broken"}" data-type="${escapeHtml(p.media_type)}" title="${escapeHtml(title)}"`;
     const when = date ? ` del ${escapeHtml(date)}` : "";
     if (slideCount > 0) {
-      return `<button type="button" ${attrs} data-index="${index}" aria-expanded="false" aria-label="Mostra le ${slideCount} slide del carosello${when}">${inner}</button>`;
+      return `<button type="button" ${attrs} data-index="${index}" aria-expanded="false" aria-label="Show the ${slideCount} slides of the carousel${when}">${inner}</button>`;
     }
     return p.media_url
       ? `<a ${attrs} href="${escapeHtml(p.media_url)}" target="_blank" rel="noopener" aria-label="Open ${MEDIA_NOUN[p.media_type] || "the file"} in full${when}">${inner}</a>`
@@ -2942,7 +2653,7 @@
   // keyed by an id on the card, for the timezone toggle.
   const WEEKDAYS_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const WEEKDAYS_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "ora locale";
+  const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "local time";
   const timesStore = new Map();
   let timesSeq = 0;
   const hh = (h) => String(h).padStart(2, "0");
@@ -2958,7 +2669,7 @@
     const id = `tm${++timesSeq}`;
     timesStore.set(id, result.timestamps);
     return `${tiles}<div class="posting-times" data-times="${id}">
-      <div class="tz-toggle" role="group" aria-label="Fuso orario">
+      <div class="tz-toggle" role="group" aria-label="Time zone">
         <button type="button" class="active" data-tz="local">Ora locale (${escapeHtml(LOCAL_TZ)})</button>
         <button type="button" data-tz="utc">UTC</button>
       </div>
@@ -3056,7 +2767,7 @@
         let hint = "";
         let extraClass = "";
         if (typeof v === "boolean") display = v ? "Yes" : "No";
-        else if (typeof v === "string" && /^https?:\/\//.test(v)) display = `<a href="${escapeHtml(v)}" target="_blank" rel="noopener">Open ↗</a>`;
+        else if (typeof v === "string" && /^https?:\/\//.test(v)) display = `<a href="${escapeHtml(v)}" target="_blank" rel="noopener">Open</a>`;
         else if (isIdentifier(k)) {
           // An identifier is a label, not a quantity: it must be shown whole
           // and be copy-pasteable, so no thousands separators (they'd have to
@@ -3103,7 +2814,7 @@
 
   function renderToolResult(result) {
     if (result && typeof result === "object" && !Array.isArray(result) && "error" in result) {
-      return `<p class="empty">⚠️ ${escapeHtml(result.error)}</p>`;
+      return `<p class="empty">${escapeHtml(result.error)}</p>`;
     }
     if (Array.isArray(result)) {
       if (result.length === 0) return `<p class="empty">No results.</p>`;
@@ -3135,35 +2846,45 @@
   function summarizeInput(input) {
     const entries = Object.entries(input || {});
     if (entries.length === 0) return "";
-    return entries.map(([k, v]) => `${k}=${v}`).join(", ");
+    return entries
+      .map(([k, v]) => `${PARAM_LABELS[k] || k.replace(/_/g, " ")}: ${v === null ? "all" : v}`)
+      .join(" · ");
+  }
+
+  // Which command group a lookup belongs to, as a stable slug: it picks the
+  // exhibit's hue so a result keeps the colour of the command that made it.
+  function toolGroupSlug(name) {
+    const hit = TOOL_GROUPS.find(([, names]) => names.includes(name));
+    if (!hit) return "other";
+    return hit[0].toLowerCase().split(/[ (]/)[0];
   }
 
   function renderToolCard(tc, idx) {
     const [icon, label] = TOOL_META[tc.name] || ["🔧", tc.name];
     const badges = [];
     if (tc.is_error) badges.push('<span class="badge err">error</span>');
-    if (typeof tc.elapsed_ms === "number") badges.push(`<span class="badge">⏱ ${tc.elapsed_ms} ms</span>`);
-    if (typeof tc.api_calls_delta === "number") badges.push(`<span class="badge">🌐 ${tc.api_calls_delta} API request${tc.api_calls_delta === 1 ? "" : "s"}</span>`);
+    if (typeof tc.api_calls_delta === "number") badges.push(`<span class="badge cost">${tc.api_calls_delta} request${tc.api_calls_delta === 1 ? "" : "s"}</span>`);
+    if (typeof tc.elapsed_ms === "number") badges.push(`<span class="badge">${tc.elapsed_ms} ms</span>`);
     const meta = summarizeInput(tc.input);
     const body = tc.is_error
-      ? `<p class="empty">⚠️ ${escapeHtml(tc.result && tc.result.error ? tc.result.error : JSON.stringify(tc.result))}</p>`
+      ? `<p class="empty">${escapeHtml(tc.result && tc.result.error ? tc.result.error : JSON.stringify(tc.result))}</p>`
       : renderToolResult(tc.result);
     const jsonId = `json-${idx}`;
     const mediaCount = tc.is_error ? 0 : collectMediaUrls(tc.result).length;
-    return `<div class="tool-card">
+    return `<div class="tool-card" data-grp="${toolGroupSlug(tc.name)}">
       <div class="tool-head">
-        <span class="tool-icon">${icon}</span>
+        <span class="acc" title="Exhibit number, usable to cite this result">E-${String(idx + 1).padStart(3, "0")}</span>
         <span class="tool-title">${escapeHtml(label)}</span>
         ${meta ? `<span class="tool-meta">${escapeHtml(meta)}</span>` : ""}
         ${badges.join("")}
       </div>
       <div class="tool-body">${body}</div>
       <div class="card-actions">
-        <button class="json-toggle" type="button" onclick="const el=document.getElementById('${jsonId}'); el.hidden=!el.hidden;">Show/hide JSON</button>
-        <button class="export-btn" type="button" data-card="${idx}" data-format="json" title="Download the full result as JSON">⬇ JSON</button>
-        <button class="export-btn" type="button" data-card="${idx}" data-format="csv" title="Download the result as a CSV table (comma separated)">⬇ CSV</button>
+        <button class="json-toggle" type="button" onclick="const el=document.getElementById('${jsonId}'); el.hidden=!el.hidden;">View raw JSON</button>
+        <button class="export-btn" type="button" data-card="${idx}" data-format="json" title="Download the full result as JSON">Download JSON</button>
+        <button class="export-btn" type="button" data-card="${idx}" data-format="csv" title="Download the result as a CSV table (comma separated)">Download CSV</button>
         ${mediaCount ? `<button class="export-btn" type="button" data-card="${idx}" data-format="zip"
-            title="Download the original files (photos and videos) as one zip archive">⬇ Media (${mediaCount})</button>` : ""}
+            title="Download the original files (photos and videos) as one zip archive">Media (${mediaCount})</button>` : ""}
       </div>
       <pre class="json" id="${jsonId}" hidden>${escapeHtml(JSON.stringify(tc.result, null, 2))}</pre>
     </div>`;
@@ -3385,9 +3106,8 @@
   </header>
   ${clone.outerHTML}
   <footer class="report-footer">
-    <p><strong>For educational purposes only.</strong> The contributors do not assume any responsibility for the 'uso di questo strumento.
-    <span lang="en">FOR EDUCATIONAL PURPOSE ONLY! The contributors do not assume any responsibility for the use of this tool.</span></p>
-    <p>Image previews point at Instagram's CDN with signed URLs that <strong>expire after a few hours</strong>: to keep the files themselves use "⬇ Media" on the original page. The numbers and text in this report are complete and permanent.</p>
+    <p><strong>For educational purposes only.</strong> The contributors do not assume any responsibility for the use of this tool.</p>
+    <p>Image previews point at Instagram's CDN with signed URLs that <strong>expire after a few hours</strong>: to keep the files themselves use "Media" on the original page. The numbers and text in this report are complete and permanent.</p>
     <p>Generated by <a href="https://github.com/Datalux/Osintgram">Osintgram</a>.</p>
   </footer>
 </main>
@@ -3453,15 +3173,21 @@
   }
 
   function setHeading(backend) {
-    const title = isAiMode() ? "Request details" : "Results";
-    outHeading.innerHTML = `<span>${title}${backend ? ` &middot; via ${escapeHtml(backend)}` : ""}</span>
-      <button class="export-btn" type="button" data-save-dossier title="Save this search: you can reopen it without spending requests again, and compare it with a later one">💾 Save dossier</button>
-      <button class="export-btn" type="button" data-export-all title="Download request, answer and every result as one JSON file">⬇ Export all</button>
-      <button class="export-btn" type="button" data-export-report title="Download a standalone HTML report, readable without Osintgram and printable to PDF">📄 Report</button>`;
+    const target = exportState.meta && exportState.meta.target;
+    const title = target ? `Case &middot; @${escapeHtml(target)}` : (isAiMode() ? "Request details" : "Results");
+    const when = new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    outHeading.innerHTML = `<span>${title}${backend ? ` &middot; via ${escapeHtml(backend)}` : ""} &middot; <span class="n">${escapeHtml(when)}</span></span>
+      <details class="file-menu"><summary>File</summary><div class="file-menu-items">
+        <button class="export-btn" type="button" data-save-dossier title="Save this search: you can reopen it without spending requests again, and compare it with a later one">Save dossier</button>
+        <button class="export-btn" type="button" data-export-all title="Download request, answer and every result as one JSON file">Export all (JSON)</button>
+        <button class="export-btn" type="button" data-export-report title="Download a standalone HTML report, readable without Osintgram and printable to PDF">Report (HTML / PDF)</button>
+      </div></details>`;
     outHeading.hidden = false;
     if (exportState.meta && backend) exportState.meta.backend = backend;
   }
   outHeading.addEventListener("click", (event) => {
+    const menu = event.target.closest(".file-menu");
+    if (menu && event.target.closest(".export-btn")) setTimeout(() => menu.removeAttribute("open"), 0);
     if (event.target.closest("[data-export-all]")) exportAll();
     else if (event.target.closest("[data-export-report]")) exportReport(event.target.closest("[data-export-report]"));
     else if (event.target.closest("[data-save-dossier]")) saveDossier(event.target.closest("[data-save-dossier]"));
