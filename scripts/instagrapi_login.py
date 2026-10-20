@@ -41,6 +41,9 @@ def main():
         cl.login(username, password)
     except Exception as e:
         print(f"\nLogin fallito: {e}")
+        if "out of date" in str(e).lower() or "upgrade" in str(e).lower():
+            print("\nTip: Instagram blocks direct credential login for this account/IP.")
+            print("You can log in using your browser sessionid via: python scripts/set_session.py")
         sys.exit(1)
 
     session_path = Path(DEFAULT_SESSION_PATH)

@@ -4,6 +4,7 @@
 # commit a real key by accident.
 config/*
 !config/credentials.ini.example
+credentials.ini
 
 # Collected Instagram data - third parties' personal data, never in git.
 cache/

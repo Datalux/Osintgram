@@ -149,6 +149,35 @@ def tool_specs() -> list:
     return specs
 
 
+def tools_to_openai_specs(tools: list) -> list:
+    """Convert tool functions to the OpenAI function calling schema (used by
+    LM Studio, vLLM, and other OpenAI-compatible servers)."""
+    openai_tools = []
+    for fn in tools:
+        description, param_docs = _parse_docstring(fn)
+        properties = {}
+        for name, param in inspect.signature(fn).parameters.items():
+            prop = {
+                "type": "integer" if name in _INT_PARAMS else "string",
+                "description": param_docs.get(name, ""),
+            }
+            if typing.get_origin(param.annotation) is Literal:
+                prop["enum"] = list(typing.get_args(param.annotation))
+            properties[name] = prop
+        openai_tools.append({
+            "type": "function",
+            "function": {
+                "name": fn.__name__,
+                "description": description,
+                "parameters": {
+                    "type": "object",
+                    "properties": properties,
+                },
+            },
+        })
+    return openai_tools
+
+
 def build_tools(service: OsintgramService) -> list:
     """Return the tool functions available for `service`'s target."""
 

@@ -395,7 +395,7 @@ class OsintgramService:
 
     def _require_public(self) -> None:
         self._require_target()
-        if self.is_private:
+        if self.is_private and self.backend_name != "instagrapi":
             raise PrivateProfileError(f"@{self.target} has a private profile")
 
     def _iter_items(self, api_method, results_key: str, cursor_param: str = "page_id", user_id=None):
@@ -1239,7 +1239,7 @@ class OsintgramService:
             raise OsintServiceError(f"invalid scope: {scope!r} (use followers, followings or both)")
         self._require_public()
         other = normalize_payload(self._fetch_user(other_username))
-        if other.get("is_private"):
+        if other.get("is_private") and self.backend_name != "instagrapi":
             raise PrivateProfileError(f"@{other_username} has a private profile")
         other_id = other["pk"]
 

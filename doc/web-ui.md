@@ -540,11 +540,15 @@ instagrapi when a saved session exists.
 
 | Variable | Default | What it does |
 |---|---|---|
+| `LLM_BACKEND` | `ollama` | Local LLM backend: `ollama` or `lmstudio` (OpenAI-compatible) |
 | `OLLAMA_MODEL` | `llama3.1:8b` | Any tool-calling capable model you've pulled |
 | `OLLAMA_MAX_TOKENS` | `1024` | Cap on the model's reply length |
 | `OLLAMA_NUM_CTX` | `16384` | Context window. Ollama defaults to 4096 regardless of what the model supports, which is not enough here — see below |
 | `OLLAMA_TEMPERATURE` | `0.1` | Low on purpose: picking a tool is a decision, not a creative act |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Where Ollama is listening. Read by the Ollama client itself; the Docker setup points it at your host |
+| `LMSTUDIO_HOST` / `OPENAI_BASE_URL` | `http://127.0.0.1:1234/v1` | LM Studio or OpenAI-compatible server endpoint (auto-detects Windows host in WSL) |
+| `LMSTUDIO_MODEL` | auto | Model identifier loaded in LM Studio |
+| `LMSTUDIO_API_KEY` / `OPENAI_API_KEY` | `lm-studio` | Optional API key for LM Studio or OpenAI-compatible endpoint |
 
 ---
 

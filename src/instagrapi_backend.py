@@ -78,13 +78,16 @@ class InstagrapiClient:
 
         self._cl = Client()
         self._cl.load_settings(session_file)
-        try:
-            self._cl.login(username, password)
-        except Exception as e:
-            raise InstagrapiBackendError(
-                f"instagrapi login failed using the saved session: {e}. "
-                "Re-run `python scripts/instagrapi_login.py` to refresh it."
-            ) from e
+        self._cl.username = username
+        self._cl.password = password
+        if not self._cl.user_id:
+            try:
+                self._cl.login(username, password)
+            except Exception as e:
+                raise InstagrapiBackendError(
+                    f"instagrapi login failed: {e}. "
+                    "Please update your session in config/instagrapi_session.json."
+                ) from e
 
     # ---- shape-translation helpers ----
 

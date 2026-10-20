@@ -15,12 +15,19 @@ import queue
 import re
 import threading
 import time
+import uuid
 from contextlib import contextmanager
 from importlib import metadata
 from pathlib import Path
 from typing import Callable, Iterator, Optional
 
-import ollama
+import httpx
+
+try:
+    import ollama
+except ImportError:
+    ollama = None
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -43,9 +50,82 @@ from src.osint_service import (
 )
 from src.web import cost, dossier, download, history
 from src.web.request_cache import PersistentRequestCache
-from src.web.tools import TARGET_FREE_TOOLS, build_tools, resolve_call_args, tool_specs
+from src.web.tools import (
+    TARGET_FREE_TOOLS,
+    build_tools,
+    resolve_call_args,
+    tool_specs,
+    tools_to_openai_specs,
+)
 
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
+LLM_BACKEND = os.getenv("LLM_BACKEND", "auto").lower()
+LMSTUDIO_API_KEY = os.getenv("LMSTUDIO_API_KEY", os.getenv("OPENAI_API_KEY", "lm-studio"))
+
+
+def _detect_wsl_host() -> Optional[str]:
+    try:
+        with open("/proc/version", "r") as f:
+            if "microsoft" in f.read().lower():
+                import subprocess
+                out = subprocess.check_output(["ip", "route"], text=True)
+                for line in out.splitlines():
+                    if line.startswith("default via"):
+                        return line.split()[2]
+    except Exception:
+        pass
+    return None
+
+
+def resolve_lmstudio_host() -> str:
+    explicit = os.getenv("LMSTUDIO_HOST") or os.getenv("OPENAI_BASE_URL")
+    if explicit:
+        return explicit
+    wsl_ip = _detect_wsl_host()
+    if wsl_ip:
+        try:
+            with httpx.Client(timeout=0.3) as c:
+                c.get("http://127.0.0.1:1234/v1/models")
+                return "http://127.0.0.1:1234/v1"
+        except Exception:
+            return f"http://{wsl_ip}:1234/v1"
+    return "http://127.0.0.1:1234/v1"
+
+
+def resolve_lmstudio_model(host: Optional[str] = None) -> str:
+    explicit = os.getenv("LMSTUDIO_MODEL")
+    if explicit:
+        return explicit
+    host = host or resolve_lmstudio_host()
+    try:
+        with httpx.Client(timeout=1.0) as c:
+            r = c.get(f"{host.rstrip('/')}/models")
+            if r.status_code == 200:
+                models = r.json().get("data", [])
+                for m in models:
+                    mid = m.get("id", "")
+                    if "embed" not in mid and ("qwen" in mid.lower() or "llama" in mid.lower()):
+                        return mid
+                for m in models:
+                    mid = m.get("id", "")
+                    if "embed" not in mid:
+                        return mid
+    except Exception:
+        pass
+    return "local-model"
+
+
+def resolve_llm_backend() -> str:
+    """Determine whether to use 'lmstudio' (OpenAI-compatible) or 'ollama'."""
+    backend = (os.getenv("LLM_BACKEND") or "").lower()
+    if backend in ("lmstudio", "lm_studio", "openai"):
+        return "lmstudio"
+    if backend == "ollama":
+        return "ollama"
+    if os.getenv("LMSTUDIO_HOST") or os.getenv("OPENAI_BASE_URL"):
+        return "lmstudio"
+    return "ollama"
+
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL") or "llama3.1:8b"
 OLLAMA_MAX_TOKENS = int(os.getenv("OLLAMA_MAX_TOKENS", "1024"))
 # Ollama loads a model with a 4096-token window unless told otherwise, however
 # large a context the model itself supports. That is not enough here: the 28
@@ -60,6 +140,7 @@ OLLAMA_NUM_CTX = int(os.getenv("OLLAMA_NUM_CTX", "16384"))
 # (0.8) makes an 8B model wander between plausible-looking tools and invent
 # argument values; near-zero makes the choice repeatable.
 OLLAMA_TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.1"))
+
 MAX_TOOL_TURNS = 8
 # Every ollama.chat() call re-sends and reprocesses the full message history
 # (no server-side prompt caching like the Anthropic API) - a large tool
@@ -404,6 +485,8 @@ def _run_agent_events(
         {"role": "user", "content": user_message},
     ]
 
+    backend = resolve_llm_backend()
+
     for _ in range(MAX_TOOL_TURNS):
         # Streamed so the final answer appears word by word instead of after a
         # silence: on a local 8B model writing a paragraph takes seconds, and
@@ -411,28 +494,132 @@ def _run_agent_events(
         # own chunks, so they are simply collected until the turn ends.
         content_parts: list = []
         tool_calls: list = []
-        for chunk in ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=messages,
-            tools=tools,
-            stream=True,
-            options={
-                "num_predict": OLLAMA_MAX_TOKENS,
-                "num_ctx": OLLAMA_NUM_CTX,
+
+        if backend == "lmstudio":
+            lm_host = resolve_lmstudio_host()
+            lm_model = resolve_lmstudio_model(lm_host)
+            openai_tools = tools_to_openai_specs(tools)
+            payload = {
+                "model": lm_model,
+                "messages": messages,
+                "tools": openai_tools,
+                "stream": True,
                 "temperature": OLLAMA_TEMPERATURE,
-            },
-        ):
-            piece = chunk.message
-            if piece.content:
-                content_parts.append(piece.content)
-                yield {"type": "answer_delta", "text": piece.content}
-            if piece.tool_calls:
-                tool_calls.extend(piece.tool_calls)
+                "max_tokens": OLLAMA_MAX_TOKENS,
+            }
+            headers = {
+                "Authorization": f"Bearer {LMSTUDIO_API_KEY}",
+                "Content-Type": "application/json",
+            }
+            url = f"{lm_host.rstrip('/')}/chat/completions"
+            tool_calls_acc: dict = {}
+            with httpx.Client(timeout=180.0) as http_client:
+                with http_client.stream("POST", url, json=payload, headers=headers) as resp:
+                    resp.raise_for_status()
+                    for line in resp.iter_lines():
+                        if not line or not line.startswith("data: "):
+                            continue
+                        data_str = line[6:].strip()
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(data_str)
+                        except Exception:
+                            continue
+                        choices = chunk.get("choices") or []
+                        if not choices:
+                            continue
+                        delta = choices[0].get("delta", {})
+                        if delta.get("content"):
+                            text = delta["content"]
+                            content_parts.append(text)
+                            yield {"type": "answer_delta", "text": text}
+                        if delta.get("tool_calls"):
+                            for tc in delta["tool_calls"]:
+                                idx = tc.get("index", 0)
+                                if idx not in tool_calls_acc:
+                                    tool_calls_acc[idx] = {
+                                        "id": tc.get("id") or f"call_{idx}_{uuid.uuid4().hex[:6]}",
+                                        "name": "",
+                                        "arguments": "",
+                                    }
+                                if tc.get("id"):
+                                    tool_calls_acc[idx]["id"] = tc["id"]
+                                fn = tc.get("function") or {}
+                                if fn.get("name"):
+                                    tool_calls_acc[idx]["name"] += fn["name"]
+                                if fn.get("arguments"):
+                                    tool_calls_acc[idx]["arguments"] += fn["arguments"]
+
+            for idx in sorted(tool_calls_acc.keys()):
+                raw = tool_calls_acc[idx]
+                args = {}
+                if raw["arguments"]:
+                    try:
+                        args = json.loads(raw["arguments"])
+                    except Exception:
+                        args = {}
+                tool_calls.append({
+                    "id": raw["id"],
+                    "name": raw["name"],
+                    "arguments": args,
+                })
+        else:
+            if ollama is None:
+                raise RuntimeError(
+                    "The `ollama` Python package is not installed. Either install it, "
+                    "or set LLM_BACKEND=lmstudio to use LM Studio instead."
+                )
+            for chunk in ollama.chat(
+                model=OLLAMA_MODEL,
+                messages=messages,
+                tools=tools,
+                stream=True,
+                options={
+                    "num_predict": OLLAMA_MAX_TOKENS,
+                    "num_ctx": OLLAMA_NUM_CTX,
+                    "temperature": OLLAMA_TEMPERATURE,
+                },
+            ):
+                piece = chunk.message
+                if piece.content:
+                    content_parts.append(piece.content)
+                    yield {"type": "answer_delta", "text": piece.content}
+                if piece.tool_calls:
+                    for tc in piece.tool_calls:
+                        tool_calls.append({
+                            "id": getattr(tc, "id", None) or f"call_{len(tool_calls)}_{uuid.uuid4().hex[:6]}",
+                            "name": tc.function.name,
+                            "arguments": dict(tc.function.arguments or {}),
+                        })
 
         content = "".join(content_parts)
-        msg = {"role": "assistant", "content": content}
-        if tool_calls:
-            msg["tool_calls"] = tool_calls
+        if backend == "lmstudio":
+            if tool_calls:
+                msg = {
+                    "role": "assistant",
+                    "content": content or None,
+                    "tool_calls": [
+                        {
+                            "id": tc["id"],
+                            "type": "function",
+                            "function": {
+                                "name": tc["name"],
+                                "arguments": json.dumps(tc["arguments"]),
+                            },
+                        }
+                        for tc in tool_calls
+                    ],
+                }
+            else:
+                msg = {"role": "assistant", "content": content}
+        else:
+            msg = {"role": "assistant", "content": content}
+            if tool_calls:
+                msg["tool_calls"] = [
+                    {"function": {"name": tc["name"], "arguments": tc["arguments"]}}
+                    for tc in tool_calls
+                ]
         messages.append(msg)
 
         if not tool_calls:
@@ -442,12 +629,20 @@ def _run_agent_events(
             return
 
         for call in tool_calls:
-            name = call.function.name
+            name = call["name"]
             result, parsed_result, is_error = yield from _execute_tool_events(
-                service, name, dispatch.get(name), dict(call.function.arguments or {}), max_items, emit_live
+                service, name, dispatch.get(name), dict(call["arguments"] or {}), max_items, emit_live
             )
             model_facing_result = result if is_error else _truncate_for_model(parsed_result)
-            messages.append({"role": "tool", "tool_name": name, "content": model_facing_result})
+            if backend == "lmstudio":
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": call["id"],
+                    "name": name,
+                    "content": model_facing_result,
+                })
+            else:
+                messages.append({"role": "tool", "tool_name": name, "content": model_facing_result})
 
     # The loop ran out of turns with the model still asking for tools. Say so
     # plainly: the results it did collect are on screen either way.
@@ -479,7 +674,10 @@ def _profile_facts(service: OsintgramService) -> str:
         if isinstance(user.get(key), int):
             bits.append(f"{user[key]} {label}")
     if user.get("is_private"):
-        bits.append("the profile is PRIVATE, so any tool needing a public one will refuse")
+        if service.backend_name == "instagrapi":
+            bits.append("the profile is private on Instagram, but you can still call tools if the authenticated user follows it")
+        else:
+            bits.append("the profile is PRIVATE, so any tool needing a public one will refuse")
     else:
         bits.append("the profile is public")
     for key in ("is_verified", "is_business"):
@@ -615,17 +813,35 @@ def _run_safe_events(make_events: Callable[[Callable[[dict], None]], Iterator[di
                 q.put(event)
         except QueryCancelledError:
             pass  # the user stopped the search - nothing left to report
+        except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+            q.put({
+                "type": "error",
+                "detail": (
+                    f"Cannot reach LM Studio at {resolve_lmstudio_host()}: {e}. Make sure LM Studio "
+                    f"is running and the local server is started (default port 1234)."
+                ),
+            })
+        except httpx.HTTPStatusError as e:
+            q.put({
+                "type": "error",
+                "detail": f"LM Studio returned HTTP {e.response.status_code}: {e.response.text[:200]}",
+            })
+        except httpx.HTTPError as e:
+            q.put({"type": "error", "detail": f"LM Studio communication error: {e}"})
         except ConnectionError as e:
             q.put({
                 "type": "error",
                 "detail": (
-                    f"Cannot reach Ollama: {e}. Make sure it is running "
-                    f"(`ollama serve`) and that the model has been pulled "
-                    f"(`ollama pull {OLLAMA_MODEL}`)."
+                    f"Cannot reach LLM service: {e}. If using Ollama, make sure it is running "
+                    f"(`ollama serve`) and that the model has been pulled (`ollama pull {OLLAMA_MODEL}`). "
+                    f"If using LM Studio, ensure the local server is running at {resolve_lmstudio_host()}."
                 ),
             })
-        except ollama.ResponseError as e:
-            q.put({"type": "error", "detail": f"Ollama error: {e}"})
+        except Exception as e:
+            if ollama and isinstance(e, getattr(ollama, "ResponseError", ())):
+                q.put({"type": "error", "detail": f"Ollama error: {e}"})
+            else:
+                q.put({"type": "error", "detail": f"LLM error: {e}"})
         finally:
             q.put(_SENTINEL)
 
@@ -658,6 +874,7 @@ THIRD_PARTY = [
     ("hikerapi", "backend Instagram (HikerAPI)", "https://hikerapi.com"),
     ("instagrapi", "backend Instagram alternativo", "https://github.com/subzeroid/instagrapi"),
     ("ollama", "local model client", "https://github.com/ollama/ollama-python"),
+    ("httpx", "HTTP & LM Studio client", "https://www.python-httpx.org"),
     ("geopy", "geocodifica inversa (Nominatim)", "https://github.com/geopy/geopy"),
 ]
 
@@ -678,6 +895,8 @@ def _library_credit(dist: str, role: str, url: str) -> dict:
 def about():
     """The header's logo and version line (the CLI's own src/artwork.py) and
     the footer's project/credits info."""
+    backend = resolve_llm_backend()
+    active_model = resolve_lmstudio_model() if backend == "lmstudio" else OLLAMA_MODEL
     return {
         "logo": artwork.ascii_art,
         "version": artwork.version,
@@ -687,7 +906,8 @@ def about():
         "libraries": [_library_credit(*lib) for lib in THIRD_PARTY],
         # Shown in the footer's attribution: the model's own license terms
         # apply on top of Ollama's (e.g. "Built with Llama" for Llama models).
-        "ollama_model": OLLAMA_MODEL,
+        "ollama_model": active_model,
+        "llm_backend": backend,
     }
 
 

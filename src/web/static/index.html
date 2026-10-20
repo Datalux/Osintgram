@@ -1547,8 +1547,11 @@
     // Models have their own licenses - e.g. Meta's Llama license asks for a
     // visible "Built with Llama" wherever a Llama model powers a product.
     const isLlama = /^llama/i.test(data.ollama_model || "");
+    const providerLink = data.llm_backend === "lmstudio"
+      ? '<a href="https://lmstudio.ai" target="_blank" rel="noopener">LM Studio</a>'
+      : '<a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a>';
     document.getElementById("footer-model").innerHTML =
-      `AI mode: local model <code>${escapeHtml(data.ollama_model)}</code> via <a href="https://ollama.com" target="_blank" rel="noopener">Ollama</a>` +
+      `AI mode: local model <code>${escapeHtml(data.ollama_model)}</code> via ${providerLink}` +
       (isLlama ? ` · <strong>Built with Llama</strong>` : " · check the licence of the model you use");
   }
 
