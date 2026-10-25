@@ -137,7 +137,7 @@ def test_media_pk_from_code_is_a_free_local_decode_on_instagrapi():
 
 def test_get_post_comments_works_end_to_end_on_the_instagrapi_backend():
     """Exercises the real call path: OsintgramService -> InstagrapiClient ->
-    the (faked) instagrapi Client, resolving a shortcode then paging comments -
+    the (faked) instagrapi Client, decoding a shortcode then paging comments -
     not just the adapter's two new methods in isolation."""
     # Duck-typed the way InstagrapiClient._comment_to_dict reads a comment:
     # user_id comes from comment.user.pk, not a user_id field on the comment.
@@ -153,7 +153,7 @@ def test_get_post_comments_works_end_to_end_on_the_instagrapi_backend():
     service = OsintgramService(None, _client(fake))
     result = service.get_post_comments("B1LbfVPlwIA")
     assert result == [{"post_id": "2110901750722920960", "user_id": "9", "username": "anna", "comment": "nice shot"}]
-    assert ("pk_from_code", "B1LbfVPlwIA") in fake.calls
+    assert not any(call[0].startswith("pk_from") for call in fake.calls)  # decoded locally
     # The bare pk (no owner suffix) is what reaches media_comments_chunk -
     # instagrapi's own media_id() upgrades it internally if it needs to.
     assert ("comments", "2110901750722920960", None) in fake.calls

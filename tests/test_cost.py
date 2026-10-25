@@ -48,12 +48,13 @@ def test_compare_scope_halves_the_cost():
     assert one_side[1] < both[1]
 
 
-def test_post_comments_charges_one_extra_for_resolving_a_url_or_shortcode():
+def test_post_comments_costs_no_extra_for_a_url_or_shortcode_but_one_for_a_share_link():
     raw_id = est("get_post_comments", {"post": "123_456"})
     shortcode = est("get_post_comments", {"post": "B1LbfVPlwIA"})
-    url = est("get_post_comments", {"post": "https://www.instagram.com/p/B1LbfVPlwIA/"})
-    assert shortcode == url
-    assert shortcode[0] == raw_id[0] + 1 and shortcode[1] == raw_id[1] + 1
+    url = est("get_post_comments", {"post": "https://www.instagram.com/reel/B1LbfVPlwIA/?igsh=x"})
+    share = est("get_post_comments", {"post": "https://www.instagram.com/share/reel/BAbCdEfGh/"})
+    assert shortcode == url == raw_id  # decoded locally
+    assert share[0] == raw_id[0] + 1 and share[1] == raw_id[1] + 1
 
 
 def test_post_comments_scales_with_limit():

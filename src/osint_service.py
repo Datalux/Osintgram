@@ -879,30 +879,66 @@ class OsintgramService:
     # the bare numeric pk, or "<pk>_<owner pk>". Accepted as-is, no lookup.
     _RAW_MEDIA_ID = re.compile(r"^\d+(_\d+)?$")
 
+    # The shortcode in a post/reel URL: /p/CODE, /reel/CODE, /reels/CODE or
+    # /tv/CODE, optionally behind the owner's username (/user/reel/CODE) and
+    # followed by a query string (?igsh=...), a fragment or a trailing slash.
+    _POST_PATH = re.compile(r"/(?:p|reel|reels|tv)/([A-Za-z0-9_-]{6,})")
+    _BARE_SHORTCODE = re.compile(r"^[A-Za-z0-9_-]{6,}$")
+    _SHORTCODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+    @classmethod
+    def _shortcode_from(cls, value: str) -> Optional[str]:
+        """The shortcode inside a post/reel URL or path fragment, or None
+        (e.g. a /share/ short link, which only the backend can follow)."""
+        value = value.split("?", 1)[0].split("#", 1)[0]
+        if "/share/" in value:
+            return None  # a short link: its shortcode is not the post's
+        found = cls._POST_PATH.search(value)
+        if found:
+            return found.group(1)
+        if value.startswith(("http://", "https://")):
+            return None
+        # A bare shortcode, or one with stray slashes around it
+        # ("p/Cx.../", a path fragment rather than a full URL).
+        code = value.strip("/").rsplit("/", 1)[-1]
+        return code if cls._BARE_SHORTCODE.match(code) else None
+
+    @classmethod
+    def _pk_from_shortcode(cls, code: str) -> str:
+        """A shortcode is the media pk written in base 64 (first 11 characters;
+        a longer code carries a private-post suffix). Decoded locally: no
+        request, on any backend."""
+        pk = 0
+        for char in code[:11]:
+            pk = pk * 64 + cls._SHORTCODE_ALPHABET.index(char)
+        return str(pk)
+
     def _resolve_media_id(self, post: str) -> str:
         """A post/reel given as a URL, a shortcode, or a raw id already seen
         elsewhere (e.g. a previous command's "id" field) - whichever is more
-        convenient to have in hand. Resolving a URL or shortcode is a real
-        lookup on HikerAPI (one request); instagrapi decodes a shortcode
-        locally - the pk is encoded in it, no request spent."""
+        convenient to have in hand. A URL or shortcode is decoded locally, no
+        request spent; only a /share/ short link needs the backend to follow
+        it."""
         value = (post or "").strip()
         if not value:
             raise OsintServiceError("Specify a post/reel URL, shortcode or id.")
         if self._RAW_MEDIA_ID.match(value):
             return value
-        is_url = value.startswith(("http://", "https://"))
+        code = self._shortcode_from(value)
+        if code:
+            return self._pk_from_shortcode(code)
+        if not value.startswith(("http://", "https://")):
+            raise OsintServiceError(
+                f"Could not recognise {post!r} as a post. Use the post or reel URL "
+                "(instagram.com/p/... or instagram.com/reel/...), its shortcode, or its numeric id.")
         try:
-            if is_url:
-                resolved = self.api.media_pk_from_url_v1(value)
-            else:
-                # A bare shortcode, or one with stray slashes around it
-                # ("p/Cx.../", a path fragment rather than a full URL).
-                code = value.strip("/").rsplit("/", 1)[-1]
-                resolved = self.api.media_pk_from_code_v1(code)
+            resolved = self.api.media_pk_from_url_v1(value)
         except RequestLimitReachedError:
             raise
         except Exception as e:
-            raise OsintServiceError(f"Could not resolve {post!r} to a post: {e}") from e
+            raise OsintServiceError(
+                f"Could not resolve {post!r} to a post: {e}. Try the post's own URL "
+                "(instagram.com/p/... or instagram.com/reel/...) instead of a share link.") from e
         # Documented as a bare string on both backends; a dict is handled too
         # in case a future client version wraps it.
         resolved = normalize_payload(resolved)
