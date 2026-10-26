@@ -290,27 +290,44 @@ def test_get_post_comments_accepts_a_raw_id_with_no_resolution_call():
     assert not any(call[0].startswith("pk_from") for call in client.calls)  # no resolution spent
 
 
-def test_get_post_comments_resolves_a_shortcode():
-    client = SearchClient(resolved_pk="2110901750722920960", comment_pages=[_comment_page(["ciao"])])
+def test_get_post_comments_decodes_a_shortcode_locally():
+    client = SearchClient(comment_pages=[_comment_page(["ciao"])])
     result = OsintgramService(None, client).get_post_comments("B1LbfVPlwIA")
     assert [c["comment"] for c in result] == ["ciao"]
-    assert ("pk_from_code", "B1LbfVPlwIA") in client.calls
     assert ("comments", "2110901750722920960", "") in client.calls
+    assert not any(call[0].startswith("pk_from") for call in client.calls)  # no resolution spent
 
 
-def test_get_post_comments_resolves_a_full_url():
+@pytest.mark.parametrize("ref", [
+    "https://www.instagram.com/p/B1LbfVPlwIA/",
+    "https://www.instagram.com/reel/B1LbfVPlwIA/",
+    "https://www.instagram.com/reel/B1LbfVPlwIA/?igsh=MXRhbGxhbA%3D%3D",
+    "https://www.instagram.com/reels/B1LbfVPlwIA/",
+    "https://www.instagram.com/some.user/reel/B1LbfVPlwIA/",
+    "https://instagram.com/p/B1LbfVPlwIA?utm_source=ig_web_copy_link#top",
+    "  https://www.instagram.com/tv/B1LbfVPlwIA/  ",
+    "instagram.com/reel/B1LbfVPlwIA/",
+])
+def test_get_post_comments_accepts_post_and_reel_url_formats(ref):
+    client = SearchClient(comment_pages=[_comment_page(["ciao"])])
+    result = OsintgramService(None, client).get_post_comments(ref)
+    assert [c["comment"] for c in result] == ["ciao"]
+    assert ("comments", "2110901750722920960", "") in client.calls
+    assert not any(call[0].startswith("pk_from") for call in client.calls)
+
+
+def test_get_post_comments_uses_the_backend_only_for_a_share_link():
     client = SearchClient(resolved_pk="2110901750722920960", comment_pages=[_comment_page(["ciao"])])
-    url = "https://www.instagram.com/p/B1LbfVPlwIA/"
+    url = "https://www.instagram.com/share/reel/BAbCdEfGh/"
     result = OsintgramService(None, client).get_post_comments(url)
     assert [c["comment"] for c in result] == ["ciao"]
     assert ("pk_from_url", url) in client.calls
-    assert not any(call[0] == "pk_from_code" for call in client.calls)
 
 
 def test_get_post_comments_strips_a_trailing_slash_from_a_bare_shortcode():
-    client = SearchClient(resolved_pk="42", comment_pages=[_comment_page(["x"])])
+    client = SearchClient(comment_pages=[_comment_page(["x"])])
     OsintgramService(None, client).get_post_comments("p/B1LbfVPlwIA/")
-    assert ("pk_from_code", "B1LbfVPlwIA") in client.calls
+    assert ("comments", "2110901750722920960", "") in client.calls
 
 
 def test_get_post_comments_requires_an_input():
@@ -318,10 +335,15 @@ def test_get_post_comments_requires_an_input():
         OsintgramService(None, SearchClient()).get_post_comments("")
 
 
-def test_get_post_comments_reports_an_unresolvable_input():
+def test_get_post_comments_reports_an_unrecognisable_input():
+    with pytest.raises(OsintServiceError, match="Could not recognise"):
+        OsintgramService(None, SearchClient()).get_post_comments("not a post!")
+
+
+def test_get_post_comments_reports_an_unresolvable_share_link():
     client = SearchClient(resolved_pk="not-a-number")
     with pytest.raises(OsintServiceError):
-        OsintgramService(None, client).get_post_comments("not-a-real-shortcode")
+        OsintgramService(None, client).get_post_comments("https://www.instagram.com/share/reel/BAbCdEfGh/")
 
 
 def test_get_post_comments_respects_the_limit_without_extra_pages():

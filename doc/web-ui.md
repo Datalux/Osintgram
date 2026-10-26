@@ -333,13 +333,14 @@ With only these selected the username field stops being required, and the label
 says so.
 
 **On "Post comments":** `post` takes whatever's easiest to have in hand — the
-post/reel's full Instagram URL, its shortcode (the part after `/p/` or
-`/reel/` in the URL), or a raw id you already have from an earlier result
-(e.g. a post preview's `"id"` field — pasting that back in skips resolving it
-again). On HikerAPI, resolving a URL or shortcode costs one extra request;
-pasting a raw id doesn't. On instagrapi it's free either way — the pk is
-encoded in the shortcode itself, decoded locally with no request to
-Instagram.
+post/reel's full Instagram URL (`/p/`, `/reel/`, `/reels/` or `/tv/`, with or
+without a username in front, and with or without trailing parameters such as
+`?igsh=...`), its shortcode (the part after `/p/` or `/reel/` in the URL), or a
+raw id you already have from an earlier result (e.g. a post preview's `"id"`
+field). The shortcode is the post's id written in base 64, so it is decoded
+locally: resolving it costs no request, on either backend. The one exception
+is a `/share/...` short link, which only Instagram can follow: that costs one
+request on HikerAPI. If one fails, paste the post's own URL instead.
 
 ---
 
