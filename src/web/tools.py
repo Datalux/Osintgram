@@ -177,19 +177,19 @@ def build_tools(service: OsintgramService) -> list:
         and a year."""
         return _call(service.get_account_about)
 
-    def get_followers(limit: Optional[int] = 200) -> str:
+    def get_followers(limit: Optional[int] = None) -> str:
         """List the target's followers (id, username, full name).
 
         Args:
-            limit: Maximum number of followers to return.
+            limit: Maximum number of followers to return (omit for all / no limit).
         """
         return _call(service.get_followers, limit=limit)
 
-    def get_followings(limit: Optional[int] = 200) -> str:
+    def get_followings(limit: Optional[int] = None) -> str:
         """List accounts the target follows (id, username, full name).
 
         Args:
-            limit: Maximum number of followed accounts to return.
+            limit: Maximum number of followed accounts to return (omit for all / no limit).
         """
         return _call(service.get_followings, limit=limit)
 

@@ -244,14 +244,58 @@ class InstagrapiClient:
         }
 
     def user_followers_g2(self, user_id, page_id: Optional[str] = None) -> dict:
-        users, cursor = self._cl.user_followers_v1_chunk(str(user_id), max_amount=50, max_id=page_id or "")
+        import time, random
+        if page_id:
+            # Human pacing to avoid Instagram burst rate limits
+            time.sleep(random.uniform(1.2, 2.5))
+        try:
+            # Modern private GraphQL endpoint - mirrors official mobile app and avoids feedback_required
+            users, cursor = self._cl.user_followers_private_gql_chunk(
+                str(user_id), max_amount=50, max_id=page_id or None
+            )
+        except Exception as e_gql:
+            err_str = str(e_gql).lower()
+            if "private" in err_str or "not authorized" in err_str or "forbidden" in err_str:
+                raise RuntimeError("Profile is private and the logged-in session does not follow it") from e_gql
+            # Fallback to v1 chunk
+            try:
+                users, cursor = self._cl.user_followers_v1_chunk(
+                    str(user_id), max_amount=50, max_id=page_id or ""
+                )
+            except Exception as e:
+                err_str = str(e).lower()
+                if "private" in err_str or "not authorized" in err_str or "forbidden" in err_str:
+                    raise RuntimeError("Profile is private and the logged-in session does not follow it") from e
+                raise e_gql from e
         return {
             "response": {"users": [self._short_user_to_dict(u) for u in users]},
             "next_page_id": cursor or None,
         }
 
     def user_following_g2(self, user_id, page_id: Optional[str] = None) -> dict:
-        users, cursor = self._cl.user_following_v1_chunk(str(user_id), max_amount=50, max_id=page_id or "")
+        import time, random
+        if page_id:
+            # Human pacing to avoid Instagram burst rate limits
+            time.sleep(random.uniform(1.2, 2.5))
+        try:
+            # Modern private GraphQL endpoint - mirrors official mobile app and avoids feedback_required
+            users, cursor = self._cl.user_following_private_gql_chunk(
+                str(user_id), max_amount=50, max_id=page_id or None
+            )
+        except Exception as e_gql:
+            err_str = str(e_gql).lower()
+            if "private" in err_str or "not authorized" in err_str or "forbidden" in err_str:
+                raise RuntimeError("Profile is private and the logged-in session does not follow it") from e_gql
+            # Fallback to v1 chunk
+            try:
+                users, cursor = self._cl.user_following_v1_chunk(
+                    str(user_id), max_amount=50, max_id=page_id or ""
+                )
+            except Exception as e:
+                err_str = str(e).lower()
+                if "private" in err_str or "not authorized" in err_str or "forbidden" in err_str:
+                    raise RuntimeError("Profile is private and the logged-in session does not follow it") from e
+                raise e_gql from e
         return {
             "response": {"users": [self._short_user_to_dict(u) for u in users]},
             "next_page_id": cursor or None,

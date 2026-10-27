@@ -395,8 +395,8 @@ class OsintgramService:
 
     def _require_public(self) -> None:
         self._require_target()
-        if self.is_private:
-            raise PrivateProfileError(f"@{self.target} has a private profile")
+        # Allow requests to proceed: if the logged-in session has access (owns or follows the account),
+        # Instagram's API will return the data. If not authorized, the API call itself will fail.
 
     def _iter_items(self, api_method, results_key: str, cursor_param: str = "page_id", user_id=None):
         """Yield a user's items page by page, normalized (see normalize_payload).
@@ -410,6 +410,7 @@ class OsintgramService:
         """
         subject = self.target_id if user_id is None else user_id
         next_page_id = None
+        collected_count = 0
         while True:
             try:
                 result = api_method(subject, **({cursor_param: next_page_id} if next_page_id else {}))
@@ -419,7 +420,18 @@ class OsintgramService:
                 # the whole tool call; a shorter-than-asked-for list is still
                 # a valid, usable answer, not an error.
                 return
-            yield from normalize_payload(result.get("response", {}).get(results_key, []))
+            except Exception as e:
+                err_lower = str(e).lower()
+                # If Instagram throttles with feedback_required, rate limit, or 429 mid-scan:
+                # return what we already fetched rather than crashing and losing everything!
+                if collected_count > 0 and ("feedback_required" in err_lower or "429" in err_lower or "rate limit" in err_lower or "too many" in err_lower):
+                    return
+                if "feedback_required" in err_lower:
+                    raise OsintServiceError("Instagram applied a temporary action block (feedback_required). Please wait before making more requests.") from e
+                raise
+            items = list(normalize_payload(result.get("response", {}).get(results_key, [])))
+            collected_count += len(items)
+            yield from items
             next_page_id = result.get("next_page_id")
             if not next_page_id:
                 return
@@ -659,12 +671,12 @@ class OsintgramService:
             info["former_usernames_count"] = 0
         return info
 
-    def get_followers(self, limit: Optional[int] = 200) -> list:
+    def get_followers(self, limit: Optional[int] = None) -> list:
         self._require_public()
         users = self._paginate(self.api.user_followers_g2, "users", limit=limit)
         return [self._summarize_user(u) for u in users]
 
-    def get_followings(self, limit: Optional[int] = 200) -> list:
+    def get_followings(self, limit: Optional[int] = None) -> list:
         self._require_public()
         users = self._paginate(self.api.user_following_g2, "users", limit=limit)
         return [self._summarize_user(u) for u in users]
@@ -1187,8 +1199,6 @@ class OsintgramService:
             raise OsintServiceError(f"invalid scope: {scope!r} (use followers, followings or both)")
         self._require_public()
         other = normalize_payload(self._fetch_user(other_username))
-        if other.get("is_private"):
-            raise PrivateProfileError(f"@{other_username} has a private profile")
         other_id = other["pk"]
 
         def common(mine, theirs):
