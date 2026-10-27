@@ -1024,11 +1024,151 @@
   .key-input:focus { outline: none; border-color: var(--accent); }
   .key-remember { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 0.78rem; color: var(--muted); }
   .key-remember code { font-size: 0.74rem; }
-  .ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 10px; }
-  .ai-field { display: flex; flex-direction: column; gap: 4px; }
-  .ai-field label { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-  .ai-model-box { display: flex; gap: 6px; }
-  .ai-bottom-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .ai-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    transition: all 0.15s ease;
+  }
+  .ai-chip:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  #ai-panel {
+    padding: 16px 20px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+  .ai-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px 18px;
+    margin: 12px 0 16px;
+  }
+  .ai-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .ai-field label {
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .ai-input {
+    width: 100%;
+    height: 38px;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.83rem;
+    line-height: normal;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ai-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  select.ai-input {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .ai-model-box {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+  }
+  .ai-model-box .ai-input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .ai-btn-sm {
+    height: 38px;
+    padding: 0 13px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font: 600 0.8rem var(--mono);
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+  }
+  .ai-btn-sm:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .ai-btn-sm:disabled { opacity: 0.5; cursor: default; }
+
+  .ai-bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .ai-actions-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ai-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .ai-save-btn {
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 9px;
+    background: var(--accent-gradient);
+    color: var(--accent-text);
+    border: none;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px -4px var(--accent-glow);
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ai-save-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px -4px var(--accent-glow);
+  }
+  .ai-save-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+  .ai-status-badge {
+    font-size: 0.8rem;
+    font-family: var(--mono);
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ai-status-badge.ok { color: var(--ok); }
+  .ai-status-badge.err { color: var(--error); }
   .key-status { margin: 10px 0 0; font-size: 0.8rem; }
   .key-status.ok { color: var(--accent); }
   .key-status.err { color: var(--term-err); }
@@ -1514,8 +1654,8 @@
     <!-- AI Settings Panel -->
     <section class="key-panel" id="ai-panel" hidden>
       <div class="key-panel-head">
-        <span class="key-panel-title">🤖 AI Provider & Model Settings</span>
-        <button type="button" class="link-btn" id="ai-close">Close</button>
+        <span class="key-panel-title">🤖 AI Provider &amp; Model Settings</span>
+        <button type="button" class="link-btn" id="ai-close">✕ Close</button>
       </div>
       <p class="key-panel-note" id="ai-note">
         Configure the local AI engine (LM Studio or Ollama) that interprets queries and selects OSINT tools in AI mode.
@@ -1523,36 +1663,41 @@
       <div class="ai-grid">
         <div class="ai-field">
           <label for="ai-provider">Provider</label>
-          <select id="ai-provider" class="key-input">
+          <select id="ai-provider" class="ai-input">
             <option value="lmstudio">LM Studio (OpenAI API)</option>
             <option value="ollama">Ollama</option>
           </select>
         </div>
         <div class="ai-field">
           <label for="ai-url">Endpoint URL</label>
-          <input type="text" id="ai-url" class="key-input" placeholder="http://127.0.0.1:1234/v1" autocomplete="off">
+          <input type="text" id="ai-url" class="ai-input" placeholder="http://127.0.0.1:1234/v1" autocomplete="off" spellcheck="false">
         </div>
         <div class="ai-field">
           <label for="ai-model">Model</label>
           <div class="ai-model-box">
-            <input type="text" id="ai-model" class="key-input" placeholder="e.g. qwen3.5-4b" autocomplete="off">
-            <select id="ai-model-select" class="key-input" style="display:none;"></select>
-            <button type="button" class="secondary" id="ai-fetch-models" title="Query server for loaded models">Fetch</button>
+            <input type="text" id="ai-model" class="ai-input" placeholder="e.g. qwen3.5-4b" autocomplete="off" spellcheck="false">
+            <select id="ai-model-select" class="ai-input" style="display:none;"></select>
+            <button type="button" class="ai-btn-sm" id="ai-fetch-models" title="Query server for loaded models">🔄 Fetch</button>
           </div>
         </div>
         <div class="ai-field">
           <label for="ai-key">API Key (optional)</label>
-          <input type="password" id="ai-key" class="key-input" placeholder="optional (e.g. lm-studio)" autocomplete="off">
+          <input type="password" id="ai-key" class="ai-input" placeholder="optional (e.g. lm-studio)" autocomplete="off">
         </div>
       </div>
       <div class="ai-bottom-row">
-        <button type="button" class="secondary" id="ai-test">Test Connection</button>
-        <button type="button" class="secondary" id="ai-save" style="border-color: var(--accent); color: var(--accent);">Save & Apply</button>
-        <label class="key-remember" style="margin-top:0;">
-          <input type="checkbox" id="ai-remember" checked> Remember in <code>config/credentials.ini</code>
-        </label>
+        <div class="ai-actions-left">
+          <button type="button" class="ai-btn-sm" id="ai-test">⚡ Test Connection</button>
+          <button type="button" class="ai-save-btn" id="ai-save">✓ Save &amp; Apply</button>
+          <label class="key-remember" style="margin-top:0;">
+            <input type="checkbox" id="ai-remember" checked>
+            <span>Remember in <code>config/credentials.ini</code></span>
+          </label>
+        </div>
+        <div class="ai-actions-right">
+          <p class="ai-status-badge" id="ai-status" hidden></p>
+        </div>
       </div>
-      <p class="key-status" id="ai-status" hidden></p>
     </section>
 
     <form id="query-form">
@@ -2019,7 +2164,7 @@
 
   function setAiStatus(text, kind) {
     aiStatus.textContent = text;
-    aiStatus.className = `key-status${kind ? ` ${kind}` : ""}`;
+    aiStatus.className = `ai-status-badge${kind ? ` ${kind}` : ""}`;
     aiStatus.hidden = !text;
   }
 
