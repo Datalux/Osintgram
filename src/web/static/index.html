@@ -1024,6 +1024,11 @@
   .key-input:focus { outline: none; border-color: var(--accent); }
   .key-remember { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 0.78rem; color: var(--muted); }
   .key-remember code { font-size: 0.74rem; }
+  .ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 10px; }
+  .ai-field { display: flex; flex-direction: column; gap: 4px; }
+  .ai-field label { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .ai-model-box { display: flex; gap: 6px; }
+  .ai-bottom-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
   .key-status { margin: 10px 0 0; font-size: 0.8rem; }
   .key-status.ok { color: var(--accent); }
   .key-status.err { color: var(--term-err); }
@@ -1470,6 +1475,7 @@
         <span class="terminal-title" id="terminal-title">osintgram — web</span>
         <span class="balance-chip" id="balance-chip" hidden title="Remaining HikerAPI credit (free check, spends no requests)"></span>
         <button type="button" class="key-chip" id="key-chip" hidden title="HikerAPI key"></button>
+        <button type="button" class="key-chip ai-chip" id="ai-chip" title="AI Settings">⚙️ <span id="ai-chip-label">AI: Local</span></button>
         <label class="mode-switch" title="AI mode: describe your request and the model picks the commands. Base mode: you pick the commands and their parameters.">
           <span class="side side-base">Base</span>
           <input type="checkbox" id="ai-mode" checked>
@@ -1503,6 +1509,50 @@
       <label class="key-remember"><input type="checkbox" id="key-remember" checked>
         Remember in <code>config/credentials.ini</code> (the same key also works for the CLI)</label>
       <p class="key-status" id="key-status" hidden></p>
+    </section>
+
+    <!-- AI Settings Panel -->
+    <section class="key-panel" id="ai-panel" hidden>
+      <div class="key-panel-head">
+        <span class="key-panel-title">🤖 AI Provider & Model Settings</span>
+        <button type="button" class="link-btn" id="ai-close">Close</button>
+      </div>
+      <p class="key-panel-note" id="ai-note">
+        Configure the local AI engine (LM Studio or Ollama) that interprets queries and selects OSINT tools in AI mode.
+      </p>
+      <div class="ai-grid">
+        <div class="ai-field">
+          <label for="ai-provider">Provider</label>
+          <select id="ai-provider" class="key-input">
+            <option value="lmstudio">LM Studio (OpenAI API)</option>
+            <option value="ollama">Ollama</option>
+          </select>
+        </div>
+        <div class="ai-field">
+          <label for="ai-url">Endpoint URL</label>
+          <input type="text" id="ai-url" class="key-input" placeholder="http://127.0.0.1:1234/v1" autocomplete="off">
+        </div>
+        <div class="ai-field">
+          <label for="ai-model">Model</label>
+          <div class="ai-model-box">
+            <input type="text" id="ai-model" class="key-input" placeholder="e.g. qwen3.5-4b" autocomplete="off">
+            <select id="ai-model-select" class="key-input" style="display:none;"></select>
+            <button type="button" class="secondary" id="ai-fetch-models" title="Query server for loaded models">Fetch</button>
+          </div>
+        </div>
+        <div class="ai-field">
+          <label for="ai-key">API Key (optional)</label>
+          <input type="password" id="ai-key" class="key-input" placeholder="optional (e.g. lm-studio)" autocomplete="off">
+        </div>
+      </div>
+      <div class="ai-bottom-row">
+        <button type="button" class="secondary" id="ai-test">Test Connection</button>
+        <button type="button" class="secondary" id="ai-save" style="border-color: var(--accent); color: var(--accent);">Save & Apply</button>
+        <label class="key-remember" style="margin-top:0;">
+          <input type="checkbox" id="ai-remember" checked> Remember in <code>config/credentials.ini</code>
+        </label>
+      </div>
+      <p class="key-status" id="ai-status" hidden></p>
     </section>
 
     <form id="query-form">
@@ -1950,6 +2000,149 @@
   keyInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") { event.preventDefault(); document.getElementById("key-save").click(); }
   });
+
+  // ---- AI Settings panel & state ----
+  const aiChip = document.getElementById("ai-chip");
+  const aiChipLabel = document.getElementById("ai-chip-label");
+  const aiPanel = document.getElementById("ai-panel");
+  const aiClose = document.getElementById("ai-close");
+  const aiProvider = document.getElementById("ai-provider");
+  const aiUrl = document.getElementById("ai-url");
+  const aiModel = document.getElementById("ai-model");
+  const aiModelSelect = document.getElementById("ai-model-select");
+  const aiKey = document.getElementById("ai-key");
+  const aiFetchBtn = document.getElementById("ai-fetch-models");
+  const aiTestBtn = document.getElementById("ai-test");
+  const aiSaveBtn = document.getElementById("ai-save");
+  const aiStatus = document.getElementById("ai-status");
+  const aiRemember = document.getElementById("ai-remember");
+
+  function setAiStatus(text, kind) {
+    aiStatus.textContent = text;
+    aiStatus.className = `key-status${kind ? ` ${kind}` : ""}`;
+    aiStatus.hidden = !text;
+  }
+
+  function updateAiModelOptions(models, currentModel) {
+    if (!models || models.length === 0) {
+      aiModelSelect.style.display = "none";
+      aiModel.style.display = "";
+      return;
+    }
+    aiModelSelect.innerHTML = models.map((m) => `<option value="${escapeHtml(m)}"${m === currentModel ? " selected" : ""}>${escapeHtml(m)}</option>`).join("");
+    aiModelSelect.style.display = "";
+    aiModel.style.display = "none";
+    aiModel.value = currentModel || models[0];
+  }
+
+  aiModelSelect.addEventListener("change", () => {
+    aiModel.value = aiModelSelect.value;
+  });
+
+  async function loadAiSettings() {
+    try {
+      const resp = await fetch("/api/ai/settings");
+      if (!resp.ok) return;
+      const data = await resp.json();
+      aiProvider.value = data.provider === "ollama" ? "ollama" : "lmstudio";
+      aiUrl.value = data.base_url || "";
+      aiModel.value = data.model || "";
+      if (data.api_key_preview) {
+        aiKey.placeholder = `current: ${data.api_key_preview}`;
+      }
+      aiChipLabel.textContent = `AI: ${data.provider.toUpperCase()} (${data.model || "active"})`;
+      aiChip.classList.toggle("missing", !data.connected);
+      if (data.models && data.models.length) {
+        updateAiModelOptions(data.models, data.model);
+      }
+    } catch (e) {
+      aiChipLabel.textContent = "AI Settings";
+    }
+  }
+
+  aiChip.addEventListener("click", () => {
+    aiPanel.hidden = !aiPanel.hidden;
+    if (!aiPanel.hidden) loadAiSettings();
+  });
+  aiClose.addEventListener("click", () => { aiPanel.hidden = true; });
+
+  aiProvider.addEventListener("change", () => {
+    const isOllama = aiProvider.value === "ollama";
+    aiUrl.placeholder = isOllama ? "http://127.0.0.1:11434" : "http://127.0.0.1:1234/v1";
+    if (!aiUrl.value || aiUrl.value.includes("1234") || aiUrl.value.includes("11434")) {
+      aiUrl.value = aiUrl.placeholder;
+    }
+  });
+
+  aiFetchBtn.addEventListener("click", async () => {
+    const provider = aiProvider.value;
+    const baseUrl = aiUrl.value.trim() || aiUrl.placeholder;
+    const apiKey = aiKey.value.trim();
+    aiFetchBtn.disabled = true;
+    setAiStatus("Fetching models…");
+    try {
+      const query = new URLSearchParams({ provider, base_url: baseUrl, api_key: apiKey });
+      const resp = await fetch(`/api/ai/models?${query}`);
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+      updateAiModelOptions(data.models, aiModel.value);
+      setAiStatus(`✓ Found ${data.models.length} models.`, "ok");
+    } catch (err) {
+      setAiStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      aiFetchBtn.disabled = false;
+    }
+  });
+
+  aiTestBtn.addEventListener("click", async () => {
+    aiTestBtn.disabled = true;
+    setAiStatus("Testing connection…");
+    try {
+      const provider = aiProvider.value;
+      const baseUrl = aiUrl.value.trim() || aiUrl.placeholder;
+      const apiKey = aiKey.value.trim();
+      const query = new URLSearchParams({ provider, base_url: baseUrl, api_key: apiKey });
+      const resp = await fetch(`/api/ai/models?${query}`);
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+      setAiStatus(`✓ Connected to ${provider.toUpperCase()} (${data.models.length} model(s) available).`, "ok");
+      updateAiModelOptions(data.models, aiModel.value);
+    } catch (err) {
+      setAiStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      aiTestBtn.disabled = false;
+    }
+  });
+
+  aiSaveBtn.addEventListener("click", async () => {
+    const provider = aiProvider.value;
+    const baseUrl = aiUrl.value.trim() || aiUrl.placeholder;
+    const model = (aiModelSelect.style.display !== "none" ? aiModelSelect.value : aiModel.value).trim();
+    const apiKey = aiKey.value.trim();
+    const remember = aiRemember.checked;
+
+    aiSaveBtn.disabled = true;
+    setAiStatus("Saving and verifying…");
+    try {
+      const resp = await fetch("/api/ai/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, base_url: baseUrl, model, api_key: apiKey, remember }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+      aiChipLabel.textContent = `AI: ${data.provider.toUpperCase()} (${data.model})`;
+      aiChip.classList.toggle("missing", !data.connected);
+      setAiStatus(`✓ Active model: ${data.model}${data.saved ? " (saved to credentials.ini)" : ""}.`, "ok");
+      loadAbout();
+    } catch (err) {
+      setAiStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      aiSaveBtn.disabled = false;
+    }
+  });
+
+  loadAiSettings();
 
   // ---- HikerAPI balance (terminal bar) ----
   // HikerAPI doesn't bill this lookup, so it's refreshed on load and after

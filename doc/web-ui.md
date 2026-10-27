@@ -35,10 +35,10 @@ your computer is the request to the Instagram data backend.
 |---|---|---|
 | Python 3.10+ with `requirements.txt` | everything | the floor FastAPI and uvicorn require |
 | A **data backend** | everything | HikerAPI key (paid, recommended) or an instagrapi login — see [Setup](#22-choose-a-data-backend) |
-| **Ollama** + a tool-calling model | AI mode only | Base mode works without it |
+| **Local AI backend** (LM Studio / Ollama) | AI mode only | Base mode works without it |
 | A browser | everything | any modern one |
 
-Base mode needs no Ollama at all. If you don't want to run a local LLM, skip
+Base mode needs no AI model at all. If you don't want to run a local LLM, skip
 step 2.3 and use Base mode — every command is available there.
 
 ---
@@ -111,10 +111,22 @@ Both backends run every command except **"Suggested profiles"** and
 instead of returning an empty result. "Profile info" works on both, though
 instagrapi exposes a slightly smaller field set.
 
-### 2.3 Install Ollama (AI mode only)
+### 2.3 Set up a local model (AI mode only)
 
-1. Install [Ollama](https://ollama.com/download) and make sure it's running
-   (`ollama serve`; on macOS and Windows it starts on its own after install).
+If you're using Base mode, you can skip this entirely.
+
+You can use either **LM Studio** (OpenAI-compatible) or **Ollama**:
+
+#### Option A: LM Studio (Recommended)
+1. Download and run [LM Studio](https://lmstudio.ai/).
+2. Load a model that supports tool calling / function calling (e.g. `qwen2.5-7b-instruct`, `qwen3.5-4b`, `llama-3.1-8b-instruct`).
+3. Start the **Local Server** (default: `http://127.0.0.1:1234/v1`).
+4. In the Osintgram web UI, click the **⚙️ AI Settings** chip in the header:
+   - Select Provider: **LM Studio (OpenAI API)**
+   - Click **Fetch** to see your loaded models, pick one, and click **Save & Apply**.
+
+#### Option B: Ollama
+1. Install [Ollama](https://ollama.com/download) and make sure it's running (`ollama serve`).
 2. Pull a model that supports tool calling:
 
 ```bash
@@ -122,9 +134,7 @@ ollama pull llama3.1:8b     # ~4.7 GB, the default
 ollama pull qwen2.5:7b      # a solid alternative
 ```
 
-Pick a different one with `export OLLAMA_MODEL=qwen2.5:7b`. The model must
-support tool calling — one that doesn't will answer from thin air instead of
-running commands.
+Select **Ollama** in the web UI **⚙️ AI Settings** panel or configure `config/credentials.ini`.
 
 **Give it enough context.** Ollama loads every model with a 4096-token window
 unless told otherwise, however large a context the model itself advertises.
@@ -528,13 +538,16 @@ instagrapi when a saved session exists.
 
 ### AI mode
 
-| Variable | Default | What it does |
+Settings can be changed dynamically from the web UI header (⚙️ button) or in `config/credentials.ini` under `[AI]`:
+
+| Setting / Env Var | Default | What it does |
 |---|---|---|
-| `OLLAMA_MODEL` | `llama3.1:8b` | Any tool-calling capable model you've pulled |
-| `OLLAMA_MAX_TOKENS` | `1024` | Cap on the model's reply length |
-| `OLLAMA_NUM_CTX` | `16384` | Context window. Ollama defaults to 4096 regardless of what the model supports, which is not enough here — see below |
-| `OLLAMA_TEMPERATURE` | `0.1` | Low on purpose: picking a tool is a decision, not a creative act |
-| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Where Ollama is listening. Read by the Ollama client itself; the Docker setup points it at your host |
+| `provider` / `LLM_PROVIDER` | `lmstudio` | AI backend provider (`lmstudio` or `ollama`) |
+| `base_url` / `LLM_BASE_URL` | `http://127.0.0.1:1234/v1` | Endpoint URL (for LM Studio/OpenAI or Ollama) |
+| `model` / `LLM_MODEL` / `OLLAMA_MODEL` | `qwen3.5-4b` | Active model identifier |
+| `api_key` / `LLM_API_KEY` | *(empty)* | Optional API key for OpenAI-compatible proxies |
+| `OLLAMA_NUM_CTX` | `16384` | Context window when using Ollama |
+| `OLLAMA_TEMPERATURE` | `0.1` | Temperature for tool picking |
 
 ---
 

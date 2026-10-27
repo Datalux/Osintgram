@@ -44,6 +44,7 @@ from src.osint_service import (
 from src.web import cost, dossier, download, history
 from src.web.request_cache import PersistentRequestCache
 from src.web.tools import TARGET_FREE_TOOLS, build_tools, resolve_call_args, tool_specs
+from src.web.llm_client import fetch_available_models, resolve_llm_info, run_llm_chat, save_ai_config, set_runtime_ai_config
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 OLLAMA_MAX_TOKENS = int(os.getenv("OLLAMA_MAX_TOKENS", "1024"))
@@ -404,35 +405,36 @@ def _run_agent_events(
         # silence: on a local 8B model writing a paragraph takes seconds, and
         # a frozen page reads as a hung tool. Tool calls arrive whole in their
         # own chunks, so they are simply collected until the turn ends.
-        content_parts: list = []
-        tool_calls: list = []
-        for chunk in ollama.chat(
-            model=OLLAMA_MODEL,
+        llm_info = resolve_llm_info()
+        chat_gen = run_llm_chat(
+            provider=llm_info["provider"],
+            model=llm_info["model"],
             messages=messages,
             tools=tools,
-            stream=True,
             options={
                 "num_predict": OLLAMA_MAX_TOKENS,
                 "num_ctx": OLLAMA_NUM_CTX,
                 "temperature": OLLAMA_TEMPERATURE,
             },
-        ):
-            piece = chunk.message
-            if piece.content:
-                content_parts.append(piece.content)
-                yield {"type": "answer_delta", "text": piece.content}
-            if piece.tool_calls:
-                tool_calls.extend(piece.tool_calls)
+            lmstudio_url=llm_info.get("base_url", "http://127.0.0.1:1234/v1"),
+            api_key=llm_info.get("api_key", ""),
+        )
+        content = ""
+        tool_calls = []
+        try:
+            while True:
+                delta_event = next(chat_gen)
+                yield delta_event
+        except StopIteration as stop:
+            if stop.value:
+                content, tool_calls = stop.value
 
-        content = "".join(content_parts)
         msg = {"role": "assistant", "content": content}
         if tool_calls:
             msg["tool_calls"] = tool_calls
         messages.append(msg)
 
         if not tool_calls:
-            # Already streamed above; this carries the whole text for the
-            # non-streaming response and for the export.
             yield {"type": "answer", "text": content}
             return
 
@@ -442,7 +444,12 @@ def _run_agent_events(
                 service, name, dispatch.get(name), dict(call.function.arguments or {}), max_items, emit_live
             )
             model_facing_result = result if is_error else _truncate_for_model(parsed_result)
-            messages.append({"role": "tool", "tool_name": name, "content": model_facing_result})
+            messages.append({
+                "role": "tool",
+                "tool_call_id": getattr(call, "id", f"call_{name}"),
+                "tool_name": name,
+                "content": model_facing_result,
+            })
 
     # The loop ran out of turns with the model still asking for tools. Say so
     # plainly: the results it did collect are on screen either way.
@@ -474,7 +481,7 @@ def _profile_facts(service: OsintgramService) -> str:
         if isinstance(user.get(key), int):
             bits.append(f"{user[key]} {label}")
     if user.get("is_private"):
-        bits.append("the profile is PRIVATE, so any tool needing a public one will refuse")
+        bits.append("the profile is marked as private on Instagram (call tools normally; if the logged-in user has permission or follows it, Instagram will return the data)")
     else:
         bits.append("the profile is public")
     for key in ("is_verified", "is_business"):
@@ -611,14 +618,19 @@ def _run_safe_events(make_events: Callable[[Callable[[dict], None]], Iterator[di
         except QueryCancelledError:
             pass  # the user stopped the search - nothing left to report
         except ConnectionError as e:
-            q.put({
-                "type": "error",
-                "detail": (
+            llm_info = resolve_llm_info()
+            if llm_info["provider"] == "lmstudio":
+                err_detail = (
+                    f"Cannot reach LM Studio at {llm_info['lmstudio_url']}: {e}. "
+                    "Make sure LM Studio is running with local server started on port 1234."
+                )
+            else:
+                err_detail = (
                     f"Cannot reach Ollama: {e}. Make sure it is running "
                     f"(`ollama serve`) and that the model has been pulled "
                     f"(`ollama pull {OLLAMA_MODEL}`)."
-                ),
-            })
+                )
+            q.put({"type": "error", "detail": err_detail})
         except ollama.ResponseError as e:
             q.put({"type": "error", "detail": f"Ollama error: {e}"})
         finally:
@@ -682,7 +694,7 @@ def about():
         "libraries": [_library_credit(*lib) for lib in THIRD_PARTY],
         # Shown in the footer's attribution: the model's own license terms
         # apply on top of Ollama's (e.g. "Built with Llama" for Llama models).
-        "ollama_model": OLLAMA_MODEL,
+        "ollama_model": f"{resolve_llm_info()['provider'].upper()}: {resolve_llm_info()['model']}",
     }
 
 
@@ -851,6 +863,93 @@ def clear_token(request: Request):
     _require_local_origin(request)
     set_runtime_hiker_token(None)
     return _token_state()
+
+
+class AISettingsRequest(BaseModel):
+    provider: str
+    base_url: str
+    model: Optional[str] = ""
+    api_key: Optional[str] = ""
+    remember: bool = True
+
+
+@app.get("/api/ai/settings")
+def get_ai_settings():
+    """Return current AI provider settings and connectivity state."""
+    info = resolve_llm_info()
+    models = []
+    connected = False
+    try:
+        models = fetch_available_models(info["provider"], info["base_url"], info.get("api_key", ""))
+        connected = True
+    except Exception:
+        pass
+    raw_key = info.get("api_key", "")
+    return {
+        "provider": info["provider"],
+        "base_url": info["base_url"],
+        "model": info["model"],
+        "has_api_key": bool(raw_key),
+        "api_key_preview": mask_token(raw_key) if raw_key else "",
+        "models": models,
+        "connected": connected,
+    }
+
+
+@app.post("/api/ai/settings")
+def update_ai_settings(req: AISettingsRequest, request: Request):
+    """Update and verify AI provider settings, optionally saving to config/credentials.ini."""
+    _require_local_origin(request)
+    provider = (req.provider or "lmstudio").strip().lower()
+    base_url = (req.base_url or "").strip()
+    if not base_url:
+        base_url = "http://127.0.0.1:1234/v1" if provider in ("lmstudio", "openai") else "http://127.0.0.1:11434"
+
+    api_key = (req.api_key or "").strip()
+    # Test connection and fetch available models
+    models = []
+    try:
+        models = fetch_available_models(provider, base_url, api_key)
+    except Exception as e:
+        raise HTTPException(400, f"Cannot connect to {provider} at {base_url}: {e}")
+
+    model = (req.model or "").strip()
+    if not model and models:
+        model = models[0]
+
+    set_runtime_ai_config({
+        "provider": provider,
+        "base_url": base_url,
+        "model": model,
+        "api_key": api_key,
+    })
+
+    saved = False
+    if req.remember:
+        saved = save_ai_config(provider, base_url, model, api_key)
+
+    return {
+        "ok": True,
+        "provider": provider,
+        "base_url": base_url,
+        "model": model,
+        "models": models,
+        "saved": saved,
+        "connected": True,
+    }
+
+
+@app.get("/api/ai/models")
+def get_ai_models(provider: str = "lmstudio", base_url: str = "", api_key: str = ""):
+    """Query the active provider for its list of models."""
+    provider = provider.strip().lower()
+    if not base_url:
+        base_url = "http://127.0.0.1:1234/v1" if provider in ("lmstudio", "openai") else "http://127.0.0.1:11434"
+    try:
+        models = fetch_available_models(provider, base_url, api_key)
+        return {"ok": True, "models": models}
+    except Exception as e:
+        raise HTTPException(400, f"Cannot fetch models from {provider} at {base_url}: {e}")
 
 
 class DownloadRequest(BaseModel):

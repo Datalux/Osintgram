@@ -31,3 +31,4 @@ env/
 .claude/
 .graphify/
 .graphifyignore
+.fresh/
