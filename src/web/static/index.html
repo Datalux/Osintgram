@@ -1806,6 +1806,8 @@
     get_total_likes: ["❤️", "Like totals", "Total, min, max and average likes per post."],
     get_media_type: ["🖼️", "Media types", "How many posts are photos, videos or carousels, with views, collaborations and paid partnerships."],
     get_posting_times: ["🕒", "Posting times", "Which days and hours they post on (heatmap) and how often."],
+    get_sleep_schedule: ["🌙", "Sleep schedule", "Infer circadian sleep pattern, quiet hours, and probable timezone from post timestamps."],
+    get_travel_route: ["🗺️", "Travel route", "Chronological travel trajectory, distances between stops, and transit hops from geotags."],
     get_photo_descriptions: ["🔍", "Photo descriptions", "Alt text of the photos (what they show), when the post's author wrote it."],
     get_comment_data: ["💬", "Comments", "Every comment on the posts, with its author and post."],
     get_people_who_commented: ["💬", "Who commented", "Accounts that commented on the posts, by number of comments."],
@@ -1832,7 +1834,7 @@
   const TOOL_GROUPS = [
     ["Profile", ["get_user_info", "get_account_about", "snapshot_profile", "diff_profile", "get_user_propic", "get_user_stories", "get_highlights", "get_user_photos"]],
     ["Network", ["get_followers", "get_followings", "audit_followers", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_tagged_posts", "get_people_tagged_by_user", "get_people_who_commented"]],
-    ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions"]],
+    ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_travel_route", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_sleep_schedule", "get_photo_descriptions"]],
     ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
 ["Search (no target)", ["search_hashtag", "search_location", "get_post_comments", "search_public_context", "search_cross_platform"]],
   ];
@@ -2953,6 +2955,99 @@
     </div>`;
   }
 
+  // ---- Sleep Schedule & Circadian Analyzer ----
+  function renderSleepSchedule(result) {
+    if (result.insufficient_data) {
+      return `<p class="empty">Insufficient timestamp data (less than 3 posts with valid timestamps) to determine sleep patterns.</p>`;
+    }
+    const win = result.sleep_window_utc || {};
+    const tz = result.estimated_timezone || "UTC";
+    const conf = result.confidence || "Low";
+    const confClass = conf === "High" ? "ok" : (conf === "Medium" ? "accent" : "muted");
+
+    const maxPosts = Math.max(1, ...(result.histogram_utc || []));
+    const bars = (result.histogram_utc || []).map((cnt, h) => {
+      const inSleep = win.start_hour !== undefined && (
+        win.start_hour <= win.end_hour
+          ? (h >= win.start_hour && h < win.end_hour)
+          : (h >= win.start_hour || h < win.end_hour)
+      );
+      const pct = Math.round((cnt / maxPosts) * 100);
+      const bg = inSleep ? "rgba(99, 102, 241, 0.4)" : "var(--accent)";
+      return `<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;">
+        <span style="font-size:0.65rem; color:var(--muted);">${cnt || ""}</span>
+        <div style="width:100%; height:45px; display:flex; align-items:flex-end; background:rgba(255,255,255,0.05); border-radius:2px;">
+          <div style="width:100%; height:${Math.max(4, pct)}%; background:${bg}; border-radius:2px;"></div>
+        </div>
+        <span style="font-size:0.65rem; color:${inSleep ? "#818cf8" : "var(--muted)"};">${h}</span>
+      </div>`;
+    }).join("");
+
+    const anomalies = (result.circadian_anomalies || []).map(a => `
+      <div style="padding:6px 10px; background:rgba(239, 68, 68, 0.1); border-left:3px solid var(--err); margin-top:6px; font-size:0.8rem;">
+        <strong>${escapeHtml(a.timestamp_utc)} (${a.hour_utc}:00 UTC)</strong>: ${escapeHtml(a.caption || "No caption")}
+      </div>
+    `).join("");
+
+    return `
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+        <div class="stat-pill"><span class="k">Estimated Timezone</span><span class="v" style="color:var(--accent); font-weight:bold;">${escapeHtml(tz)}</span></div>
+        <div class="stat-pill"><span class="k">Inferred Sleep Window</span><span class="v" style="color:#818cf8; font-weight:bold;">${win.start_hour}:00 - ${win.end_hour}:00 UTC (${win.duration_hours}h)</span></div>
+        <div class="stat-pill"><span class="k">Confidence</span><span class="badge ${confClass}">${escapeHtml(conf)}</span></div>
+        <div class="stat-pill"><span class="k">Analyzed Posts</span><span class="v">${result.total_analyzed || 0}</span></div>
+      </div>
+      <div style="padding:10px; background:rgba(0,0,0,0.25); border-radius:6px; margin-bottom:12px;">
+        <div style="font-size:0.75rem; color:var(--muted); margin-bottom:6px;">24h Activity Distribution (UTC hours, purple bars denote quiet / sleep period):</div>
+        <div style="display:flex; gap:2px; align-items:flex-end; width:100%;">${bars}</div>
+      </div>
+      ${anomalies ? `<div style="margin-top:10px;"><strong style="font-size:0.82rem; color:var(--err);">🚨 Nocturnal / Jet-Lag Activity Incidents:</strong>${anomalies}</div>` : ""}
+    `;
+  }
+
+  // ---- Travel Route & Timeline Tracker ----
+  function renderTravelRoute(result) {
+    const hops = result.route_hops || [];
+    if (hops.length === 0) {
+      return `<p class="empty">No geotagged locations found across the scanned posts to reconstruct a travel route.</p>`;
+    }
+
+    const items = hops.map(h => {
+      const isTransit = h.distance_from_prev_km > 0;
+      const badgeKind = h.distance_from_prev_km > 500 ? "err" : (h.distance_from_prev_km > 80 ? "accent" : "muted");
+      const transitBadge = isTransit
+        ? `<div style="display:flex; align-items:center; gap:8px; margin: 4px 0 6px 14px; font-size:0.78rem; color:var(--muted);">
+             <span>↓</span>
+             <span class="badge ${badgeKind}">🚗 ${h.distance_from_prev_km} km (${h.transit_type})</span>
+             <span>⏱️ +${h.days_since_prev} days</span>
+             ${h.speed_kmh ? `<span>avg ~${h.speed_kmh} km/h</span>` : ""}
+           </div>`
+        : "";
+
+      return `
+        ${transitBadge}
+        <div class="user-row" style="align-items:center; padding:8px 12px; background:rgba(255,255,255,0.03); border-radius:6px;">
+          <span style="font-weight:bold; color:var(--muted); min-width:26px;">#${h.sequence}</span>
+          <div style="flex:1;">
+            <div style="font-weight:600; font-size:0.9rem; color:var(--fg);">${escapeHtml(h.location)}</div>
+            <div style="font-size:0.75rem; color:var(--muted);">📅 ${escapeHtml(h.date)} (${h.coordinates[0].toFixed(3)}, ${h.coordinates[1].toFixed(3)})</div>
+          </div>
+          <a class="ai-btn-sm" href="https://www.google.com/maps/search/?api=1&query=${h.coordinates[0]},${h.coordinates[1]}" target="_blank" rel="noopener" style="text-decoration:none; height:28px; line-height:26px;">📍 Map</a>
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+        <div class="stat-pill"><span class="k">Total Distance Traveled</span><span class="v" style="color:var(--accent); font-weight:bold;">${result.total_distance_km} km</span></div>
+        <div class="stat-pill"><span class="k">Geotagged Stops</span><span class="v">${result.total_geotagged_stops}</span></div>
+        <div class="stat-pill"><span class="k">Unique Locations</span><span class="v">${result.unique_locations_count}</span></div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        ${items}
+      </div>
+    `;
+  }
+
   // ---- Story Highlights (archived stories pinned on the profile) ----
   function renderHighlights(items) {
     const cells = items.map((h) => {
@@ -3700,6 +3795,8 @@
       if ("common_followers" in result || "common_followings" in result) return renderCompare(result);
       if ("hashtag" in result || "place" in result) return renderSearch(result);
       if (Array.isArray(result.timestamps)) return renderPostingTimes(result);
+      if ("sleep_window_utc" in result && "histogram_utc" in result) return renderSleepSchedule(result);
+      if ("route_hops" in result && "total_distance_km" in result) return renderTravelRoute(result);
       if (Array.isArray(result.descriptions)) return renderDescriptions(result);
       if (result.has_changes !== undefined && Array.isArray(result.summary)) return renderDiffResult(result);
       if (result.avatar_hash !== undefined && result.timestamp) return renderSnapshotResult(result);

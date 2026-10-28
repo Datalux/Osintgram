@@ -266,7 +266,7 @@ both modes.
 
 ## 5. What you can ask for
 
-33 commands, grouped by what they tell you. Parameters are in `code`.
+35 commands, grouped by what they tell you. Parameters are in `code`.
 
 ### Profile
 
@@ -311,10 +311,12 @@ half the requests of `both`.
 | **Hashtags** | Hashtags used, most frequent first |
 | **Captions** | Post captions |
 | **Addresses** | Geotagged locations, reverse-geocoded, **plotted on a map** |
+| **Travel route** | Chronological travel trajectory, distances between stops, and transit hops from geotags |
 | **Comments** | Every comment with author and post |
 | **Like totals** / **Comment totals** | Total, min, max, average — plus post previews |
 | **Media types** | How many posts are photos, videos, carousels, with views, collaborations and paid partnerships |
 | **Posting times** | Weekday × hour heatmap of when they post, and how often |
+| **Sleep schedule** | Circadian sleep window, quiet hours, and probable timezone estimation |
 | **Photo descriptions** | Alt text of each photo, carousel slides included |
 
 All of these take `limit_posts`.

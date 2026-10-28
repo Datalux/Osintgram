@@ -1515,6 +1515,22 @@ class OsintgramService:
             raise OsintServiceError(f"Not enough snapshots to compare for @{self.target}. At least 2 snapshots are required.")
         return diff
 
+    def get_sleep_schedule(self, limit_posts: Optional[int] = 50) -> dict:
+        """Infer target's circadian sleep pattern, quiet hours, and probable timezone."""
+        self._require_public()
+        from src.chronology_tracker import SleepScheduleAnalyzer
+        posts = self._get_feed(limit=limit_posts)
+        analyzer = SleepScheduleAnalyzer()
+        return analyzer.analyze(posts)
+
+    def get_travel_route(self, limit_posts: Optional[int] = 50) -> dict:
+        """Reconstruct target's chronological travel trajectory, distances, and transit legs."""
+        self._require_public()
+        from src.chronology_tracker import TravelRouteTracker
+        posts = self._get_feed(limit=limit_posts)
+        tracker = TravelRouteTracker()
+        return tracker.analyze(posts)
+
 
 def check_hiker_token(token: str) -> dict:
     """Verify a token by asking HikerAPI for its own balance.
