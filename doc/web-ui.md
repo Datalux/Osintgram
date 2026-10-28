@@ -503,7 +503,8 @@ the comparison, so it reports real changes only.
 | **⬇ CSV** | The same as a table — comma separated with a BOM, so Excel reads it as UTF-8 |
 | **⬇ Media (N)** | The original photos and videos, as one zip |
 | **⬇ Export all** | Request, answer and every result in one JSON file |
-| **📄 Report** | The whole search as a standalone HTML page |
+| **📄 Report (PDF)** | Standalone investigation dossier as a clean, vectorized PDF document |
+| **📄 Report (HTML)** | The whole search as a standalone HTML page |
 
 **CSV safety:** any text starting with `=`, `+`, `-` or `@` is prefixed with
 `'`, so a spreadsheet can't execute it as a formula.
