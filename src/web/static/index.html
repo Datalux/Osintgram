@@ -766,8 +766,266 @@
   .gallery a { display: block; aspect-ratio: 1; border-radius: var(--radius); overflow: hidden; background: var(--panel-2); }
   .gallery img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  /* ---- posting-times heatmap: one ink, intensity = share ---- */
-  .tz-toggle { display: flex; flex-wrap: wrap; gap: 0; margin: 12px 0 8px; }
+/* ---- HikerAPI balance (terminal bar) ---- */
+  .balance-chip {
+    flex: none;
+    padding: 2px 9px;
+    border: 1px solid var(--term-border);
+    border-radius: 999px;
+    font: 600 0.7rem var(--mono);
+    color: var(--term-dim);
+    white-space: nowrap;
+  }
+  .balance-chip.low { color: var(--term-err); border-color: color-mix(in srgb, var(--term-err) 45%, transparent); }
+  @media (max-width: 520px) { .balance-chip .amount { display: none; } }
+  .key-chip {
+    flex: none;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--term-fg) 30%, transparent);
+    background: none;
+    color: var(--term-fg);
+    font: inherit;
+    font-size: 0.72rem;
+    cursor: pointer;
+  }
+  .key-chip:hover { border-color: var(--term-fg); }
+  .key-chip.missing { color: var(--term-err); border-color: color-mix(in srgb, var(--term-err) 55%, transparent); }
+
+  .key-panel {
+    padding: 14px 18px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+  .key-panel-head { display: flex; align-items: baseline; gap: 10px; }
+  .key-panel-title { font-size: 0.8rem; font-weight: 600; }
+  .key-panel-head .link-btn { margin-left: auto; }
+  .key-panel-note { margin: 6px 0 10px; font-size: 0.8rem; color: var(--muted); }
+  .key-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .key-input {
+    flex: 1 1 260px;
+    min-width: 0;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font: inherit;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+  }
+  .key-input:focus { outline: none; border-color: var(--accent); }
+  .key-remember { display: flex; align-items: center; gap: 7px; margin-top: 9px; font-size: 0.78rem; color: var(--muted); }
+  .key-remember code { font-size: 0.74rem; }
+  .ai-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    transition: all 0.15s ease;
+  }
+  .ai-chip:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  #ai-panel {
+    padding: 16px 20px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+  }
+  .ai-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px 18px;
+    margin: 12px 0 16px;
+  }
+  .ai-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .ai-field label {
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .ai-input {
+    width: 100%;
+    height: 38px;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 0.83rem;
+    line-height: normal;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ai-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  select.ai-input {
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .ai-model-box {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+  }
+  .ai-model-box .ai-input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .ai-btn-sm {
+    height: 38px;
+    padding: 0 13px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    font: 600 0.8rem var(--mono);
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+  }
+  .ai-btn-sm:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .ai-btn-sm:disabled { opacity: 0.5; cursor: default; }
+
+  .ai-bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .ai-actions-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .ai-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .ai-save-btn {
+    height: 38px;
+    padding: 0 18px;
+    border-radius: 9px;
+    background: var(--accent-gradient);
+    color: var(--accent-text);
+    border: none;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 14px -4px var(--accent-glow);
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ai-save-btn:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px -4px var(--accent-glow);
+  }
+  .ai-save-btn:disabled { opacity: 0.6; cursor: default; transform: none; }
+  .ai-web-section {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px dashed var(--border);
+    background: var(--panel);
+  }
+  .ai-web-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .ai-web-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.83rem;
+    font-weight: 600;
+  }
+  .ai-web-toggle input { cursor: pointer; }
+  .ai-web-privacy-badge {
+    font-size: 0.72rem;
+    font-family: var(--mono);
+    color: var(--ok);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+  .ai-web-desc {
+    margin: 4px 0 0;
+    font-size: 0.76rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .ai-status-badge {
+    font-size: 0.8rem;
+    font-family: var(--mono);
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ai-status-badge.ok { color: var(--ok); }
+  .ai-status-badge.err { color: var(--error); }
+  .key-status { margin: 10px 0 0; font-size: 0.8rem; }
+  .key-status.ok { color: var(--accent); }
+  .key-status.err { color: var(--term-err); }
+
+  /* ---- field heading with an inline action (e.g. "Clear cache") ---- */
+  .field-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  .field-head label { margin-bottom: 0 !important; }
+  .field-head .link-btn { margin-left: auto; }
+  .field-head .note { font-size: 0.72rem; color: var(--muted); }
+
+  /* ---- export ---- */
+  .card-actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+  .card-actions .json-toggle { margin-top: 0; }
+  .export-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: 600 0.75rem var(--mono);
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .card-actions .export-btn:first-of-type { margin-left: auto; }
+  .export-btn:hover, .export-btn:focus-visible { text-decoration: underline; outline: none; }
+  .details-heading { display: flex; align-items: baseline; gap: 8px; }
+  .details-heading .export-btn { margin-left: auto; text-transform: none; letter-spacing: 0; }
+
+  /* ---- posting times heatmap ---- */
+  .tz-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
   .tz-toggle button {
     border: 1px solid var(--rule);
     margin-right: -1px;
@@ -1161,12 +1419,14 @@
 <body>
 <main>
   <section class="app-window">
-    <header class="masthead">
-      <div class="mast-bar">
-        <span class="mast-host" id="terminal-title"></span>
-        <div class="mast-tools">
+    <header class="terminal">
+      <div class="terminal-bar">
+        <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="terminal-title" id="terminal-title">osintgram &mdash; web</span>
+        <div class="terminal-actions">
           <span class="balance-chip" id="balance-chip" hidden title="Remaining HikerAPI credit (free check, spends no requests)"></span>
           <button type="button" class="key-chip" id="key-chip" hidden title="HikerAPI key"></button>
+          <button type="button" class="key-chip ai-chip" id="ai-chip" title="AI Settings">⚙️ <span id="ai-chip-label">AI: Local</span></button>
           <label class="mode-switch" title="AI mode: describe your request and the model picks the commands. Base mode: you pick the commands and their parameters.">
             <span class="side side-base">Base</span>
             <input type="checkbox" id="ai-mode" role="switch" aria-label="AI mode (off: Base mode, you pick the commands)" checked>
@@ -1174,6 +1434,8 @@
             <span class="side side-ai">AI</span>
           </label>
         </div>
+      </div>
+    </header>
       </div>
       <h1 class="sr-only">Osintgram</h1>
       <pre class="ascii-logo" id="ascii-logo" aria-hidden="true"></pre>
@@ -1199,6 +1461,106 @@
       <label class="key-remember"><input type="checkbox" id="key-remember" checked>
         Remember in <code>config/credentials.ini</code> (the same key also works for the CLI)</label>
       <p class="key-status" id="key-status" hidden></p>
+    </section>
+
+    <!-- AI Settings Panel -->
+    <section class="key-panel" id="ai-panel" hidden>
+      <div class="key-panel-head">
+        <span class="key-panel-title">🤖 AI Provider &amp; Model Settings</span>
+        <button type="button" class="link-btn" id="ai-close">✕ Close</button>
+      </div>
+      <p class="key-panel-note" id="ai-note">
+        Configure the local AI engine (LM Studio or Ollama) that interprets queries and selects OSINT tools in AI mode.
+      </p>
+      <div class="ai-grid">
+        <div class="ai-field">
+          <label for="ai-provider">Provider</label>
+          <select id="ai-provider" class="ai-input">
+            <option value="lmstudio">LM Studio (OpenAI API)</option>
+            <option value="ollama">Ollama</option>
+          </select>
+        </div>
+        <div class="ai-field">
+          <label for="ai-url">Endpoint URL</label>
+          <input type="text" id="ai-url" class="ai-input" placeholder="http://127.0.0.1:1234/v1" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="ai-field">
+          <label for="ai-model">Model</label>
+          <div class="ai-model-box">
+            <input type="text" id="ai-model" class="ai-input" placeholder="e.g. qwen3.5-4b" autocomplete="off" spellcheck="false">
+            <select id="ai-model-select" class="ai-input" style="display:none;"></select>
+            <button type="button" class="ai-btn-sm" id="ai-fetch-models" title="Query server for loaded models">🔄 Fetch</button>
+          </div>
+        </div>
+        <div class="ai-field">
+          <label for="ai-key">API Key (optional)</label>
+          <input type="password" id="ai-key" class="ai-input" placeholder="optional (e.g. lm-studio)" autocomplete="off">
+        </div>
+      </div>
+      <!-- Public Web Context Section (Opt-in) -->
+      <div class="ai-web-section">
+        <div class="ai-web-head">
+          <label class="ai-web-toggle">
+            <input type="checkbox" id="ai-web-enabled">
+            <span class="ai-web-toggle-label">🌐 Enable Public Web Context (Opt-in)</span>
+          </label>
+          <span class="ai-web-privacy-badge">🔒 Privacy-Guarded</span>
+        </div>
+        <p class="ai-web-desc">
+          Allows the AI model to query public web information about landmarks, venues, and organizations. Target usernames, handles, and personal identifiers are strictly blocked before sending. Queries leave your machine to the chosen provider — never search for private individuals.
+        </p>
+        <div class="ai-grid" id="ai-web-grid" style="display:none; margin-top: 10px;">
+          <div class="ai-field">
+            <label for="ai-web-provider">Search Provider</label>
+            <select id="ai-web-provider" class="ai-input">
+              <option value="duckduckgo">DuckDuckGo (Instant, Zero-Config)</option>
+              <option value="wikipedia">Wikipedia (OpenSearch API)</option>
+              <option value="searxng">SearXNG (Self-Hosted / Private)</option>
+              <option value="parallel">Parallel Search (API / MCP)</option>
+            </select>
+          </div>
+          <div class="ai-field" id="ai-web-param-box" style="display:none;">
+            <label for="ai-web-url" id="ai-web-param-label">SearXNG URL</label>
+            <input type="text" id="ai-web-url" class="ai-input" placeholder="http://127.0.0.1:8080" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+      </div>
+
+      <!-- Proxy Settings (instagrapi) -->
+      <div class="ai-web-section" style="margin-top: 14px;">
+        <div class="ai-web-head">
+          <label class="ai-web-toggle">
+            <span class="ai-web-toggle-label">🛡️ Proxy Gateway (instagrapi backend)</span>
+          </label>
+          <span class="ai-web-privacy-badge" id="proxy-status-badge">Direct IP</span>
+        </div>
+        <p class="ai-web-desc">
+          Route instagrapi queries through an HTTP/SOCKS5 or rotating residential proxy to bypass rate limits and IP action blocks.
+        </p>
+        <div class="ai-grid" style="margin-top: 10px; grid-template-columns: 1fr auto auto; align-items: end;">
+          <div class="ai-field">
+            <label for="proxy-input">Proxy URL</label>
+            <input type="text" id="proxy-input" class="ai-input" placeholder="http://user:pass@host:port or socks5://host:port" autocomplete="off" spellcheck="false">
+          </div>
+          <button type="button" class="ai-btn-sm" id="proxy-test-btn" style="height:38px;">⚡ Test</button>
+          <button type="button" class="ai-btn-sm" id="proxy-save-btn" style="height:38px; border-color:var(--accent); color:var(--accent);">Save</button>
+        </div>
+        <p class="key-status" id="proxy-status-msg" hidden style="margin-top:8px; font-size:0.78rem;"></p>
+      </div>
+
+      <div class="ai-bottom-row">
+        <div class="ai-actions-left">
+          <button type="button" class="ai-btn-sm" id="ai-test">⚡ Test Connection</button>
+          <button type="button" class="ai-save-btn" id="ai-save">✓ Save &amp; Apply</button>
+          <label class="key-remember" style="margin-top:0;">
+            <input type="checkbox" id="ai-remember" checked>
+            <span>Remember in <code>config/credentials.ini</code></span>
+          </label>
+        </div>
+        <div class="ai-actions-right">
+          <p class="ai-status-badge" id="ai-status" hidden></p>
+        </div>
+      </div>
     </section>
 
     <form id="query-form">
@@ -1440,6 +1802,7 @@
     search_hashtag: ["#️⃣", "Hashtag search", "Posts published with a hashtag and who published them. Needs no target."],
     search_location: ["🌍", "Place search", "Posts published from a place and who published them. Needs no target."],
     get_post_comments: ["💬", "Post comments", "Every comment on one specific post or reel, given by its URL, shortcode or id. Needs no target."],
+    search_public_context: ["🌐", "Public web context", "Search the public web for context about landmarks, places, or organizations."],
     get_followers_email: ["✉️", "Follower emails", "Public emails among the followers (one request per account checked)."],
     get_followings_email: ["✉️", "Following emails", "Public emails among the followed accounts (one request per account checked)."],
     get_followers_phone: ["📞", "Follower phones", "Public phone numbers among the followers (one request per account checked)."],
@@ -1451,7 +1814,7 @@
     ["Network", ["get_followers", "get_followings", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_people_tagged_by_user", "get_people_who_commented"]],
     ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions"]],
     ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
-    ["Search (no target)", ["search_hashtag", "search_location", "get_post_comments"]],
+["Search (no target)", ["search_hashtag", "search_location", "get_post_comments", "search_public_context"]],
   ];
 
   const PARAM_LABELS = {
@@ -1665,6 +2028,288 @@
   keyInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") { event.preventDefault(); document.getElementById("key-save").click(); }
   });
+
+  // ---- AI Settings panel & state ----
+  const aiChip = document.getElementById("ai-chip");
+  const aiChipLabel = document.getElementById("ai-chip-label");
+  const aiPanel = document.getElementById("ai-panel");
+  const aiClose = document.getElementById("ai-close");
+  const aiProvider = document.getElementById("ai-provider");
+  const aiUrl = document.getElementById("ai-url");
+  const aiModel = document.getElementById("ai-model");
+  const aiModelSelect = document.getElementById("ai-model-select");
+  const aiKey = document.getElementById("ai-key");
+  const aiFetchBtn = document.getElementById("ai-fetch-models");
+  const aiTestBtn = document.getElementById("ai-test");
+  const aiSaveBtn = document.getElementById("ai-save");
+  const aiStatus = document.getElementById("ai-status");
+  const aiRemember = document.getElementById("ai-remember");
+
+  function setAiStatus(text, kind) {
+    aiStatus.textContent = text;
+    aiStatus.className = `ai-status-badge${kind ? ` ${kind}` : ""}`;
+    aiStatus.hidden = !text;
+  }
+
+  function updateAiModelOptions(models, currentModel) {
+    if (!models || models.length === 0) {
+      aiModelSelect.style.display = "none";
+      aiModel.style.display = "";
+      return;
+    }
+    aiModelSelect.innerHTML = models.map((m) => `<option value="${escapeHtml(m)}"${m === currentModel ? " selected" : ""}>${escapeHtml(m)}</option>`).join("");
+    aiModelSelect.style.display = "";
+    aiModel.style.display = "none";
+    aiModel.value = currentModel || models[0];
+  }
+
+  aiModelSelect.addEventListener("change", () => {
+    aiModel.value = aiModelSelect.value;
+  });
+
+  async function loadAiSettings() {
+    try {
+      const resp = await fetch("/api/ai/settings");
+      if (!resp.ok) return;
+      const data = await resp.json();
+      aiProvider.value = data.provider === "ollama" ? "ollama" : "lmstudio";
+      aiUrl.value = data.base_url || "";
+      aiModel.value = data.model || "";
+      if (data.api_key_preview) {
+        aiKey.placeholder = `current: ${data.api_key_preview}`;
+      }
+      aiChipLabel.textContent = `AI: ${data.provider.toUpperCase()} (${data.model || "active"})`;
+      aiChip.classList.toggle("missing", !data.connected);
+      if (data.models && data.models.length) {
+        updateAiModelOptions(data.models, data.model);
+      }
+    } catch (e) {
+      aiChipLabel.textContent = "AI Settings";
+    }
+  }
+
+  // ---- Web Search settings ----
+  const aiWebEnabled = document.getElementById("ai-web-enabled");
+  const aiWebGrid = document.getElementById("ai-web-grid");
+  const aiWebProvider = document.getElementById("ai-web-provider");
+  const aiWebParamBox = document.getElementById("ai-web-param-box");
+  const aiWebParamLabel = document.getElementById("ai-web-param-label");
+  const aiWebUrl = document.getElementById("ai-web-url");
+
+  function updateWebParamVisibility() {
+    const p = aiWebProvider.value;
+    if (p === "searxng") {
+      aiWebParamBox.style.display = "";
+      aiWebParamLabel.textContent = "SearXNG URL";
+      aiWebUrl.placeholder = "http://127.0.0.1:8080";
+      aiWebUrl.type = "text";
+    } else if (p === "parallel") {
+      aiWebParamBox.style.display = "";
+      aiWebParamLabel.textContent = "Parallel API Key";
+      aiWebUrl.placeholder = "Optional API key";
+      aiWebUrl.type = "password";
+    } else {
+      aiWebParamBox.style.display = "none";
+    }
+  }
+
+  aiWebEnabled.addEventListener("change", () => {
+    aiWebGrid.style.display = aiWebEnabled.checked ? "grid" : "none";
+  });
+
+  aiWebProvider.addEventListener("change", updateWebParamVisibility);
+
+  async function loadWebSearchSettings() {
+    try {
+      const resp = await fetch("/api/ai/websearch");
+      if (!resp.ok) return;
+      const data = await resp.json();
+      aiWebEnabled.checked = Boolean(data.enabled);
+      aiWebGrid.style.display = aiWebEnabled.checked ? "grid" : "none";
+      if (data.provider) aiWebProvider.value = data.provider;
+      if (data.searxng_url && data.provider === "searxng") aiWebUrl.value = data.searxng_url;
+      updateWebParamVisibility();
+    } catch (_) {}
+  }
+
+    // ---- Proxy settings ----
+  const proxyInput = document.getElementById("proxy-input");
+  const proxyStatusBadge = document.getElementById("proxy-status-badge");
+  const proxyTestBtn = document.getElementById("proxy-test-btn");
+  const proxySaveBtn = document.getElementById("proxy-save-btn");
+  const proxyStatusMsg = document.getElementById("proxy-status-msg");
+
+  function setProxyStatus(text, kind) {
+    proxyStatusMsg.textContent = text;
+    proxyStatusMsg.className = `key-status${kind ? ` ${kind}` : ""}`;
+    proxyStatusMsg.hidden = !text;
+  }
+
+  async function loadProxySettings() {
+    try {
+      const resp = await fetch("/api/proxy/settings");
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (data.configured) {
+        proxyStatusBadge.textContent = "● Proxy Active";
+        proxyStatusBadge.style.color = "var(--ok)";
+        proxyInput.placeholder = `current: ${data.preview}`;
+      } else {
+        proxyStatusBadge.textContent = "Direct IP";
+        proxyStatusBadge.style.color = "var(--muted)";
+      }
+    } catch (_) {}
+  }
+
+  proxyTestBtn.addEventListener("click", async () => {
+    const proxy = proxyInput.value.trim();
+    if (!proxy) {
+      setProxyStatus("Enter a proxy URL to test.", "err");
+      return;
+    }
+    proxyTestBtn.disabled = true;
+    setProxyStatus("Testing proxy connection…");
+    try {
+      const resp = await fetch("/api/proxy/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proxy, remember: false }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+      setProxyStatus("✓ Proxy connected successfully!", "ok");
+    } catch (err) {
+      setProxyStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      proxyTestBtn.disabled = false;
+    }
+  });
+
+  proxySaveBtn.addEventListener("click", async () => {
+    const proxy = proxyInput.value.trim();
+    proxySaveBtn.disabled = true;
+    setProxyStatus("Saving proxy…");
+    try {
+      const resp = await fetch("/api/proxy/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ proxy, remember: true }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+      setProxyStatus(proxy ? "✓ Proxy saved to credentials.ini!" : "✓ Proxy cleared (using Direct IP).", "ok");
+      loadProxySettings();
+    } catch (err) {
+      setProxyStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      proxySaveBtn.disabled = false;
+    }
+  });
+
+  aiChip.addEventListener("click", () => {
+    aiPanel.hidden = !aiPanel.hidden;
+    if (!aiPanel.hidden) {
+      loadAiSettings();
+      loadWebSearchSettings();
+  loadProxySettings();
+      loadProxySettings();
+    }
+  });
+  aiClose.addEventListener("click", () => { aiPanel.hidden = true; });
+
+  aiProvider.addEventListener("change", () => {
+    const isOllama = aiProvider.value === "ollama";
+    aiUrl.placeholder = isOllama ? "http://127.0.0.1:11434" : "http://127.0.0.1:1234/v1";
+    if (!aiUrl.value || aiUrl.value.includes("1234") || aiUrl.value.includes("11434")) {
+      aiUrl.value = aiUrl.placeholder;
+    }
+  });
+
+  aiFetchBtn.addEventListener("click", async () => {
+    const provider = aiProvider.value;
+    const baseUrl = aiUrl.value.trim() || aiUrl.placeholder;
+    const apiKey = aiKey.value.trim();
+    aiFetchBtn.disabled = true;
+    setAiStatus("Fetching models…");
+    try {
+      const query = new URLSearchParams({ provider, base_url: baseUrl, api_key: apiKey });
+      const resp = await fetch(`/api/ai/models?${query}`);
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+      updateAiModelOptions(data.models, aiModel.value);
+      setAiStatus(`✓ Found ${data.models.length} models.`, "ok");
+    } catch (err) {
+      setAiStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      aiFetchBtn.disabled = false;
+    }
+  });
+
+  aiTestBtn.addEventListener("click", async () => {
+    aiTestBtn.disabled = true;
+    setAiStatus("Testing connection…");
+    try {
+      const provider = aiProvider.value;
+      const baseUrl = aiUrl.value.trim() || aiUrl.placeholder;
+      const apiKey = aiKey.value.trim();
+      const query = new URLSearchParams({ provider, base_url: baseUrl, api_key: apiKey });
+      const resp = await fetch(`/api/ai/models?${query}`);
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+      setAiStatus(`✓ Connected to ${provider.toUpperCase()} (${data.models.length} model(s) available).`, "ok");
+      updateAiModelOptions(data.models, aiModel.value);
+    } catch (err) {
+      setAiStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      aiTestBtn.disabled = false;
+    }
+  });
+
+  aiSaveBtn.addEventListener("click", async () => {
+    const provider = aiProvider.value;
+    const baseUrl = aiUrl.value.trim() || aiUrl.placeholder;
+    const model = (aiModelSelect.style.display !== "none" ? aiModelSelect.value : aiModel.value).trim();
+    const apiKey = aiKey.value.trim();
+    const remember = aiRemember.checked;
+
+    aiSaveBtn.disabled = true;
+    setAiStatus("Saving and verifying…");
+    try {
+      const resp = await fetch("/api/ai/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, base_url: baseUrl, model, api_key: apiKey, remember }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+
+      // Also persist web search configuration
+      try {
+        await fetch("/api/ai/websearch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            enabled: aiWebEnabled.checked,
+            provider: aiWebProvider.value,
+            searxng_url: aiWebProvider.value === "searxng" ? aiWebUrl.value.trim() : "http://127.0.0.1:8080",
+            parallel_api_key: aiWebProvider.value === "parallel" ? aiWebUrl.value.trim() : "",
+            remember,
+          }),
+        });
+      } catch (_) {}
+
+      aiChipLabel.textContent = `AI: ${data.provider.toUpperCase()} (${data.model})`;
+      aiChip.classList.toggle("missing", !data.connected);
+      setAiStatus(`✓ Active model: ${data.model}${data.saved ? " (saved to credentials.ini)" : ""}.`, "ok");
+      loadAbout();
+    } catch (err) {
+      setAiStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      aiSaveBtn.disabled = false;
+    }
+  });
+
+  loadAiSettings();
 
   // ---- HikerAPI balance (terminal bar) ----
   // HikerAPI doesn't bill this lookup, so it's refreshed on load and after
@@ -2462,7 +3107,8 @@
         ${media}
         <span class="story-badge">${isVideo ? "▶ video" : "📷 photo"}</span>
         <a class="story-open" href="${url}" target="_blank" rel="noopener" title="Open in a new tab">↗</a>
-        <div class="story-fallback">Preview unavailable<a href="${url}" target="_blank" rel="noopener">Open</a></div>
+        <a class="story-dl" href="${url}" download="${escapeHtml(String(i.id || 'story'))}.${isVideo ? 'mp4' : 'jpg'}" target="_blank" rel="noopener" title="Download original high-res ${isVideo ? 'video' : 'photo'}" style="position:absolute; bottom:6px; right:6px; background:rgba(0,0,0,0.6); color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:12px;">⬇</a>
+        <div class="story-fallback">Preview unavailable<a href="${url}" target="_blank" rel="noopener">Open ↗</a></div>
       </div>`;
     });
     return `<div class="story-grid">${cells.join("")}</div>`;
@@ -2866,12 +3512,14 @@
     const [icon, label] = TOOL_META[tc.name] || ["🔧", tc.name];
     const badges = [];
     if (tc.is_error) badges.push('<span class="badge err">error</span>');
+    if (tc.warning) badges.push('<span class="badge" style="background:#854d0e; color:#fef08a;">⚠️ Partial Result</span>');
     if (typeof tc.api_calls_delta === "number") badges.push(`<span class="badge cost">${tc.api_calls_delta} request${tc.api_calls_delta === 1 ? "" : "s"}</span>`);
     if (typeof tc.elapsed_ms === "number") badges.push(`<span class="badge">${tc.elapsed_ms} ms</span>`);
     const meta = summarizeInput(tc.input);
-    const body = tc.is_error
+    const warningBanner = tc.warning ? `<div style="margin-bottom: 8px; padding: 6px 10px; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 4px; color: #fef08a; font-size: 12px;">⚠️ ${escapeHtml(tc.warning)}</div>` : "";
+    const body = warningBanner + (tc.is_error
       ? `<p class="empty">${escapeHtml(tc.result && tc.result.error ? tc.result.error : JSON.stringify(tc.result))}</p>`
-      : renderToolResult(tc.result);
+      : renderToolResult(tc.result));
     const jsonId = `json-${idx}`;
     const mediaCount = tc.is_error ? 0 : collectMediaUrls(tc.result).length;
     return `<div class="tool-card" data-grp="${toolGroupSlug(tc.name)}">
@@ -2962,9 +3610,9 @@
       value.forEach((item) => collectMediaUrls(item, found));
     } else if (value && typeof value === "object") {
       for (const [key, item] of Object.entries(value)) {
-        if ((key === "media_url" || key === "url") && typeof item === "string" && /^https:\/\//.test(item)) {
+        if ((key === "media_url" || key === "url" || key === "thumbnail_url" || key === "cover_url") && typeof item === "string" && /^https:\/\//.test(item)) {
           found.push(item);
-        } else if (key !== "thumbnail_url") {
+        } else {
           collectMediaUrls(item, found);
         }
       }
@@ -3049,6 +3697,34 @@
     ".card-actions", ".json-toggle", ".export-btn", ".post-filter",
     ".list-filter", ".list-filter-count", ".map-details",
   ].join(",");
+
+  async function exportSocialGraph(button) {
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "⏳ Exporting…";
+    try {
+      const target = exportState.meta?.target || "target";
+      const results = exportState.cards.map((c) => ({ name: c.name, result: c.result }));
+      const resp = await fetch("/api/export/graph", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, results, format: "gexf" }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${target}_network.gexf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      button.textContent = "✓ Downloaded";
+      setTimeout(() => { button.textContent = original; button.disabled = false; }, 2000);
+    } catch (err) {
+      alert(`Graph export failed: ${err.message || err}`);
+      button.textContent = original;
+      button.disabled = false;
+    }
+  }
 
   async function exportReport(button) {
     const original = button.textContent;
@@ -3183,6 +3859,7 @@
       <details class="file-menu"><summary>File</summary><div class="file-menu-items">
         <button class="export-btn" type="button" data-save-dossier title="Save this search: you can reopen it without spending requests again, and compare it with a later one">Save dossier</button>
         <button class="export-btn" type="button" data-export-all title="Download request, answer and every result as one JSON file">Export all (JSON)</button>
+        <button class="export-btn" type="button" data-export-graph title="Export relationship graph of followers, following, and interactions as GEXF (for Gephi)">Export graph (GEXF)</button>
         <button class="export-btn" type="button" data-export-report title="Download a standalone HTML report, readable without Osintgram and printable to PDF">Report (HTML / PDF)</button>
       </div></details>`;
     outHeading.hidden = false;
@@ -3192,6 +3869,7 @@
     const menu = event.target.closest(".file-menu");
     if (menu && event.target.closest(".export-btn")) setTimeout(() => menu.removeAttribute("open"), 0);
     if (event.target.closest("[data-export-all]")) exportAll();
+    else if (event.target.closest("[data-export-graph]")) exportSocialGraph(event.target.closest("[data-export-graph]"));
     else if (event.target.closest("[data-export-report]")) exportReport(event.target.closest("[data-export-report]"));
     else if (event.target.closest("[data-save-dossier]")) saveDossier(event.target.closest("[data-save-dossier]"));
   });
@@ -3455,6 +4133,7 @@
             if (tc) {
               tc.result = evt.result; tc.is_error = evt.is_error;
               tc.elapsed_ms = evt.elapsed_ms; tc.api_calls_delta = evt.api_calls_delta;
+              if (evt.warning) tc.warning = evt.warning;
             }
             apiCallsTotal = evt.api_calls_total;
             if (evt.is_error) {

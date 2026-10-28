@@ -384,3 +384,14 @@ def test_the_answer_is_streamed_piece_by_piece(client, monkeypatch):
     assert len(deltas) > 1, "the answer arrived in one lump"
     # Whatever the split, the pieces must rebuild the answer exactly.
     assert "".join(deltas) == final[-1] == "they post mostly at night"
+
+def test_llm_tool_call_subscriptable_and_properties():
+    from src.web.llm_client import LLMToolCall, LLMFunctionCall
+    tc = LLMToolCall(id="call_123", function=LLMFunctionCall(name="get_user_info", arguments={"target": "test"}))
+    # Must support indexing to prevent "'LLMToolCall' object is not subscriptable"
+    assert tc["name"] == "get_user_info"
+    assert tc["arguments"] == {"target": "test"}
+    assert tc["id"] == "call_123"
+    assert tc.name == "get_user_info"
+    assert tc.arguments == {"target": "test"}
+    assert tc.get("name") == "get_user_info"

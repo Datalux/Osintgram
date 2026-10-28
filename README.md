@@ -28,7 +28,7 @@ and the raw results underneath, so you can check the work instead of trusting
 the prose.
 
 **Nothing leaves your machine except the lookups themselves.** The AI runs
-locally through [Ollama](https://ollama.com): no OpenAI key, no subscription, no
+locally through [LM Studio](https://lmstudio.ai/) or [Ollama](https://ollama.com): no external cloud key, no subscription, no
 prompt of yours sent to anyone. The interface is served from `127.0.0.1`.
 
 **It tells you what a search will cost before you run it.** Instagram data
@@ -51,14 +51,14 @@ Osintgram.
 ## Two ways to drive it
 
 <p align="center">
-<img src=".img/web-commands.png" width="860" alt="Base mode: 28 commands in two columns, grouped by colour and collapsible, with a search box and the run sheet">
+<img src=".img/web-commands.png" width="860" alt="Base mode: 30 commands in two columns, grouped by colour and collapsible, with a search box and the run sheet">
 </p>
 
 **AI mode** — describe what you want. A local model picks the commands, runs
 them and summarizes. It can only choose from the same list below; it can't
 invent lookups or make up data.
 
-**Base mode** — no model, no Ollama needed. All 29 commands, one line each,
+**Base mode** — no model, no Ollama needed. All 30 commands, one line each,
 grouped and searchable. Tick what you want, set the parameters, run them in
 order.
 
@@ -97,14 +97,13 @@ accepted, and can be saved for next time. (A free
 [instagrapi](https://github.com/subzeroid/instagrapi) login works too, using an
 Instagram account of your own — see the guide for the trade-offs.)
 
-For AI mode, install [Ollama](https://ollama.com/download) and pull a
-tool-calling capable model:
+For AI mode, run a local tool-calling model via **LM Studio** (OpenAI-compatible local server) or **Ollama**:
+- **LM Studio**: Start Local Server on `http://127.0.0.1:1234/v1` with a tool-capable model (e.g. `qwen2.5-7b-instruct`, `qwen3.5-4b`).
+- **Ollama**: Run `ollama pull llama3.1:8b` (server on `http://127.0.0.1:11434`).
 
-```bash
-ollama pull llama3.1:8b     # ~4.7 GB, the default
-```
+You can configure provider, endpoint URL, and select loaded models on the fly directly inside the Web UI via the ⚙️ **AI Settings** button in the header.
 
-Base mode works without it.
+Base mode works without any AI model.
 
 Prefer containers?
 

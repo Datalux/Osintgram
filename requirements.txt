@@ -8,6 +8,7 @@ instagrapi>=2.0
 
 # Local LLM client, for AI mode (Base mode doesn't need it)
 ollama>=0.3
+openai>=1.0
 
 # Reverse-geocoding the locations tagged on posts
 geopy>=2.0.0

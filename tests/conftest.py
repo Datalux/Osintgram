@@ -14,6 +14,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 # Never let a test touch the on-disk request cache (or a real credentials file).
 os.environ["HIKER_CACHE_PATH"] = ""
+os.environ["LLM_PROVIDER"] = "ollama"
+os.environ["WEB_SEARCH_ENABLED"] = "false"
 
 
 def _img(width=720):
@@ -167,3 +169,10 @@ def make_service():
         return OsintgramService(target, FakeHiker(**kwargs))
 
     return _make
+
+@pytest.fixture(autouse=True)
+def reset_runtime_configs():
+    from src.web.web_search import set_runtime_web_search_config
+    set_runtime_web_search_config(None)
+    yield
+    set_runtime_web_search_config(None)
