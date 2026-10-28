@@ -1275,22 +1275,25 @@ class SnapshotRequest(BaseModel):
 class WebhookTestRequest(BaseModel):
     webhook_url: str
     target: str = "test_target"
+    chat_id: Optional[str] = None
 
 
 class WebhookNotifyRequest(BaseModel):
     webhook_url: str
     target: str
     diff_data: dict
+    chat_id: Optional[str] = None
 
 
 @app.post("/api/target/{target}/snapshot")
 def create_target_snapshot(target: str, req: SnapshotRequest, request: Request):
     _require_local_origin(request)
     service = build_service(target)
+    limit_net = min(500, max(1, req.limit_network or 200))
     try:
         snap = service.take_snapshot(
             include_network=req.include_network,
-            limit_network=req.limit_network,
+            limit_network=limit_net,
         )
         return {"ok": True, "snapshot": snap}
     except Exception as e:
@@ -1301,6 +1304,15 @@ def create_target_snapshot(target: str, req: SnapshotRequest, request: Request):
 def get_target_snapshots(target: str, limit: int = 50):
     from src.snapshot_tracker import list_snapshots
     return {"ok": True, "snapshots": list_snapshots(target, limit=limit)}
+
+
+@app.delete("/api/target/{target}/snapshots")
+@app.delete("/api/snapshot/{target}")
+def delete_target_snapshots(target: str, request: Request):
+    _require_local_origin(request)
+    from src.snapshot_tracker import delete_snapshots
+    count = delete_snapshots(target)
+    return {"ok": True, "target": target, "deleted_count": count}
 
 
 @app.get("/api/target/{target}/diff")
@@ -1336,7 +1348,7 @@ def test_webhook_dispatch(req: WebhookTestRequest, request: Request):
             "lost_followers": [],
         },
     }
-    res = dispatch_webhook(req.webhook_url, "test_notification", fake_diff, target=req.target)
+    res = dispatch_webhook(req.webhook_url, "test_notification", fake_diff, target=req.target, chat_id=req.chat_id)
     return res
 
 
@@ -1344,7 +1356,7 @@ def test_webhook_dispatch(req: WebhookTestRequest, request: Request):
 def send_webhook_diff_notification(req: WebhookNotifyRequest, request: Request):
     _require_local_origin(request)
     from src.webhook_dispatcher import dispatch_webhook
-    res = dispatch_webhook(req.webhook_url, "profile_diff", req.diff_data, target=req.target)
+    res = dispatch_webhook(req.webhook_url, "profile_diff", req.diff_data, target=req.target, chat_id=req.chat_id)
     return res
 
 

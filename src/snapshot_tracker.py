@@ -7,14 +7,17 @@ bio link changes, and avatar hashes), and formats human-readable summaries.
 import hashlib
 import json
 import sqlite3
+import urllib.parse
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 DEFAULT_DB_PATH = Path("cache/snapshots.sqlite3")
 
 
-def get_db_connection(db_path: Optional[Union[str, Path]] = None) -> sqlite3.Connection:
+def get_db_connection(
+    db_path: Optional[Union[str, Path]] = None
+) -> sqlite3.Connection:
     """Initialize and return an SQLite connection with WAL enabled."""
     if db_path is None:
         db_path = DEFAULT_DB_PATH
@@ -61,17 +64,30 @@ def _init_db(conn: sqlite3.Connection) -> None:
         );
     """)
     conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_snapshots_target_timestamp 
+        CREATE INDEX IF NOT EXISTS idx_snapshots_target_timestamp
         ON profile_snapshots (target, timestamp DESC);
     """)
     conn.commit()
 
 
-def compute_avatar_hash(url_or_content: Optional[str]) -> str:
-    """Generate SHA-256 fingerprint for profile picture URL or bytes."""
+def compute_avatar_hash(url_or_content: Optional[Union[str, bytes]]) -> str:
+    """Generate SHA-256 fingerprint for profile picture bytes or URL path.
+
+    Strips query parameters so signed Instagram CDN URLs don't trigger false
+    diffs on every request.
+    """
     if not url_or_content:
         return ""
-    return hashlib.sha256(url_or_content.strip().encode("utf-8")).hexdigest()[:16]
+    if isinstance(url_or_content, bytes):
+        return hashlib.sha256(url_or_content).hexdigest()[:16]
+
+    clean_val = str(url_or_content).strip()
+    try:
+        parsed = urllib.parse.urlsplit(clean_val)
+        stable_path = f"{parsed.netloc}{parsed.path}".rstrip("/")
+        return hashlib.sha256(stable_path.encode("utf-8")).hexdigest()[:16]
+    except Exception:
+        return hashlib.sha256(clean_val.encode("utf-8")).hexdigest()[:16]
 
 
 def create_snapshot(
@@ -87,7 +103,11 @@ def create_snapshot(
     target_clean = target.strip().lstrip("@").lower()
     now_iso = datetime.now(timezone.utc).isoformat()
 
-    avatar_url = profile_data.get("profile_pic_url") or profile_data.get("avatar_url") or ""
+    avatar_url = (
+        profile_data.get("profile_pic_url")
+        or profile_data.get("avatar_url")
+        or ""
+    )
     avatar_hash = compute_avatar_hash(avatar_url)
 
     # Extract bio links list if present
@@ -101,9 +121,7 @@ def create_snapshot(
         bio_links_clean = []
 
     # Extract sample usernames for network differential tracking
-    def _extract_usernames(user_list: Optional[List[Dict[str, Any]]]) -> List[str]:
-        if not user_list:
-            return []
+    def _extract_usernames(user_list: List[Dict[str, Any]]) -> List[str]:
         res = []
         for u in user_list:
             if isinstance(u, dict) and "username" in u:
@@ -112,19 +130,45 @@ def create_snapshot(
                 res.append(u.lower())
         return sorted(list(set(res)))
 
-    followers_sample = _extract_usernames(followers)
-    followings_sample = _extract_usernames(followings)
+    followers_sample_json = (
+        json.dumps(_extract_usernames(followers))
+        if followers is not None
+        else None
+    )
+    followings_sample_json = (
+        json.dumps(_extract_usernames(followings))
+        if followings is not None
+        else None
+    )
+
+    fol_count = int(
+        profile_data.get("follower_count")
+        or profile_data.get("followers")
+        or 0
+    )
+    fing_count = int(
+        profile_data.get("following_count")
+        or profile_data.get("following")
+        or 0
+    )
+    med_count = int(
+        profile_data.get("media_count")
+        or profile_data.get("posts")
+        or 0
+    )
 
     with get_db_connection(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO profile_snapshots (
-                target, timestamp, username, full_name, biography, external_url,
-                profile_pic_url, avatar_hash, follower_count, following_count,
-                media_count, is_private, is_verified, is_business, category,
-                public_email, contact_phone_number, bio_links, followers_sample,
-                followings_sample, raw_data
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                target, timestamp, username, full_name, biography,
+                external_url, profile_pic_url, avatar_hash, follower_count,
+                following_count, media_count, is_private, is_verified,
+                is_business, category, public_email, contact_phone_number,
+                bio_links, followers_sample, followings_sample, raw_data
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
         """, (
             target_clean,
             now_iso,
@@ -134,9 +178,9 @@ def create_snapshot(
             profile_data.get("external_url") or "",
             avatar_url,
             avatar_hash,
-            int(profile_data.get("follower_count") or profile_data.get("followers") or 0),
-            int(profile_data.get("following_count") or profile_data.get("following") or 0),
-            int(profile_data.get("media_count") or profile_data.get("posts") or 0),
+            fol_count,
+            fing_count,
+            med_count,
             1 if profile_data.get("is_private") else 0,
             1 if profile_data.get("is_verified") else 0,
             1 if profile_data.get("is_business") else 0,
@@ -144,8 +188,8 @@ def create_snapshot(
             profile_data.get("public_email") or "",
             profile_data.get("contact_phone_number") or "",
             json.dumps(bio_links_clean),
-            json.dumps(followers_sample),
-            json.dumps(followings_sample),
+            followers_sample_json,
+            followings_sample_json,
             json.dumps(profile_data, ensure_ascii=False),
         ))
         snapshot_id = cursor.lastrowid
@@ -157,9 +201,9 @@ def create_snapshot(
         "timestamp": now_iso,
         "username": profile_data.get("username") or target_clean,
         "full_name": profile_data.get("full_name") or "",
-        "follower_count": int(profile_data.get("follower_count") or profile_data.get("followers") or 0),
-        "following_count": int(profile_data.get("following_count") or profile_data.get("following") or 0),
-        "media_count": int(profile_data.get("media_count") or profile_data.get("posts") or 0),
+        "follower_count": fol_count,
+        "following_count": fing_count,
+        "media_count": med_count,
         "avatar_hash": avatar_hash,
     }
 
@@ -169,7 +213,7 @@ def list_snapshots(
     limit: int = 50,
     db_path: Optional[Union[str, Path]] = None,
 ) -> List[Dict[str, Any]]:
-    """Retrieve list of saved snapshots for a target ordered by timestamp descending."""
+    """Retrieve list of saved snapshots for a target ordered by timestamp."""
     if db_path is None:
         db_path = DEFAULT_DB_PATH
     target_clean = target.strip().lstrip("@").lower()
@@ -177,7 +221,8 @@ def list_snapshots(
         cursor = conn.cursor()
         cursor.execute("""
             SELECT id, target, timestamp, username, full_name, follower_count,
-                   following_count, media_count, is_private, is_verified, avatar_hash
+                   following_count, media_count, is_private, is_verified,
+                   avatar_hash
             FROM profile_snapshots
             WHERE target = ?
             ORDER BY timestamp DESC
@@ -196,12 +241,16 @@ def get_snapshot(
         db_path = DEFAULT_DB_PATH
     with get_db_connection(db_path) as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM profile_snapshots WHERE id = ?", (snapshot_id,))
+        cursor.execute(
+            "SELECT * FROM profile_snapshots WHERE id = ?", (snapshot_id,)
+        )
         row = cursor.fetchone()
         if not row:
             return None
         res = dict(row)
-        for json_col in ("bio_links", "followers_sample", "followings_sample", "raw_data"):
+        for json_col in (
+            "bio_links", "followers_sample", "followings_sample", "raw_data"
+        ):
             if res.get(json_col):
                 try:
                     res[json_col] = json.loads(res[json_col])
@@ -210,8 +259,28 @@ def get_snapshot(
         return res
 
 
-def compare_snapshots(old_snap: Dict[str, Any], new_snap: Dict[str, Any]) -> Dict[str, Any]:
-    """Compare two snapshots and calculate structural, metric, and network deltas."""
+def delete_snapshots(
+    target: str,
+    db_path: Optional[Union[str, Path]] = None,
+) -> int:
+    """Delete all snapshots for target profile. Returns rows deleted."""
+    if db_path is None:
+        db_path = DEFAULT_DB_PATH
+    target_clean = target.strip().lstrip("@").lower()
+    with get_db_connection(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM profile_snapshots WHERE target = ?", (target_clean,)
+        )
+        deleted_count = cursor.rowcount
+        conn.commit()
+        return deleted_count
+
+
+def compare_snapshots(
+    old_snap: Dict[str, Any], new_snap: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Compare two snapshots and calculate structural and metric deltas."""
     target = new_snap.get("target") or old_snap.get("target") or ""
     old_time = old_snap.get("timestamp", "")
     new_time = new_snap.get("timestamp", "")
@@ -250,7 +319,11 @@ def compare_snapshots(old_snap: Dict[str, Any], new_snap: Dict[str, Any]) -> Dic
     old_followers = int(old_snap.get("follower_count") or 0)
     new_followers = int(new_snap.get("follower_count") or 0)
     diff_followers = new_followers - old_followers
-    growth_pct = round((diff_followers / old_followers * 100), 2) if old_followers > 0 else 0.0
+    growth_pct = (
+        round((diff_followers / old_followers * 100), 2)
+        if old_followers > 0
+        else 0.0
+    )
 
     old_followings = int(old_snap.get("following_count") or 0)
     new_followings = int(new_snap.get("following_count") or 0)
@@ -260,16 +333,48 @@ def compare_snapshots(old_snap: Dict[str, Any], new_snap: Dict[str, Any]) -> Dic
     new_posts = int(new_snap.get("media_count") or 0)
     diff_posts = new_posts - old_posts
 
-    # Network followers/following diffs (if samples were tracked)
-    old_fol_set = set(old_snap.get("followers_sample") or [])
-    new_fol_set = set(new_snap.get("followers_sample") or [])
-    new_followers_list = sorted(list(new_fol_set - old_fol_set))
-    lost_followers_list = sorted(list(old_fol_set - new_fol_set))
+    # Network followers/following diffs (only when sample exists in both)
+    old_fol_raw = old_snap.get("followers_sample")
+    new_fol_raw = new_snap.get("followers_sample")
+    has_follower_sample = (
+        old_fol_raw is not None and new_fol_raw is not None
+    )
 
-    old_fing_set = set(old_snap.get("followings_sample") or [])
-    new_fing_set = set(new_snap.get("followings_sample") or [])
-    new_followings_list = sorted(list(new_fing_set - old_fing_set))
-    unfollowed_list = sorted(list(old_fing_set - new_fing_set))
+    old_fing_raw = old_snap.get("followings_sample")
+    new_fing_raw = new_snap.get("followings_sample")
+    has_following_sample = (
+        old_fing_raw is not None and new_fing_raw is not None
+    )
+
+    new_followers_list = []
+    lost_followers_list = []
+    is_followers_partial = False
+
+    if has_follower_sample:
+        old_fol_set = set(old_fol_raw)
+        new_fol_set = set(new_fol_raw)
+        new_followers_list = sorted(list(new_fol_set - old_fol_set))
+        lost_followers_list = sorted(list(old_fol_set - new_fol_set))
+        if (
+            old_followers > len(old_fol_set)
+            or new_followers > len(new_fol_set)
+        ):
+            is_followers_partial = True
+
+    new_followings_list = []
+    unfollowed_list = []
+    is_following_partial = False
+
+    if has_following_sample:
+        old_fing_set = set(old_fing_raw)
+        new_fing_set = set(new_fing_raw)
+        new_followings_list = sorted(list(new_fing_set - old_fing_set))
+        unfollowed_list = sorted(list(old_fing_set - new_fing_set))
+        if (
+            old_followings > len(old_fing_set)
+            or new_followings > len(new_fing_set)
+        ):
+            is_following_partial = True
 
     has_changes = bool(
         field_changes
@@ -288,36 +393,73 @@ def compare_snapshots(old_snap: Dict[str, Any], new_snap: Dict[str, Any]) -> Dic
     summary_lines = []
     if diff_followers != 0:
         sym = "+" if diff_followers > 0 else ""
-        summary_lines.append(f"Followers: {old_followers:,} → {new_followers:,} ({sym}{diff_followers:,}, {growth_pct:+0.1f}%)")
+        summary_lines.append(
+            f"Followers: {old_followers:,} → {new_followers:,} "
+            f"({sym}{diff_followers:,}, {growth_pct:+0.1f}%)"
+        )
     if diff_followings != 0:
         sym = "+" if diff_followings > 0 else ""
-        summary_lines.append(f"Following: {old_followings:,} → {new_followings:,} ({sym}{diff_followings:,})")
+        summary_lines.append(
+            f"Following: {old_followings:,} → {new_followings:,} "
+            f"({sym}{diff_followings:,})"
+        )
     if diff_posts != 0:
         sym = "+" if diff_posts > 0 else ""
-        summary_lines.append(f"Posts: {old_posts:,} → {new_posts:,} ({sym}{diff_posts:,})")
+        summary_lines.append(
+            f"Posts: {old_posts:,} → {new_posts:,} ({sym}{diff_posts:,})"
+        )
 
     for k, change in field_changes.items():
         if k == "avatar_hash":
-            summary_lines.append("Profile picture was updated (new avatar image)")
+            summary_lines.append(
+                "Profile picture was updated (new avatar image)"
+            )
         elif k in ("is_private", "is_verified"):
             was = "enabled" if change["old"] else "disabled"
             now = "enabled" if change["new"] else "disabled"
-            summary_lines.append(f"{change['label']} changed from {was} to {now}")
+            summary_lines.append(
+                f"{change['label']} changed from {was} to {now}"
+            )
         else:
-            summary_lines.append(f"{change['label']} changed: '{change['old']}' → '{change['new']}'")
+            summary_lines.append(
+                f"{change['label']} changed: "
+                f"'{change['old']}' → '{change['new']}'"
+            )
 
     if added_links:
         summary_lines.append(f"Added bio links: {', '.join(added_links)}")
     if removed_links:
         summary_lines.append(f"Removed bio links: {', '.join(removed_links)}")
+
+    if (
+        has_follower_sample
+        and is_followers_partial
+        and (new_followers_list or lost_followers_list)
+    ):
+        summary_lines.append(
+            f"Follower sample is partial ({len(new_fol_raw)} of "
+            f"{new_followers:,} sampled); diff may reflect pagination order."
+        )
     if new_followers_list:
-        summary_lines.append(f"Detected new followers ({len(new_followers_list)}): @{', @'.join(new_followers_list[:5])}")
+        summary_lines.append(
+            f"Detected new followers ({len(new_followers_list)}): "
+            f"@{', @'.join(new_followers_list[:5])}"
+        )
     if lost_followers_list:
-        summary_lines.append(f"Detected unfollowers ({len(lost_followers_list)}): @{', @'.join(lost_followers_list[:5])}")
+        summary_lines.append(
+            f"Detected unfollowers ({len(lost_followers_list)}): "
+            f"@{', @'.join(lost_followers_list[:5])}"
+        )
     if new_followings_list:
-        summary_lines.append(f"Target started following ({len(new_followings_list)}): @{', @'.join(new_followings_list[:5])}")
+        summary_lines.append(
+            f"Target started following ({len(new_followings_list)}): "
+            f"@{', @'.join(new_followings_list[:5])}"
+        )
     if unfollowed_list:
-        summary_lines.append(f"Target unfollowed ({len(unfollowed_list)}): @{', @'.join(unfollowed_list[:5])}")
+        summary_lines.append(
+            f"Target unfollowed ({len(unfollowed_list)}): "
+            f"@{', @'.join(unfollowed_list[:5])}"
+        )
 
     return {
         "target": target,
@@ -328,15 +470,30 @@ def compare_snapshots(old_snap: Dict[str, Any], new_snap: Dict[str, Any]) -> Dic
         "has_changes": has_changes,
         "field_changes": field_changes,
         "metric_deltas": {
-            "followers": {"old": old_followers, "new": new_followers, "diff": diff_followers, "growth_percent": growth_pct},
-            "following": {"old": old_followings, "new": new_followings, "diff": diff_followings},
-            "posts": {"old": old_posts, "new": new_posts, "diff": diff_posts},
+            "followers": {
+                "old": old_followers,
+                "new": new_followers,
+                "diff": diff_followers,
+                "growth_percent": growth_pct,
+            },
+            "following": {
+                "old": old_followings,
+                "new": new_followings,
+                "diff": diff_followings,
+            },
+            "posts": {
+                "old": old_posts,
+                "new": new_posts,
+                "diff": diff_posts,
+            },
         },
         "link_changes": {
             "added": added_links,
             "removed": removed_links,
         },
         "network_changes": {
+            "has_sample": has_follower_sample or has_following_sample,
+            "is_partial": is_followers_partial or is_following_partial,
             "new_followers": new_followers_list,
             "lost_followers": lost_followers_list,
             "new_followings": new_followings_list,
@@ -350,7 +507,7 @@ def diff_latest_two(
     target: str,
     db_path: Optional[Union[str, Path]] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Compare the most recent snapshot against the second most recent for target."""
+    """Compare the most recent snapshot against the second most recent."""
     if db_path is None:
         db_path = DEFAULT_DB_PATH
     snaps = list_snapshots(target, limit=2, db_path=db_path)

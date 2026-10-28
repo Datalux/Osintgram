@@ -1367,19 +1367,14 @@ class OsintgramService:
 
     def take_snapshot(self, include_network: bool = False, limit_network: int = 200, db_path=None) -> dict:
         """Capture and record a new historical profile snapshot."""
+        limit_network = min(500, max(1, limit_network or 200))
         from src.snapshot_tracker import create_snapshot, DEFAULT_DB_PATH
         profile = self.get_profile_info()
         followers = None
         followings = None
         if include_network and not self.is_private:
-            try:
-                followers = self.get_followers(limit=limit_network)
-            except Exception:
-                followers = None
-            try:
-                followings = self.get_followings(limit=limit_network)
-            except Exception:
-                followings = None
+            followers = self.get_followers(limit=limit_network)
+            followings = self.get_followings(limit=limit_network)
         return create_snapshot(
             target=self.target,
             profile_data=profile,
