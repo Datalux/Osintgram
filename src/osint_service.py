@@ -919,7 +919,10 @@ class OsintgramService:
             texts.extend(captions)
             scanned_count = getattr(self, "_last_posts_scanned", len(captions))
         if source in ("comments", "all"):
-            comments = self.get_comment_data(limit_posts=eff_limit)
+            try:
+                comments = self.get_comment_data(limit_posts=eff_limit, max_comments_per_post=50)
+            except TypeError:
+                comments = self.get_comment_data(limit_posts=eff_limit)
             texts.extend([c.get("comment") or c.get("text") or "" for c in comments])
             comment_scanned = getattr(self, "_last_posts_scanned", len(comments))
             scanned_count = max(scanned_count or 0, comment_scanned)
@@ -929,12 +932,12 @@ class OsintgramService:
         res["posts_scanned"] = scanned_count if scanned_count is not None else 0
         return res
 
-    def get_comment_data(self, limit_posts: Optional[int] = None, max_comments_per_post: Optional[int] = 50) -> list:
+    def get_comment_data(self, limit_posts: Optional[int] = None, max_comments_per_post: Optional[int] = None) -> list:
         self._require_public()
         data = self._get_feed(limit=limit_posts)
         self._last_posts_scanned = len(data)
         comments = []
-        eff_cap = min(100, max(1, max_comments_per_post)) if max_comments_per_post is not None else 50
+        eff_cap = min(100, max(1, max_comments_per_post)) if max_comments_per_post is not None else None
         for post in data:
             post_id = post.get("id")
             for comment in self._get_comments(post_id, limit=eff_cap):
