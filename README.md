@@ -91,6 +91,18 @@ uvicorn src.web.app:app --host 127.0.0.1 --port 8000 --reload   # or: make run
 
 Open **<http://127.0.0.1:8000>**.
 
+### Headless CLI & Scheduled Audits
+
+Run automated investigations, scheduled audits, and dossier generation without opening a browser:
+
+```bash
+# Complete audit with standalone HTML and JSON dossier export
+python main.py <target> --preset full --export-html report.html --export-json out.json
+
+# Continuous monitoring: re-audit every 60 minutes and send webhook alerts on changes
+python main.py <target> --watch 60 --diff --webhook https://discord.com/api/webhooks/...
+```
+
 You need a data backend. The page opens on a panel where you can paste a
 [HikerAPI](https://hikerapi.com) key directly — it's verified before it's
 accepted, and can be saved for next time. (A free
