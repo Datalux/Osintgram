@@ -100,7 +100,9 @@ def session_exists(session_path: str = DEFAULT_SESSION_PATH) -> bool:
 class InstagrapiClient:
     """HikerAPI-shaped wrapper around an authenticated instagrapi.Client."""
 
-    def __init__(self, username: str, password: str, session_path: str = DEFAULT_SESSION_PATH, proxy: Optional[str] = None):
+    def __init__(self, username: str, password: str, session_path: str = DEFAULT_SESSION_PATH, proxy: Optional[str] = None, pacer: Optional[object] = None):
+        from src.human_pacing import HumanPacer
+        self.pacer = pacer or HumanPacer()
         session_file = Path(session_path)
         if not session_file.exists():
             raise InstagrapiBackendError(
@@ -291,10 +293,8 @@ class InstagrapiClient:
         }
 
     def user_followers_g2(self, user_id, page_id: Optional[str] = None) -> dict:
-        import time, random
         if page_id:
-            # Human pacing to avoid Instagram burst rate limits
-            time.sleep(random.uniform(1.2, 2.5))
+            self.pacer.pace(is_subsequent=True)
         try:
             # Modern private GraphQL endpoint - mirrors official mobile app and avoids feedback_required
             users, cursor = self._cl.user_followers_private_gql_chunk(
@@ -320,10 +320,8 @@ class InstagrapiClient:
         }
 
     def user_following_g2(self, user_id, page_id: Optional[str] = None) -> dict:
-        import time, random
         if page_id:
-            # Human pacing to avoid Instagram burst rate limits
-            time.sleep(random.uniform(1.2, 2.5))
+            self.pacer.pace(is_subsequent=True)
         try:
             # Modern private GraphQL endpoint - mirrors official mobile app and avoids feedback_required
             users, cursor = self._cl.user_following_private_gql_chunk(

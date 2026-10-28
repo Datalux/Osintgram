@@ -1159,8 +1159,9 @@ def update_proxy_settings(req: ProxySettingsRequest, request: Request):
     # Persist or clear in credentials.ini
     saved = False
     if req.remember:
+        from src.human_pacing import CREDENTIALS_PATH
         cp = configparser.ConfigParser(interpolation=None)
-        cred_path = Path("config/credentials.ini")
+        cred_path = CREDENTIALS_PATH
         if cred_path.exists():
             try:
                 cp.read(cred_path, encoding="utf-8")
@@ -1189,6 +1190,79 @@ def update_proxy_settings(req: ProxySettingsRequest, request: Request):
         "saved": saved,
         "origin_ip": origin_ip,
         "warning": test_warning,
+    }
+
+
+class PacingSettingsRequest(BaseModel):
+    mode: str = "normal"
+    min_delay: Optional[float] = None
+    max_delay: Optional[float] = None
+    break_frequency: Optional[int] = None
+    break_min: Optional[float] = None
+    break_max: Optional[float] = None
+    adaptive_backoff: Optional[bool] = None
+    remember: bool = True
+
+
+@app.get("/api/pacing/settings")
+def get_pacing_settings():
+    from src.human_pacing import resolve_pacing_config
+    cfg = resolve_pacing_config()
+    return {
+        "mode": cfg.mode,
+        "min_delay": cfg.min_delay,
+        "max_delay": cfg.max_delay,
+        "break_frequency": cfg.break_frequency,
+        "break_min": cfg.break_min,
+        "break_max": cfg.break_max,
+        "adaptive_backoff": cfg.adaptive_backoff,
+    }
+
+
+@app.post("/api/pacing/settings")
+def update_pacing_settings(req: PacingSettingsRequest, request: Request):
+    _require_local_origin(request)
+    from src.human_pacing import PacingMode
+    mode = (req.mode or PacingMode.NORMAL).strip().lower()
+    valid = (PacingMode.STEALTH, PacingMode.NORMAL, PacingMode.FAST, PacingMode.CUSTOM)
+    if mode not in valid:
+        raise HTTPException(status_code=400, detail=f"Invalid pacing mode: {mode}")
+
+    saved = False
+    if req.remember:
+        from src.human_pacing import CREDENTIALS_PATH
+        cp = configparser.ConfigParser(interpolation=None)
+        cred_path = CREDENTIALS_PATH
+        if cred_path.exists():
+            try:
+                cp.read(cred_path, encoding="utf-8")
+            except Exception:
+                pass
+        if not cp.has_section("Pacing"):
+            cp.add_section("Pacing")
+        cp.set("Pacing", "mode", mode)
+        if req.min_delay is not None:
+            cp.set("Pacing", "min_delay", str(req.min_delay))
+        if req.max_delay is not None:
+            cp.set("Pacing", "max_delay", str(req.max_delay))
+        if req.break_frequency is not None:
+            cp.set("Pacing", "break_frequency", str(req.break_frequency))
+        if req.break_min is not None:
+            cp.set("Pacing", "break_min", str(req.break_min))
+        if req.break_max is not None:
+            cp.set("Pacing", "break_max", str(req.break_max))
+        if req.adaptive_backoff is not None:
+            cp.set("Pacing", "adaptive_backoff", str(req.adaptive_backoff).lower())
+        cred_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(cred_path, "w", encoding="utf-8") as f:
+            cp.write(f)
+        saved = True
+
+    os.environ["SCRAPE_PACING"] = mode
+    return {
+        "ok": True,
+        "mode": mode,
+        "saved": saved,
     }
 
 

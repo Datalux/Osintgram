@@ -23,6 +23,7 @@ import httpx
 from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
 from hikerapi import Client as AppClient
+from src.human_pacing import HumanPacer
 
 
 class OsintServiceError(Exception):
@@ -343,8 +344,9 @@ class OsintgramService:
     have a client instance.
     """
 
-    def __init__(self, target: str, api_client):
+    def __init__(self, target: str, api_client, pacer: Optional[HumanPacer] = None):
         self._backend_client = api_client
+        self.pacer = pacer if pacer is not None else HumanPacer()
         self.api = _CountingApiProxy(api_client)
         self.geolocator = Nominatim(user_agent="osintgram-web")
         # Nominatim's usage policy caps requests at 1/second; without this,
@@ -412,8 +414,11 @@ class OsintgramService:
         next_page_id = None
         collected_count = 0
         while True:
+            if next_page_id:
+                self.pacer.pace(is_subsequent=True)
             try:
                 result = api_method(subject, **({cursor_param: next_page_id} if next_page_id else {}))
+                self.pacer.record_success()
             except RequestLimitReachedError:
                 # The per-query request budget ran out mid-scan - end here
                 # with whatever pages were already fetched instead of failing
@@ -421,6 +426,7 @@ class OsintgramService:
                 # a valid, usable answer, not an error.
                 return
             except Exception as e:
+                self.pacer.record_throttle_or_error()
                 err_lower = str(e).lower()
                 # If Instagram throttles with feedback_required, rate limit, or 429 mid-scan:
                 # return what we already fetched rather than crashing and losing everything!
@@ -449,11 +455,15 @@ class OsintgramService:
         data = []
         next_page_id = ""
         while True:
+            if next_page_id:
+                self.pacer.pace(is_subsequent=True)
             try:
                 result = self.api.media_comments_v2(media_id, page_id=next_page_id)
+                self.pacer.record_success()
             except RequestLimitReachedError:
                 return data  # budget ran out mid-scan - return what we have
             except Exception as e:
+                self.pacer.record_throttle_or_error()
                 if "Entries not found" in str(e):
                     return data
                 raise HikerAPIError(str(e)) from e

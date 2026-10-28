@@ -1563,6 +1563,31 @@
         <p class="key-status" id="proxy-status-msg" hidden style="margin-top:8px; font-size:0.78rem;"></p>
       </div>
 
+      <!-- Stealth Human Pacing & Anti-Throttling -->
+      <div class="ai-web-section" style="margin-top: 14px;">
+        <div class="ai-web-head">
+          <label class="ai-web-toggle">
+            <span class="ai-web-toggle-label">⏱️ Stealth Human Pacing &amp; Anti-Throttling</span>
+          </label>
+          <span class="ai-web-privacy-badge" id="pacing-status-badge">Normal</span>
+        </div>
+        <p class="ai-web-desc">
+          Simulate human browsing pauses (Gaussian distribution + reading breaks) during bulk scrapes (followers/followings/comments) to evade bot heuristics and feedback_required action blocks.
+        </p>
+        <div class="ai-grid" style="margin-top: 10px; grid-template-columns: 1fr auto; align-items: end;">
+          <div class="ai-field">
+            <label for="pacing-mode-select">Pacing Mode</label>
+            <select id="pacing-mode-select" class="ai-select">
+              <option value="normal">Normal (0.8s - 2.4s Gaussian jitter)</option>
+              <option value="stealth">Stealth (1.6s - 4.8s + reading breaks every 20 pages)</option>
+              <option value="fast">Fast (Minimal ~0.05s delay)</option>
+            </select>
+          </div>
+          <button type="button" class="ai-btn-sm" id="pacing-save-btn" style="height:38px; border-color:var(--accent); color:var(--accent);">Apply</button>
+        </div>
+        <p class="key-status" id="pacing-status-msg" hidden style="margin-top:8px; font-size:0.78rem;"></p>
+      </div>
+
       <div class="ai-bottom-row">
         <div class="ai-actions-left">
           <button type="button" class="ai-btn-sm" id="ai-test">⚡ Test Connection</button>
@@ -2226,13 +2251,65 @@
     }
   });
 
+  // ---- Pacing settings ----
+  const pacingModeSelect = document.getElementById("pacing-mode-select");
+  const pacingStatusBadge = document.getElementById("pacing-status-badge");
+  const pacingSaveBtn = document.getElementById("pacing-save-btn");
+  const pacingStatusMsg = document.getElementById("pacing-status-msg");
+
+  function setPacingStatus(text, kind) {
+    pacingStatusMsg.textContent = text;
+    pacingStatusMsg.className = `key-status${kind ? ` ${kind}` : ""}`;
+    pacingStatusMsg.hidden = !text;
+  }
+
+  async function loadPacingSettings() {
+    try {
+      const resp = await fetch("/api/pacing/settings");
+      if (!resp.ok) return;
+      const data = await resp.json();
+      pacingModeSelect.value = data.mode || "normal";
+      if (data.mode === "stealth") {
+        pacingStatusBadge.textContent = "● Stealth Active";
+        pacingStatusBadge.style.color = "var(--ok)";
+      } else if (data.mode === "fast") {
+        pacingStatusBadge.textContent = "● Fast Mode";
+        pacingStatusBadge.style.color = "var(--warn)";
+      } else {
+        pacingStatusBadge.textContent = "Normal";
+        pacingStatusBadge.style.color = "var(--muted)";
+      }
+    } catch (_) {}
+  }
+
+  pacingSaveBtn.addEventListener("click", async () => {
+    const mode = pacingModeSelect.value;
+    pacingSaveBtn.disabled = true;
+    setPacingStatus("Saving pacing mode…");
+    try {
+      const resp = await fetch("/api/pacing/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, remember: true }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.detail || `HTTP ${resp.status}`);
+      setPacingStatus(`✓ Pacing mode set to ${mode}!`, "ok");
+      loadPacingSettings();
+    } catch (err) {
+      setPacingStatus(`✗ ${err.message || err}`, "err");
+    } finally {
+      pacingSaveBtn.disabled = false;
+    }
+  });
+
   aiChip.addEventListener("click", () => {
     aiPanel.hidden = !aiPanel.hidden;
     if (!aiPanel.hidden) {
       loadAiSettings();
       loadWebSearchSettings();
-  loadProxySettings();
       loadProxySettings();
+      loadPacingSettings();
     }
   });
   aiClose.addEventListener("click", () => { aiPanel.hidden = true; });
