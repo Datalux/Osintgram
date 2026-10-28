@@ -34,6 +34,42 @@ class InstagrapiBackendError(Exception):
     """Raised when the instagrapi backend can't authenticate."""
 
 
+def mask_proxy(proxy_url: Optional[str]) -> str:
+    """Mask credentials in proxy string for safe logging and UI display."""
+    if not proxy_url:
+        return ""
+    try:
+        import urllib.parse
+        parsed = urllib.parse.urlsplit(proxy_url)
+        if parsed.username or parsed.password:
+            user = parsed.username or ""
+            netloc = f"{user}:***@{parsed.hostname}"
+            if parsed.port:
+                netloc += f":{parsed.port}"
+            return urllib.parse.urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+    except Exception:
+        pass
+    return proxy_url
+
+
+def resolve_instagrapi_proxy(
+    credentials_path: str = "config/credentials.ini",
+) -> Optional[str]:
+    """Resolve proxy URL for instagrapi (HTTP/HTTPS/SOCKS5 / rotating proxy)."""
+    proxy = os.getenv("INSTAGRAPI_PROXY") or os.getenv("INSTAGRAM_PROXY")
+    if proxy and proxy.strip():
+        return proxy.strip()
+    try:
+        parser = configparser.ConfigParser(interpolation=None)
+        parser.read(credentials_path)
+        val = parser.get("Credentials", "proxy", fallback=None)
+        if val and val.strip():
+            return val.strip()
+    except Exception:
+        pass
+    return None
+
+
 def resolve_instagrapi_credentials(
     credentials_path: str = "config/credentials.ini",
 ) -> tuple[Optional[str], Optional[str]]:
@@ -64,7 +100,7 @@ def session_exists(session_path: str = DEFAULT_SESSION_PATH) -> bool:
 class InstagrapiClient:
     """HikerAPI-shaped wrapper around an authenticated instagrapi.Client."""
 
-    def __init__(self, username: str, password: str, session_path: str = DEFAULT_SESSION_PATH):
+    def __init__(self, username: str, password: str, session_path: str = DEFAULT_SESSION_PATH, proxy: Optional[str] = None):
         session_file = Path(session_path)
         if not session_file.exists():
             raise InstagrapiBackendError(
@@ -77,6 +113,13 @@ class InstagrapiClient:
         from instagrapi import Client
 
         self._cl = Client()
+        self._proxy = proxy or resolve_instagrapi_proxy()
+        if self._proxy:
+            try:
+                self._cl.set_proxy(self._proxy)
+            except Exception as e:
+                masked = mask_proxy(self._proxy)
+                raise InstagrapiBackendError(f"Failed to set instagrapi proxy {masked}: {e}") from e
         self._cl.load_settings(session_file)
         self._cl.username = username
         self._cl.password = password
@@ -248,14 +291,58 @@ class InstagrapiClient:
         }
 
     def user_followers_g2(self, user_id, page_id: Optional[str] = None) -> dict:
-        users, cursor = self._cl.user_followers_v1_chunk(str(user_id), max_amount=50, max_id=page_id or "")
+        import time, random
+        if page_id:
+            # Human pacing to avoid Instagram burst rate limits
+            time.sleep(random.uniform(1.2, 2.5))
+        try:
+            # Modern private GraphQL endpoint - mirrors official mobile app and avoids feedback_required
+            users, cursor = self._cl.user_followers_private_gql_chunk(
+                str(user_id), max_amount=50, max_id=page_id or None
+            )
+        except Exception as e_gql:
+            err_str = str(e_gql).lower()
+            if "private" in err_str or "not authorized" in err_str or "forbidden" in err_str:
+                raise RuntimeError("Profile is private and the logged-in session does not follow it") from e_gql
+            # Fallback to v1 chunk
+            try:
+                users, cursor = self._cl.user_followers_v1_chunk(
+                    str(user_id), max_amount=50, max_id=page_id or ""
+                )
+            except Exception as e:
+                err_str = str(e).lower()
+                if "private" in err_str or "not authorized" in err_str or "forbidden" in err_str:
+                    raise RuntimeError("Profile is private and the logged-in session does not follow it") from e
+                raise e_gql from e
         return {
             "response": {"users": [self._short_user_to_dict(u) for u in users]},
             "next_page_id": cursor or None,
         }
 
     def user_following_g2(self, user_id, page_id: Optional[str] = None) -> dict:
-        users, cursor = self._cl.user_following_v1_chunk(str(user_id), max_amount=50, max_id=page_id or "")
+        import time, random
+        if page_id:
+            # Human pacing to avoid Instagram burst rate limits
+            time.sleep(random.uniform(1.2, 2.5))
+        try:
+            # Modern private GraphQL endpoint - mirrors official mobile app and avoids feedback_required
+            users, cursor = self._cl.user_following_private_gql_chunk(
+                str(user_id), max_amount=50, max_id=page_id or None
+            )
+        except Exception as e_gql:
+            err_str = str(e_gql).lower()
+            if "private" in err_str or "not authorized" in err_str or "forbidden" in err_str:
+                raise RuntimeError("Profile is private and the logged-in session does not follow it") from e_gql
+            # Fallback to v1 chunk
+            try:
+                users, cursor = self._cl.user_following_v1_chunk(
+                    str(user_id), max_amount=50, max_id=page_id or ""
+                )
+            except Exception as e:
+                err_str = str(e).lower()
+                if "private" in err_str or "not authorized" in err_str or "forbidden" in err_str:
+                    raise RuntimeError("Profile is private and the logged-in session does not follow it") from e
+                raise e_gql from e
         return {
             "response": {"users": [self._short_user_to_dict(u) for u in users]},
             "next_page_id": cursor or None,
