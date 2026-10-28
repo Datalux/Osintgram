@@ -266,7 +266,7 @@ both modes.
 
 ## 5. What you can ask for
 
-33 commands, grouped by what they tell you. Parameters are in `code`.
+34 commands, grouped by what they tell you. Parameters are in `code`.
 
 ### Profile
 
@@ -275,6 +275,7 @@ both modes.
 | **Profile info** | Bio and **all bio links**, follower/following/post counts, business & verified flags, category, pronouns, public email/phone, full business address including coordinates, linked Facebook id, reel and tag counters | free¹ |
 | **Account info** | Instagram's *About this account*: country of registration, creation month, number of username changes | 1 |
 | **Profile picture** | Direct CDN URL at full resolution | free¹ |
+| **Reverse image search** | 1-click reverse visual search & facial recognition pivot links (Lens, Yandex, Bing, TinEye) — `photo_url` | free¹ |
 | **Stories** | Currently active stories, previewed vertically | 2 |
 | **Story highlights** | Pinned story highlights: title, count, cover | 2 |
 | **Photos** | Direct CDN URLs of posted photos — `limit` | per page |

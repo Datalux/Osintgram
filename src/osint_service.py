@@ -1515,6 +1515,26 @@ class OsintgramService:
             raise OsintServiceError(f"Not enough snapshots to compare for @{self.target}. At least 2 snapshots are required.")
         return diff
 
+    def get_reverse_image_search(self, photo_url: Optional[str] = None) -> dict:
+        """Generate 1-click reverse image search & facial recognition pivot links for avatar or media."""
+        self._require_target()
+        url = photo_url
+        context = "media_photo"
+        if not url:
+            try:
+                propic = self.get_user_propic()
+                url = propic.get("url") or propic.get("profile_pic_url") or ""
+            except Exception:
+                url = self.user.get("profile_pic_url") or ""
+            context = "profile_pic"
+
+        if not url:
+            raise OsintServiceError("No image URL provided and target has no profile picture.")
+
+        from src.reverse_image_search import ReverseImageSearchEngine
+        engine = ReverseImageSearchEngine()
+        return engine.analyze(image_url=url, context=context)
+
 
 def check_hiker_token(token: str) -> dict:
     """Verify a token by asking HikerAPI for its own balance.
