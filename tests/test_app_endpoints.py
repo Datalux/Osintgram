@@ -395,3 +395,13 @@ def test_llm_tool_call_subscriptable_and_properties():
     assert tc.name == "get_user_info"
     assert tc.arguments == {"target": "test"}
     assert tc.get("name") == "get_user_info"
+
+
+def test_run_tool_call_catches_type_error():
+    from src.web.app import _run_tool_call
+    import json
+    def dummy_tool(required_arg: str):
+        return "ok"
+    res = json.loads(_run_tool_call("dummy_tool", {}, dummy_tool))
+    assert "error" in res
+    assert "Invalid tool arguments" in res["error"]

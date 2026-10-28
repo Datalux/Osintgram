@@ -183,7 +183,12 @@ def _run_tool_call(name: str, args: dict, fn) -> str:
     same tool with different arguments) that happen to need the same
     underlying user/page get to share that cache hit, which a whole-tool
     cache keyed on (tool, arguments) could never do."""
-    return fn(**args) if fn else json.dumps({"error": f"unknown tool {name}"})
+    if not fn:
+        return json.dumps({"error": f"unknown tool {name}"})
+    try:
+        return fn(**args)
+    except TypeError as e:
+        return json.dumps({"error": f"Invalid tool arguments for {name}: {e}"})
 
 
 app = FastAPI(title="Osintgram Web")
