@@ -1406,5 +1406,98 @@ async def _response_headers(request, call_next):
     return response
 
 
+class SnapshotRequest(BaseModel):
+    include_network: bool = False
+    limit_network: int = 200
+
+
+class WebhookTestRequest(BaseModel):
+    webhook_url: str
+    target: str = "test_target"
+    chat_id: Optional[str] = None
+
+
+class WebhookNotifyRequest(BaseModel):
+    webhook_url: str
+    target: str
+    diff_data: dict
+    chat_id: Optional[str] = None
+
+
+@app.post("/api/target/{target}/snapshot")
+def create_target_snapshot(target: str, req: SnapshotRequest, request: Request):
+    _require_local_origin(request)
+    service = build_service(target)
+    limit_net = min(500, max(1, req.limit_network or 200))
+    try:
+        snap = service.take_snapshot(
+            include_network=req.include_network,
+            limit_network=limit_net,
+        )
+        return {"ok": True, "snapshot": snap}
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+
+@app.get("/api/target/{target}/snapshots")
+def get_target_snapshots(target: str, limit: int = 50):
+    from src.snapshot_tracker import list_snapshots
+    return {"ok": True, "snapshots": list_snapshots(target, limit=limit)}
+
+
+@app.delete("/api/target/{target}/snapshots")
+@app.delete("/api/snapshot/{target}")
+def delete_target_snapshots(target: str, request: Request):
+    _require_local_origin(request)
+    from src.snapshot_tracker import delete_snapshots
+    count = delete_snapshots(target)
+    return {"ok": True, "target": target, "deleted_count": count}
+
+
+@app.get("/api/target/{target}/diff")
+def get_target_diff(target: str, old_id: Optional[int] = None, new_id: Optional[int] = None):
+    from src.snapshot_tracker import compare_snapshots, diff_latest_two, get_snapshot
+    if old_id is not None and new_id is not None:
+        old_snap = get_snapshot(old_id)
+        new_snap = get_snapshot(new_id)
+        if not old_snap or not new_snap:
+            raise HTTPException(404, f"Snapshot not found (old_id={old_id}, new_id={new_id})")
+        diff = compare_snapshots(old_snap, new_snap)
+    else:
+        diff = diff_latest_two(target)
+        if diff is None:
+            raise HTTPException(404, f"At least 2 snapshots are required to calculate diff for @{target}")
+    return {"ok": True, "diff": diff}
+
+
+@app.post("/api/webhook/test")
+def test_webhook_dispatch(req: WebhookTestRequest, request: Request):
+    _require_local_origin(request)
+    from src.webhook_dispatcher import dispatch_webhook
+    fake_diff = {
+        "target": req.target,
+        "has_changes": True,
+        "summary": ["Test notification from Osintgram Watcher.", "Followers: +5 new accounts."],
+        "metric_deltas": {
+            "followers": {"old": 100, "new": 105, "diff": 5},
+            "following": {"old": 50, "new": 50, "diff": 0},
+        },
+        "network_changes": {
+            "new_followers": ["sample_user_1", "sample_user_2"],
+            "lost_followers": [],
+        },
+    }
+    res = dispatch_webhook(req.webhook_url, "test_notification", fake_diff, target=req.target, chat_id=req.chat_id)
+    return res
+
+
+@app.post("/api/webhook/notify-diff")
+def send_webhook_diff_notification(req: WebhookNotifyRequest, request: Request):
+    _require_local_origin(request)
+    from src.webhook_dispatcher import dispatch_webhook
+    res = dispatch_webhook(req.webhook_url, "profile_diff", req.diff_data, target=req.target, chat_id=req.chat_id)
+    return res
+
+
 # Registered last so it doesn't shadow /api/query.
 app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")

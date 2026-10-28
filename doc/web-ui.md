@@ -278,6 +278,8 @@ both modes.
 | **Stories** | Currently active stories, previewed vertically | 2 |
 | **Story highlights** | Pinned story highlights: title, count, cover | 2 |
 | **Photos** | Direct CDN URLs of posted photos — `limit` | per page |
+| **Take snapshot** | Record a timestamped historical snapshot in local SQLite (`cache/snapshots.sqlite3`) | free¹ |
+| **Diff snapshots** | Compare the latest snapshot against previous ones to detect bio, links, and unfollowers | free |
 
 ¹ Read from the profile lookup the run already performs.
 

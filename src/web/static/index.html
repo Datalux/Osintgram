@@ -1807,10 +1807,12 @@
     get_followings_email: ["✉️", "Following emails", "Public emails among the followed accounts (one request per account checked)."],
     get_followers_phone: ["📞", "Follower phones", "Public phone numbers among the followers (one request per account checked)."],
     get_followings_phone: ["📞", "Following phones", "Public phone numbers among the followed accounts (one request per account checked)."],
+    snapshot_profile: ["📸", "Take snapshot", "Record a timestamped historical snapshot of this profile in the local database."],
+    diff_profile: ["🔄", "Diff snapshots", "Compare the latest snapshot against previous ones to detect changes in bio, links, and unfollowers."],
   };
 
   const TOOL_GROUPS = [
-    ["Profile", ["get_user_info", "get_account_about", "get_user_propic", "get_user_stories", "get_highlights", "get_user_photos"]],
+    ["Profile", ["get_user_info", "get_account_about", "snapshot_profile", "diff_profile", "get_user_propic", "get_user_stories", "get_highlights", "get_user_photos"]],
     ["Network", ["get_followers", "get_followings", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_people_tagged_by_user", "get_people_who_commented"]],
     ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions"]],
     ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
@@ -3461,6 +3463,49 @@
     return html;
   }
 
+  function renderDiffResult(diff) {
+    let html = `<div class="diff-card">`;
+    const statusText = diff.has_changes
+      ? `<span class="badge" style="background:#e11d48; color:#fff;">Changes detected</span>`
+      : `<span class="badge" style="background:#059669; color:#fff;">No changes detected</span>`;
+    html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <strong>Target: @${escapeHtml(diff.target || "")}</strong>
+      ${statusText}
+    </div>`;
+
+    if (Array.isArray(diff.summary) && diff.summary.length > 0) {
+      html += `<div class="details-heading"><span>Summary of changes</span></div><ul style="margin: 0 0 12px 18px; padding:0; line-height:1.6;">`;
+      for (const line of diff.summary) {
+        html += `<li>${escapeHtml(line)}</li>`;
+      }
+      html += `</ul>`;
+    } else {
+      html += `<p class="hint">Profile state is identical between these two snapshots.</p>`;
+    }
+
+    const net = diff.network_changes || {};
+    if (Array.isArray(net.lost_followers) && net.lost_followers.length > 0) {
+      html += `<div class="details-heading"><span>📉 Unfollowers <span class="n">${net.lost_followers.length}</span></span></div>
+        <p class="hint" style="color:#fb7185;">Accounts that stopped following @${escapeHtml(diff.target)}: ${net.lost_followers.map(u => `@${escapeHtml(u)}`).join(", ")}</p>`;
+    }
+    if (Array.isArray(net.new_followers) && net.new_followers.length > 0) {
+      html += `<div class="details-heading"><span>📈 New followers <span class="n">${net.new_followers.length}</span></span></div>
+        <p class="hint" style="color:#34d399;">${net.new_followers.map(u => `@${escapeHtml(u)}`).join(", ")}</p>`;
+    }
+    html += `</div>`;
+    return html;
+  }
+
+  function renderSnapshotResult(snap) {
+    return `<div class="snapshot-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <strong>📸 Snapshot #${escapeHtml(String(snap.id || snap.snapshot_id || ""))}</strong>
+        <span class="badge" style="background:#4f46e5; color:#fff;">${escapeHtml(snap.timestamp || "")}</span>
+      </div>
+      <p class="hint">Saved state for @${escapeHtml(snap.target || snap.username || "")} with ${snap.follower_count || 0} followers, ${snap.following_count || 0} following, ${snap.media_count || 0} posts.</p>
+    </div>`;
+  }
+
   function renderToolResult(result) {
     if (result && typeof result === "object" && !Array.isArray(result) && "error" in result) {
       return `<p class="empty">${escapeHtml(result.error)}</p>`;
@@ -3486,6 +3531,8 @@
       if ("hashtag" in result || "place" in result) return renderSearch(result);
       if (Array.isArray(result.timestamps)) return renderPostingTimes(result);
       if (Array.isArray(result.descriptions)) return renderDescriptions(result);
+      if (result.has_changes !== undefined && Array.isArray(result.summary)) return renderDiffResult(result);
+      if (result.avatar_hash !== undefined && result.timestamp) return renderSnapshotResult(result);
       return renderStatGrid(result) + renderProfileLists(result)
         + (Array.isArray(result.previews) ? renderPostPreviews(result.previews) : "");
     }
