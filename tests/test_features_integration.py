@@ -46,6 +46,39 @@ def test_export_graph_endpoint_json(api_client):
     assert data["stats"]["edge_count"] == 1
 
 
+def test_export_graph_endpoint_cytoscape(api_client):
+    payload = {
+        "target": "target_user",
+        "results": [
+            {"name": "get_followers", "result": [{"username": "alice", "id": "1"}]},
+        ],
+        "format": "cytoscape",
+    }
+    resp = api_client.post("/api/export/graph", json=payload)
+    assert resp.status_code == 200
+    assert "application/json" in resp.headers.get("content-type", "")
+    data = resp.json()
+    assert data["format"] == "cytoscape"
+    assert "elements" in data
+    assert len(data["elements"]["nodes"]) == 2
+
+
+def test_export_graph_endpoint_vis(api_client):
+    payload = {
+        "target": "target_user",
+        "results": [
+            {"name": "get_followers", "result": [{"username": "alice", "id": "1"}]},
+        ],
+        "format": "vis",
+    }
+    resp = api_client.post("/api/export/graph", json=payload)
+    assert resp.status_code == 200
+    assert "application/json" in resp.headers.get("content-type", "")
+    data = resp.json()
+    assert data["format"] == "vis"
+    assert len(data["nodes"]) == 2
+
+
 def test_websearch_api_endpoints(api_client):
     headers = {"origin": "http://127.0.0.1:8000"}
     # GET settings

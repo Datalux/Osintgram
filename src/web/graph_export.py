@@ -5,12 +5,33 @@ following, tagged accounts, commenters, mutual connections).
 
 Exports to:
   - GEXF (Graph Exchange XML Format) for Gephi and network analysis tools.
-  - JSON (nodes and edges) for D3.js, Cytoscape, and Vis.js.
+  - JSON (nodes and edges) for interactive Web UI, D3.js, Cytoscape, and Vis.js.
+  - Cytoscape.js format (elements: nodes & edges).
+  - Vis.js network format (nodes with groups & edges with arrows).
 """
 import html
 import json
 import time
 from typing import Any, Dict, List, Optional, Set, Tuple
+
+CATEGORY_COLORS: Dict[str, str] = {
+    "target": "#ec4899",           # Pink accent
+    "follower": "#5b52f0",          # Indigo
+    "following": "#3b82f6",         # Blue
+    "commenter": "#f59e0b",         # Amber
+    "tagged_by_target": "#10b981",  # Emerald
+    "tagged_target": "#8b5cf6",     # Purple
+    "mutual_connection": "#ef4444", # Red
+    "compared_target": "#f97316",   # Orange
+    "account": "#6b7280",           # Neutral Gray
+}
+
+
+def _hex_to_rgb(hex_str: str) -> Tuple[int, int, int]:
+    h = hex_str.lstrip("#")
+    if len(h) != 6:
+        return 120, 120, 120
+    return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
 
 
 def build_social_graph(results: List[Dict[str, Any]], target: str) -> Dict[str, Any]:
@@ -119,7 +140,7 @@ def build_social_graph(results: List[Dict[str, Any]], target: str) -> Dict[str, 
                 if m_uname:
                     add_node(m_uname, category="mutual_connection")
                     add_edge(m_uname, target_clean, "follows")
-                    add_edge(m_uname, other, "follows")
+                    add_edge(other, m_uname, "follows")
             for mutual in res.get("common_followings", []):
                 m_uname = mutual.get("username") if isinstance(mutual, dict) else str(mutual)
                 if m_uname:
@@ -135,14 +156,110 @@ def build_social_graph(results: List[Dict[str, Any]], target: str) -> Dict[str, 
             if tgt in nodes:
                 nodes[tgt]["mutual_with_target"] = True
 
+    # Decorate nodes and edges with visual properties for web/vis/cytoscape
+    node_list = list(nodes.values())
+    for n in node_list:
+        cat = n.get("category", "account")
+        n["color"] = CATEGORY_COLORS.get(cat, "#6b7280")
+        is_target = cat == "target"
+        deg = n["in_degree"] + n["out_degree"]
+        n["size"] = 28 if is_target else min(32, max(12, 10 + deg * 2))
+
+    edge_list = list(edges.values())
+    for e in edge_list:
+        e["from"] = e["source"]
+        e["to"] = e["target"]
+
     return {
         "target": target_clean,
-        "nodes": list(nodes.values()),
-        "edges": list(edges.values()),
+        "nodes": node_list,
+        "edges": edge_list,
         "stats": {
-            "node_count": len(nodes),
-            "edge_count": len(edges),
+            "node_count": len(node_list),
+            "edge_count": len(edge_list),
         },
+    }
+
+
+def export_cytoscape(graph: Dict[str, Any]) -> Dict[str, Any]:
+    """Serialize graph into standard Cytoscape.js elements JSON format."""
+    nodes = []
+    for n in graph.get("nodes", []):
+        cat = n.get("category", "account")
+        nodes.append({
+            "data": {
+                "id": str(n["id"]),
+                "label": str(n.get("label") or n["id"]),
+                "category": cat,
+                "color": n.get("color") or CATEGORY_COLORS.get(cat, "#6b7280"),
+                "size": int(n.get("size", 16)),
+                "in_degree": int(n.get("in_degree", 0)),
+                "out_degree": int(n.get("out_degree", 0)),
+                "mutual": bool(n.get("mutual_with_target", False)),
+            }
+        })
+    edges = []
+    for e in graph.get("edges", []):
+        edges.append({
+            "data": {
+                "id": str(e["id"]),
+                "source": str(e["source"]),
+                "target": str(e["target"]),
+                "relation": str(e.get("relation", "relates")),
+                "weight": float(e.get("weight", 1.0)),
+            }
+        })
+    return {
+        "format": "cytoscape",
+        "target": graph.get("target", "osintgram"),
+        "elements": {
+            "nodes": nodes,
+            "edges": edges,
+        },
+        "stats": graph.get("stats", {}),
+    }
+
+
+def export_vis(graph: Dict[str, Any]) -> Dict[str, Any]:
+    """Serialize graph into standard Vis.js network format."""
+    nodes = []
+    for n in graph.get("nodes", []):
+        cat = n.get("category", "account")
+        color = n.get("color") or CATEGORY_COLORS.get(cat, "#6b7280")
+        is_target = cat == "target"
+        deg = int(n.get("in_degree", 0)) + int(n.get("out_degree", 0))
+        size = 28 if is_target else min(32, max(12, 10 + deg * 2))
+        nodes.append({
+            "id": str(n["id"]),
+            "label": str(n.get("label") or n["id"]),
+            "group": cat,
+            "category": cat,
+            "color": {
+                "background": color,
+                "border": "#ffffff",
+                "highlight": {"background": color, "border": "#ffffff"},
+            },
+            "size": size,
+            "value": deg,
+            "title": f"@{n['id']} ({cat}) - connections: {deg}",
+        })
+    edges = []
+    for e in graph.get("edges", []):
+        edges.append({
+            "id": str(e["id"]),
+            "from": str(e["source"]),
+            "to": str(e["target"]),
+            "label": str(e.get("relation", "")),
+            "arrows": "to",
+            "value": float(e.get("weight", 1.0)),
+            "title": f"{e.get('relation', 'relates')} (weight: {e.get('weight', 1.0)})",
+        })
+    return {
+        "format": "vis",
+        "target": graph.get("target", "osintgram"),
+        "nodes": nodes,
+        "edges": edges,
+        "stats": graph.get("stats", {}),
     }
 
 
@@ -171,18 +288,6 @@ def export_gexf(graph: Dict[str, Any]) -> str:
         '    <nodes>',
     ]
 
-    # Gephi colors (r, g, b):
-    category_colors = {
-        "target": (236, 72, 153),           # Pink accent
-        "follower": (91, 82, 240),          # Indigo
-        "following": (59, 130, 246),        # Blue
-        "commenter": (245, 158, 11),        # Amber
-        "tagged_by_target": (16, 185, 129), # Emerald
-        "tagged_target": (139, 92, 246),    # Purple
-        "mutual_connection": (239, 68, 68), # Red
-        "compared_target": (249, 115, 22),  # Orange
-    }
-
     for n in graph.get("nodes", []):
         nid = html.escape(str(n["id"]))
         nlabel = html.escape(str(n.get("label") or nid))
@@ -190,7 +295,7 @@ def export_gexf(graph: Dict[str, Any]) -> str:
         in_d = int(n.get("in_degree", 0))
         out_d = int(n.get("out_degree", 0))
         mutual = "true" if n.get("mutual_with_target") else "false"
-        r, g, b = category_colors.get(cat, (120, 120, 120))
+        r, g, b = _hex_to_rgb(CATEGORY_COLORS.get(cat, "#787878"))
 
         xml.append(f'      <node id="{nid}" label="{nlabel}">')
         xml.append('        <attvalues>')

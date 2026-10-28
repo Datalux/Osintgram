@@ -507,6 +507,8 @@ the comparison, so it reports real changes only.
 | **⬇ CSV** | The same as a table — comma separated with a BOM, so Excel reads it as UTF-8 |
 | **⬇ Media (N)** | The original photos and videos, as one zip |
 | **⬇ Export all** | Request, answer and every result in one JSON file |
+| **🕸 Interactive graph** | Fullscreen interactive force-directed network graph in browser with physics, search, drag & drop, and filters |
+| **🕸 Export graph (GEXF / Cytoscape / Vis.js)** | Directed relationship graph of followers, following, commenters and tags in GEXF (for Gephi), Cytoscape.js, or Vis.js JSON |
 | **📄 Report (PDF)** | Standalone investigation dossier as a clean, vectorized PDF document |
 | **📄 Report (HTML)** | The whole search as a standalone HTML page |
 

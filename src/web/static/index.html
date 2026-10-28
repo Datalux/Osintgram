@@ -1419,7 +1419,7 @@
   @media print {
     :root { --bg: #fff; --panel: #fff; --panel-2: #fff; --text: #111; --muted: #555; --border: #bbb; --rule: #999; }
     body { background: #fff; color: #111; }
-    .masthead, form, .site-footer, .progress-wrap, #dossier-panel,
+    .masthead, form, .site-footer, .progress-wrap, #dossier-panel, #graph-modal,
     .card-actions, .export-btn, .json-toggle, .post-filter, .list-filter,
     .list-filter-count, .map-details, .file-menu, .mode-switch, .balance-chip { display: none !important; }
     main { max-width: none; margin: 0; padding: 0; }
@@ -1429,6 +1429,173 @@
     .addr-list a[href]::after, .report-footer a[href]::after { content: " (" attr(href) ")"; font-size: 0.75em; word-break: break-all; }
     a { color: #111; text-decoration: underline; }
   }
+
+  /* ---- interactive network graph modal ---- */
+  .graph-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(10, 14, 20, 0.88);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    box-sizing: border-box;
+    font-family: var(--sans);
+  }
+  .graph-modal[hidden] { display: none !important; }
+  .graph-window {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    position: relative;
+  }
+  .graph-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--rule);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .graph-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .graph-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .graph-badge {
+    font: 600 0.78rem var(--mono);
+    color: var(--muted);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+  }
+  .graph-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .graph-search-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    font: 0.84rem var(--mono);
+    width: 140px;
+  }
+  .graph-filter-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .graph-chip {
+    cursor: pointer;
+    font: 600 0.75rem var(--mono);
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    user-select: none;
+    transition: all 0.15s ease;
+  }
+  .graph-chip.active {
+    background: var(--panel);
+    color: var(--text);
+    border-color: var(--rule);
+  }
+  .graph-chip[data-cat="follower"].active { border-color: #5b52f0; color: #818cf8; }
+  .graph-chip[data-cat="following"].active { border-color: #3b82f6; color: #60a5fa; }
+  .graph-chip[data-cat="commenter"].active { border-color: #f59e0b; color: #fbbf24; }
+  .graph-chip[data-cat="tagged_target"].active, .graph-chip[data-cat="tagged_by_target"].active { border-color: #10b981; color: #34d399; }
+  .graph-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .graph-close-btn:hover { color: var(--text); background: var(--border); }
+  .graph-viewport {
+    flex: 1;
+    position: relative;
+    background: #090d16;
+    overflow: hidden;
+  }
+  #graph-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+  }
+  #graph-canvas.grabbing { cursor: grabbing; }
+  .graph-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    color: var(--text);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+    z-index: 10;
+    display: none;
+    transform: translate(12px, 12px);
+  }
+  .graph-inspector {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 12px 14px;
+    max-width: 280px;
+    font-size: 0.84rem;
+    color: var(--text);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    backdrop-filter: blur(6px);
+  }
+  .graph-inspector h4 { margin: 0 0 6px 0; font-size: 0.95rem; color: #fff; }
+  .graph-inspector .meta-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+  .graph-inspector .meta-row span:last-child { color: var(--text); font-family: var(--mono); }
+  .graph-legend {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    z-index: 9;
+    pointer-events: none;
+  }
+  .graph-legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .graph-legend-item:last-child { margin-bottom: 0; }
+  .graph-legend-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 </style>
 </head>
 <body>
@@ -1731,6 +1898,44 @@
       Instagram is a trademark of Meta Platforms, Inc.: this project is not affiliated with or endorsed by Meta.
     </p>
   </footer>
+
+  <!-- Interactive Network Graph Modal -->
+  <div id="graph-modal" class="graph-modal" hidden>
+    <div class="graph-window">
+      <header class="graph-header">
+        <div class="graph-title-wrap">
+          <span class="graph-title" id="graph-modal-title">Relationship Network</span>
+          <span class="graph-badge" id="graph-stats-badge">0 nodes · 0 edges</span>
+        </div>
+        <div class="graph-toolbar">
+          <input type="search" id="graph-search" class="graph-search-input" placeholder="Filter user..." />
+          <div class="graph-filter-chips" id="graph-filter-chips">
+            <button type="button" class="graph-chip active" data-cat="follower" title="Toggle Followers">Followers</button>
+            <button type="button" class="graph-chip active" data-cat="following" title="Toggle Following">Following</button>
+            <button type="button" class="graph-chip active" data-cat="commenter" title="Toggle Commenters">Comments</button>
+            <button type="button" class="graph-chip active" data-cat="tagged_target" title="Toggle Tagged accounts">Tagged</button>
+          </div>
+          <button class="export-btn" type="button" id="graph-toggle-physics" title="Pause or resume physics simulation">⏸ Freeze</button>
+          <button class="export-btn" type="button" id="graph-reset-zoom" title="Reset zoom and center graph">⟲ Reset</button>
+          <button class="export-btn" type="button" id="graph-export-png" title="Export graph view as high-resolution PNG image">📷 PNG</button>
+          <button class="graph-close-btn" type="button" id="graph-modal-close" title="Close graph view">&times;</button>
+        </div>
+      </header>
+      <div class="graph-viewport">
+        <canvas id="graph-canvas"></canvas>
+        <div id="graph-tooltip" class="graph-tooltip"></div>
+        <div id="graph-inspector" class="graph-inspector" hidden></div>
+        <div class="graph-legend">
+          <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#ec4899"></span> Target</div>
+          <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#5b52f0"></span> Follower</div>
+          <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#3b82f6"></span> Following</div>
+          <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#f59e0b"></span> Commenter</div>
+          <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#10b981"></span> Tagged</div>
+          <div class="graph-legend-item"><span class="graph-legend-dot" style="background:#ef4444;border:1px solid #fff"></span> Mutual Follow</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
 <noscript>
   <p class="noscript">This interface needs JavaScript enabled.</p>
@@ -4010,23 +4215,24 @@
     ".list-filter", ".list-filter-count", ".map-details",
   ].join(",");
 
-  async function exportSocialGraph(button) {
+  async function exportSocialGraph(button, format = "gexf") {
     const original = button.textContent;
     button.disabled = true;
     button.textContent = "⏳ Exporting…";
     try {
-      const target = exportState.meta?.target || "target";
+      const target = exportState.meta?.target || document.getElementById("target")?.value?.trim() || "target";
       const results = exportState.cards.map((c) => ({ name: c.name, result: c.result }));
       const resp = await fetch("/api/export/graph", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target, results, format: "gexf" }),
+        body: JSON.stringify({ target, results, format }),
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const blob = await resp.blob();
+      const ext = format === "cytoscape" ? "cytoscape.json" : (format === "vis" ? "vis.json" : (format === "json" ? "json" : "gexf"));
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `${target}_network.gexf`;
+      a.download = `${target}_network.${ext}`;
       a.click();
       URL.revokeObjectURL(a.href);
       button.textContent = "✓ Downloaded";
@@ -4066,7 +4272,521 @@
     }
   }
 
-  async function exportReport(button) {
+  // ---- interactive force-directed network graph simulation ----
+  let graphSim = null;
+
+  async function openInteractiveGraph() {
+    const target = exportState.meta?.target || document.getElementById("target")?.value?.trim() || "target";
+    const results = exportState.cards?.map((c) => ({ name: c.name, result: c.result })) || [];
+    if (results.length === 0) {
+      alert("No scan results to visualize. Run a search for followers, following, commenters or tags first.");
+      return;
+    }
+    const modal = document.getElementById("graph-modal");
+    if (!modal) return;
+    modal.hidden = false;
+
+    try {
+      const resp = await fetch("/api/export/graph", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, results, format: "json" }),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      initGraphSimulation(data);
+    } catch (err) {
+      alert(`Failed to load graph: ${err.message || err}`);
+      modal.hidden = true;
+    }
+  }
+
+  function initGraphSimulation(data) {
+    if (graphSim && graphSim.destroy) {
+      graphSim.destroy();
+    }
+    const canvas = document.getElementById("graph-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const container = canvas.parentElement;
+
+    let width = container.clientWidth || 900;
+    let height = container.clientHeight || 600;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const target = data.target || "target";
+    const titleEl = document.getElementById("graph-modal-title");
+    const badgeEl = document.getElementById("graph-stats-badge");
+    if (titleEl) titleEl.textContent = `@${target} · Relationship Network`;
+    if (badgeEl) badgeEl.textContent = `${data.stats?.node_count || data.nodes.length} nodes · ${data.stats?.edge_count || data.edges.length} edges`;
+
+    const nodes = (data.nodes || []).map((n, idx) => {
+      const isTarget = n.category === "target";
+      const angle = (idx / Math.max(1, data.nodes.length - 1)) * Math.PI * 2;
+      const radius = isTarget ? 0 : (160 + (idx % 6) * 35);
+      return {
+        ...n,
+        x: isTarget ? 0 : Math.cos(angle) * radius,
+        y: isTarget ? 0 : Math.sin(angle) * radius,
+        vx: 0,
+        vy: 0,
+        radius: isTarget ? 24 : Math.min(26, Math.max(10, 8 + ((n.in_degree || 0) + (n.out_degree || 0)) * 2)),
+      };
+    });
+
+    const nodeMap = {};
+    for (const n of nodes) nodeMap[n.id] = n;
+
+    const edges = (data.edges || []).map((e) => ({
+      ...e,
+      sourceNode: nodeMap[e.source],
+      targetNode: nodeMap[e.target],
+    })).filter((e) => e.sourceNode && e.targetNode);
+
+    let panX = width / 2;
+    let panY = height / 2;
+    let scale = 1.0;
+    let isDragging = false;
+    let isPanning = false;
+    let dragNode = null;
+    let dragStartX = 0, dragStartY = 0;
+    let panStartX = 0, panStartY = 0;
+    let hoveredNode = null;
+    let selectedNode = null;
+    let physicsRunning = true;
+    let searchFilter = "";
+    let activeCategories = new Set([
+      "target", "follower", "following", "commenter",
+      "tagged_by_target", "tagged_target", "mutual_connection",
+      "compared_target", "account"
+    ]);
+
+    const tooltip = document.getElementById("graph-tooltip");
+    const inspector = document.getElementById("graph-inspector");
+    const searchInput = document.getElementById("graph-search");
+    if (searchInput) searchInput.value = "";
+    if (inspector) inspector.hidden = true;
+
+    function resize() {
+      width = container.clientWidth || 900;
+      height = container.clientHeight || 600;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      if (ctx.resetTransform) ctx.resetTransform();
+      else ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+    }
+    window.addEventListener("resize", resize);
+
+    function getVisibleNodes() {
+      return nodes.filter((n) => {
+        if (n.category === "target") return true;
+        if (activeCategories.size && !activeCategories.has(n.category)) return false;
+        return true;
+      });
+    }
+
+    function getVisibleEdges(visNodes) {
+      const visSet = new Set(visNodes.map((n) => n.id));
+      return edges.filter((e) => visSet.has(e.source) && visSet.has(e.target));
+    }
+
+    function simulate() {
+      if (!physicsRunning) return;
+      const visNodes = getVisibleNodes();
+      const visEdges = getVisibleEdges(visNodes);
+
+      // Node repulsion (Coulomb)
+      for (let i = 0; i < visNodes.length; i++) {
+        const n1 = visNodes[i];
+        for (let j = i + 1; j < visNodes.length; j++) {
+          const n2 = visNodes[j];
+          const dx = n2.x - n1.x;
+          const dy = n2.y - n1.y;
+          const distSq = dx * dx + dy * dy + 100;
+          const dist = Math.sqrt(distSq);
+          const force = 1600 / distSq;
+          const fx = (dx / dist) * force;
+          const fy = (dy / dist) * force;
+          if (n1 !== dragNode) { n1.vx -= fx; n1.vy -= fy; }
+          if (n2 !== dragNode) { n2.vx += fx; n2.vy += fy; }
+        }
+      }
+
+      // Edge spring attraction (Hooke)
+      for (const e of visEdges) {
+        const n1 = e.sourceNode;
+        const n2 = e.targetNode;
+        const dx = n2.x - n1.x;
+        const dy = n2.y - n1.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const desiredDist = 120;
+        const force = (dist - desiredDist) * 0.03;
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        if (n1 !== dragNode) { n1.vx -= fx; n1.vy -= fy; }
+        if (n2 !== dragNode) { n2.vx += fx; n2.vy += fy; }
+      }
+
+      // Center gravity & damping
+      for (const n of visNodes) {
+        if (n === dragNode) continue;
+        const distCenter = Math.sqrt(n.x * n.x + n.y * n.y) || 1;
+        n.vx -= (n.x / distCenter) * 0.12;
+        n.vy -= (n.y / distCenter) * 0.12;
+        n.vx *= 0.88;
+        n.vy *= 0.88;
+        n.x += n.vx;
+        n.y += n.vy;
+      }
+    }
+
+    let animId = null;
+    function render() {
+      simulate();
+
+      ctx.save();
+      ctx.clearRect(0, 0, width, height);
+
+      // Background grid
+      ctx.fillStyle = "#090d16";
+      ctx.fillRect(0, 0, width, height);
+
+      // World transform
+      ctx.translate(panX, panY);
+      ctx.scale(scale, scale);
+
+      // Radar rings around center
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+      ctx.lineWidth = 1 / scale;
+      for (let r = 100; r <= 500; r += 100) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      const visNodes = getVisibleNodes();
+      const visEdges = getVisibleEdges(visNodes);
+      const activeHighlight = hoveredNode || selectedNode;
+
+      // Draw Edges
+      for (const e of visEdges) {
+        const isConnected = activeHighlight && (e.source === activeHighlight.id || e.target === activeHighlight.id);
+        const isDimmed = activeHighlight && !isConnected;
+
+        ctx.strokeStyle = isConnected
+          ? "rgba(236, 72, 153, 0.85)"
+          : (isDimmed ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.18)");
+        ctx.lineWidth = (isConnected ? 2.4 : 1.2) / scale;
+
+        const src = e.sourceNode;
+        const tgt = e.targetNode;
+        ctx.beginPath();
+        ctx.moveTo(src.x, src.y);
+        ctx.lineTo(tgt.x, tgt.y);
+        ctx.stroke();
+
+        // Direction arrow
+        const mx = src.x + (tgt.x - src.x) * 0.65;
+        const my = src.y + (tgt.y - src.y) * 0.65;
+        const angle = Math.atan2(tgt.y - src.y, tgt.x - src.x);
+        const arrowLen = (isConnected ? 9 : 6) / scale;
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.beginPath();
+        ctx.moveTo(mx, my);
+        ctx.lineTo(mx - arrowLen * Math.cos(angle - Math.PI / 6), my - arrowLen * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(mx - arrowLen * Math.cos(angle + Math.PI / 6), my - arrowLen * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Draw Nodes
+      for (const n of visNodes) {
+        const isTarget = n.category === "target";
+        const isHovered = hoveredNode === n;
+        const isSelected = selectedNode === n;
+        const isConnected = activeHighlight && (
+          edges.some((e) => (e.source === n.id && e.target === activeHighlight.id) || (e.target === n.id && e.source === activeHighlight.id))
+          || n === activeHighlight
+        );
+        const matchesSearch = !searchFilter || n.id.toLowerCase().includes(searchFilter) || (n.label && n.label.toLowerCase().includes(searchFilter));
+
+        let opacity = 1.0;
+        if (activeHighlight && !isConnected) opacity = 0.15;
+        if (searchFilter && !matchesSearch) opacity = 0.12;
+
+        ctx.save();
+        ctx.globalAlpha = opacity;
+
+        const color = n.color || "#6b7280";
+
+        if (isTarget || isSelected || isHovered) {
+          ctx.shadowColor = color;
+          ctx.shadowBlur = (isTarget ? 20 : 12) / scale;
+        }
+
+        if (n.mutual_with_target) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.radius + 4 / scale, 0, Math.PI * 2);
+          ctx.strokeStyle = "#ef4444";
+          ctx.lineWidth = 2 / scale;
+          ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        ctx.lineWidth = (isSelected ? 3 : 1.5) / scale;
+        ctx.strokeStyle = isSelected ? "#ffffff" : "rgba(255, 255, 255, 0.4)";
+        ctx.stroke();
+
+        ctx.shadowBlur = 0;
+
+        const showLabel = isTarget || isHovered || isSelected || scale >= 0.7 || visNodes.length <= 40 || matchesSearch;
+        if (showLabel) {
+          const fontSize = Math.max(10, Math.min(14, (isTarget ? 13 : 11) / scale));
+          ctx.font = `${isTarget ? "bold" : "600"} ${fontSize}px sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+
+          const labelText = n.label || `@${n.id}`;
+          const textY = n.y + n.radius + 4 / scale;
+
+          ctx.strokeStyle = "rgba(9, 13, 22, 0.9)";
+          ctx.lineWidth = 3 / scale;
+          ctx.strokeText(labelText, n.x, textY);
+
+          ctx.fillStyle = isSelected ? "#38bdf8" : (isTarget ? "#f472b6" : "#f1f5f9");
+          ctx.fillText(labelText, n.x, textY);
+        }
+
+        ctx.restore();
+      }
+
+      ctx.restore();
+      animId = requestAnimationFrame(render);
+    }
+
+    function screenToWorld(sx, sy) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = sx - rect.left;
+      const clientY = sy - rect.top;
+      return {
+        x: (clientX - panX) / scale,
+        y: (clientY - panY) / scale,
+      };
+    }
+
+    function findNodeAt(worldPos) {
+      const visNodes = getVisibleNodes();
+      for (let i = visNodes.length - 1; i >= 0; i--) {
+        const n = visNodes[i];
+        const dx = worldPos.x - n.x;
+        const dy = worldPos.y - n.y;
+        if (dx * dx + dy * dy <= (n.radius + 6) * (n.radius + 6)) {
+          return n;
+        }
+      }
+      return null;
+    }
+
+    function onMouseDown(e) {
+      const wpos = screenToWorld(e.clientX, e.clientY);
+      const hit = findNodeAt(wpos);
+      if (hit) {
+        isDragging = true;
+        dragNode = hit;
+        dragStartX = wpos.x - hit.x;
+        dragStartY = wpos.y - hit.y;
+        hit.vx = 0; hit.vy = 0;
+        selectedNode = hit;
+        updateInspector(hit);
+      } else {
+        isPanning = true;
+        panStartX = e.clientX - panX;
+        panStartY = e.clientY - panY;
+        canvas.classList.add("grabbing");
+      }
+    }
+
+    function onMouseMove(e) {
+      const wpos = screenToWorld(e.clientX, e.clientY);
+      if (isDragging && dragNode) {
+        dragNode.x = wpos.x - dragStartX;
+        dragNode.y = wpos.y - dragStartY;
+        dragNode.vx = 0; dragNode.vy = 0;
+      } else if (isPanning) {
+        panX = e.clientX - panStartX;
+        panY = e.clientY - panStartY;
+      } else {
+        const hit = findNodeAt(wpos);
+        if (hit !== hoveredNode) {
+          hoveredNode = hit;
+          updateTooltip(e.clientX, e.clientY, hit);
+        } else if (hit) {
+          updateTooltip(e.clientX, e.clientY, hit);
+        }
+      }
+    }
+
+    function onMouseUp() {
+      isDragging = false;
+      dragNode = null;
+      isPanning = false;
+      canvas.classList.remove("grabbing");
+    }
+
+    function onWheel(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+      const newScale = Math.min(5.0, Math.max(0.15, scale * zoomFactor));
+
+      panX = mouseX - (mouseX - panX) * (newScale / scale);
+      panY = mouseY - (mouseY - panY) * (newScale / scale);
+      scale = newScale;
+    }
+
+    canvas.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+
+    function updateTooltip(cx, cy, node) {
+      if (!tooltip) return;
+      if (!node) {
+        tooltip.style.display = "none";
+        return;
+      }
+      const rect = canvas.getBoundingClientRect();
+      tooltip.style.display = "block";
+      tooltip.style.left = `${cx - rect.left + 14}px`;
+      tooltip.style.top = `${cy - rect.top + 14}px`;
+      const catLabel = node.category ? node.category.replace(/_/g, " ") : "account";
+      tooltip.innerHTML = `<strong>@${escapeHtml(node.id)}</strong> <span style="color:${node.color}">(${catLabel})</span><br>
+        <span style="font-size:0.75rem;color:var(--muted)">In: ${node.in_degree || 0} · Out: ${node.out_degree || 0}${node.mutual_with_target ? " · <strong>Mutual follow</strong>" : ""}</span>`;
+    }
+
+    function updateInspector(node) {
+      if (!inspector) return;
+      inspector.hidden = false;
+      const catLabel = node.category ? node.category.replace(/_/g, " ") : "account";
+      inspector.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h4 style="margin:0;">@${escapeHtml(node.id)}</h4>
+          <span style="background:${node.color}33;color:${node.color};border:1px solid ${node.color};border-radius:4px;padding:2px 6px;font-size:0.72rem;font-weight:700;">${catLabel}</span>
+        </div>
+        ${node.label && node.label !== node.id ? `<div class="meta-row"><span>Name</span><span>${escapeHtml(node.label)}</span></div>` : ""}
+        <div class="meta-row"><span>Connections (In / Out)</span><span>${node.in_degree || 0} / ${node.out_degree || 0}</span></div>
+        <div class="meta-row"><span>Mutual with @${target}</span><span>${node.mutual_with_target ? "Yes ✓" : "No"}</span></div>
+        <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+          <a class="link-btn" href="https://instagram.com/${encodeURIComponent(node.id)}" target="_blank" rel="noopener" style="font-size:0.75rem;padding:3px 8px;">View Instagram ↗</a>
+          <button type="button" class="export-btn" id="graph-pivot-btn" style="font-size:0.75rem;padding:3px 8px;">Target @${escapeHtml(node.id)}</button>
+        </div>
+      `;
+      const pivotBtn = document.getElementById("graph-pivot-btn");
+      if (pivotBtn) {
+        pivotBtn.onclick = () => {
+          const targetInput = document.getElementById("target");
+          if (targetInput) targetInput.value = node.id;
+          document.getElementById("graph-modal").hidden = true;
+          if (graphSim && graphSim.destroy) graphSim.destroy();
+        };
+      }
+    }
+
+    const togglePhysicsBtn = document.getElementById("graph-toggle-physics");
+    if (togglePhysicsBtn) {
+      togglePhysicsBtn.onclick = () => {
+        physicsRunning = !physicsRunning;
+        togglePhysicsBtn.textContent = physicsRunning ? "⏸ Freeze" : "▶ Resume";
+      };
+    }
+
+    const resetZoomBtn = document.getElementById("graph-reset-zoom");
+    if (resetZoomBtn) {
+      resetZoomBtn.onclick = () => {
+        panX = width / 2;
+        panY = height / 2;
+        scale = 1.0;
+        selectedNode = null;
+        if (inspector) inspector.hidden = true;
+      };
+    }
+
+    const exportPngBtn = document.getElementById("graph-export-png");
+    if (exportPngBtn) {
+      exportPngBtn.onclick = () => {
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = `${target}_network.png`;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        });
+      };
+    }
+
+    if (searchInput) {
+      searchInput.oninput = (e) => {
+        searchFilter = e.target.value.trim().toLowerCase();
+      };
+    }
+
+    const chipContainer = document.getElementById("graph-filter-chips");
+    if (chipContainer) {
+      chipContainer.onclick = (e) => {
+        const chip = e.target.closest(".graph-chip");
+        if (!chip) return;
+        const cat = chip.dataset.cat;
+        if (activeCategories.has(cat)) {
+          activeCategories.delete(cat);
+          chip.classList.remove("active");
+        } else {
+          activeCategories.add(cat);
+          chip.classList.add("active");
+        }
+      };
+    }
+
+    animId = requestAnimationFrame(render);
+
+    graphSim = {
+      destroy: () => {
+        if (animId) cancelAnimationFrame(animId);
+        window.removeEventListener("resize", resize);
+        canvas.removeEventListener("mousedown", onMouseDown);
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+        canvas.removeEventListener("wheel", onWheel);
+      },
+    };
+  }
+
+  document.getElementById("graph-modal-close")?.addEventListener("click", () => {
+    const modal = document.getElementById("graph-modal");
+    if (modal) modal.hidden = true;
+    if (graphSim && graphSim.destroy) graphSim.destroy();
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const modal = document.getElementById("graph-modal");
+      if (modal && !modal.hidden) {
+        modal.hidden = true;
+        if (graphSim && graphSim.destroy) graphSim.destroy();
+      }
+    }
+  });  async function exportReport(button) {
     const original = button.textContent;
     button.disabled = true;
     button.textContent = "Preparing...";
@@ -4199,7 +4919,10 @@
       <details class="file-menu"><summary>File</summary><div class="file-menu-items">
         <button class="export-btn" type="button" data-save-dossier title="Save this search: you can reopen it without spending requests again, and compare it with a later one">Save dossier</button>
         <button class="export-btn" type="button" data-export-all title="Download request, answer and every result as one JSON file">Export all (JSON)</button>
+        <button class="export-btn" type="button" data-view-graph title="Open interactive relationship graph with physics, search and category filters">Interactive graph</button>
         <button class="export-btn" type="button" data-export-graph title="Export relationship graph of followers, following, and interactions as GEXF (for Gephi)">Export graph (GEXF)</button>
+        <button class="export-btn" type="button" data-export-cytoscape title="Export relationship graph as Cytoscape JSON">Export graph (Cytoscape)</button>
+        <button class="export-btn" type="button" data-export-vis title="Export relationship graph as Vis.js JSON">Export graph (Vis.js)</button>
         <button class="export-btn" type="button" data-export-pdf title="Download investigation dossier as a formatted PDF document">Report (PDF)</button>
         <button class="export-btn" type="button" data-export-report title="Download a standalone HTML report, readable without Osintgram and printable to PDF">Report (HTML)</button>
       </div></details>`;
@@ -4210,7 +4933,10 @@
     const menu = event.target.closest(".file-menu");
     if (menu && event.target.closest(".export-btn")) setTimeout(() => menu.removeAttribute("open"), 0);
     if (event.target.closest("[data-export-all]")) exportAll();
-    else if (event.target.closest("[data-export-graph]")) exportSocialGraph(event.target.closest("[data-export-graph]"));
+    else if (event.target.closest("[data-view-graph]")) openInteractiveGraph();
+    else if (event.target.closest("[data-export-graph]")) exportSocialGraph(event.target.closest("[data-export-graph]"), "gexf");
+    else if (event.target.closest("[data-export-cytoscape]")) exportSocialGraph(event.target.closest("[data-export-cytoscape]"), "cytoscape");
+    else if (event.target.closest("[data-export-vis]")) exportSocialGraph(event.target.closest("[data-export-vis]"), "vis");
     else if (event.target.closest("[data-export-pdf]")) exportPDF(event.target.closest("[data-export-pdf]"));
     else if (event.target.closest("[data-export-report]")) exportReport(event.target.closest("[data-export-report]"));
     else if (event.target.closest("[data-save-dossier]")) saveDossier(event.target.closest("[data-save-dossier]"));

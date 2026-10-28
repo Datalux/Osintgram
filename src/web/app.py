@@ -1212,12 +1212,29 @@ def export_network_graph(req: GraphExportRequest, request: Request):
     graph = build_social_graph(req.results, target=req.target)
     safe_target = re.sub(r"[^\w.-]+", "_", req.target or "target")
 
-    if req.format.lower() == "json":
+    fmt = req.format.lower().strip()
+    if fmt in ("json", "web"):
         body = json.dumps(graph, ensure_ascii=False, indent=2)
         return Response(
             content=body,
             media_type="application/json",
             headers={"Content-Disposition": f'attachment; filename="{safe_target}_network.json"'},
+        )
+    elif fmt in ("cytoscape", "cytoscape-json"):
+        from src.web.graph_export import export_cytoscape
+        body = json.dumps(export_cytoscape(graph), ensure_ascii=False, indent=2)
+        return Response(
+            content=body,
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{safe_target}_cytoscape.json"'},
+        )
+    elif fmt in ("vis", "vis-json"):
+        from src.web.graph_export import export_vis
+        body = json.dumps(export_vis(graph), ensure_ascii=False, indent=2)
+        return Response(
+            content=body,
+            media_type="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{safe_target}_vis.json"'},
         )
     else:
         gexf_content = export_gexf(graph)
