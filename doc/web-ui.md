@@ -266,7 +266,7 @@ both modes.
 
 ## 5. What you can ask for
 
-30 commands, grouped by what they tell you. Parameters are in `code`.
+33 commands, grouped by what they tell you. Parameters are in `code`.
 
 ### Profile
 
@@ -293,9 +293,11 @@ both modes.
 | Command | What you get | Parameters |
 |---|---|---|
 | **Followers** / **Following** | The accounts, with id, username, full name | `limit` (200) |
+| **Bot & anomaly audit** | Sample followers to calculate audience authenticity indicator score and detect probable bots or inactive accounts | `limit` (200) |
 | **Suggested profiles** | Accounts Instagram suggests as related — often the real circle or alternate accounts (HikerAPI only) | |
 | **Compare profiles** | Connections in common with another account: who follows both, who both follow | `other_username`, `scope` (`both`/`followers`/`followings`), `limit` (500) |
 | **Who tagged** | Accounts that tagged the target in their own posts | `limit` |
+| **Tagged posts** | Full details of posts where the target was tagged: author, caption, photo/video, location, likes and co-tagged accounts | `limit` |
 | **Tagged by target** | Accounts the target tagged | `limit_posts` |
 | **Who commented** | Accounts that commented, ranked by how often | `limit_posts` |
 
@@ -322,6 +324,8 @@ All of these take `limit_posts`.
 > exposed. On most accounts it comes back empty; the card then tells you how
 > many photos were checked, so you know it looked rather than failed.
 
+> **On "Bot & anomaly audit":** Scores are heuristic triage indicators based on follower metadata sampling (missing avatars, digit-heavy handles, entropy, and commercial keywords). They serve as investigative triage signals, not definitive proof of account automation or follower buying.
+
 ### Contacts
 
 **Follower emails**, **Following emails**, **Follower phones** and
@@ -341,6 +345,7 @@ full profile lookup. See [Keeping the cost down](#6-keeping-the-cost-down).
 | **Place search** | Recent posts from a place, searched by name, with the matched place and its alternatives | `place`, `limit` (30) |
 | **Post comments** | Every comment on one specific post or reel, given directly | `post`, `limit` |
 | **Public web context** | Search public web context about landmarks or venues (opt-in) | `query` |
+| **Cross-platform search** | Pivot search for matching profiles across 9 public networks (GitHub, GitLab, Telegram, Hacker News, Dev.to, Docker Hub, Linktree, Gravatar, Pinterest) | `username` |
 
 With only these selected the username field stops being required, and the label
 says so.

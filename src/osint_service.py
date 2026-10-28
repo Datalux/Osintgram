@@ -473,6 +473,8 @@ class OsintgramService:
             "full_name": user.get("full_name"),
             "is_private": user.get("is_private"),
             "is_verified": user.get("is_verified"),
+            "has_anonymous_profile_picture": user.get("has_anonymous_profile_picture"),
+            "profile_pic_url": user.get("profile_pic_url"),
         }
 
     _MEDIA_TYPE_NAMES = {1: "photo", 2: "video", 8: "carousel"}
@@ -676,6 +678,19 @@ class OsintgramService:
         self._require_public()
         users = self._paginate(self.api.user_followers_g2, "users", limit=limit)
         return [self._summarize_user(u) for u in users]
+
+    def audit_followers(self, limit: Optional[int] = 200) -> dict:
+        """Audit the target account's followers for fake, bot, and inactive accounts.
+
+        Analyzes follower profiles (avatars, handle digit patterns, spam keywords,
+        and name characteristics) to compute an audience authenticity indicator score.
+
+        Args:
+            limit: Maximum number of followers to sample for the audit (default 200).
+        """
+        from src.web.bot_detector import audit_followers_list
+        followers = self.get_followers(limit=limit)
+        return audit_followers_list(followers)
 
     def get_followings(self, limit: Optional[int] = 200) -> list:
         self._require_public()
@@ -995,6 +1010,82 @@ class OsintgramService:
                         "counter": 1,
                     }
         return sorted(users.values(), key=lambda u: u["counter"], reverse=True)
+
+    def get_tagged_posts(self, limit: Optional[int] = None) -> list:
+        """Get full details of posts where the target was tagged by other users.
+
+        Returns each post's author, caption, media preview/direct URLs,
+        taken_at timestamp, geotagged location, likes/comments count,
+        and other co-tagged accounts.
+
+        Args:
+            limit: Maximum number of tagged posts to collect (omit for all).
+        """
+        self._require_public()
+        raw_posts = self._paginate(self.api.user_tag_medias_v2, "items", limit=limit)
+        results = []
+        for post in raw_posts:
+            author = post.get("user") or {}
+            files = self._media_files(post)
+            loc = post.get("location") or {}
+
+            usertags = post.get("usertags") or []
+            if isinstance(usertags, dict) and "in" in usertags:
+                usertags = usertags["in"]
+            co_tagged = []
+            for t in (usertags or []):
+                u = t.get("user") or {}
+                if u.get("username") and u.get("username").lower() != (self.target or "").lower():
+                    co_tagged.append({
+                        "id": u.get("pk") or u.get("id"),
+                        "username": u.get("username"),
+                        "full_name": u.get("full_name"),
+                    })
+
+            results.append({
+                "id": str(post.get("pk") or post.get("id") or ""),
+                "author": {
+                    "id": str(author.get("pk") or author.get("id") or ""),
+                    "username": author.get("username"),
+                    "full_name": author.get("full_name"),
+                    "is_verified": author.get("is_verified", False),
+                },
+                "caption": (
+                    (post.get("caption") or {}).get("text", "")
+                    if isinstance(post.get("caption"), dict)
+                    else str(post.get("caption") or "")
+                ),
+                "taken_at": post.get("taken_at"),
+                "media_type": self._MEDIA_TYPE_NAMES.get(post.get("media_type"), "photo"),
+                "thumbnail_url": files.get("thumbnail_url"),
+                "url": files.get("url"),
+                "location": {
+                    "name": loc.get("name"),
+                    "address": loc.get("address"),
+                    "lat": loc.get("lat"),
+                    "lng": loc.get("lng"),
+                } if (loc.get("name") or loc.get("lat")) else None,
+                "like_count": post.get("like_count") or 0,
+                "comment_count": post.get("comment_count") or 0,
+                "co_tagged": co_tagged,
+            })
+        return results
+
+    def search_cross_platform(self, username: Optional[str] = None) -> dict:
+        """Search for accounts matching the target's username across major online platforms.
+
+        Checks public developer, social, and messaging networks (GitHub, GitLab, Telegram,
+        Hacker News, Dev.to, Docker Hub, Linktree, Gravatar, Pinterest) to locate cross-platform
+        digital footprints.
+
+        Args:
+            username: Username to search across platforms (defaults to target).
+        """
+        from src.web.cross_platform import scan_cross_platform
+        target_user = (username or self.target or "").strip().lstrip("@")
+        if not target_user:
+            return {"error": "Specify a username to scan across platforms."}
+        return scan_cross_platform(target_user)
 
     def get_people_who_tagged(self, limit: Optional[int] = None) -> list:
         self._require_public()
