@@ -1560,6 +1560,41 @@ class OsintgramService:
         return diff
 
 
+    def get_inner_circle(self, limit: int = 10, scan_posts: int = 12) -> list:
+        """Identify target's closest friends & inner circle via interaction affinity."""
+        self._require_public()
+        from src.inner_circle import InnerCircleAnalyzer
+        posts = self._get_feed(limit=scan_posts)
+        comments_by_post = {}
+        for post in posts:
+            p_id = str(post.get("id") or post.get("pk") or "")
+            if p_id:
+                try:
+                    comments_by_post[p_id] = self._get_comments(p_id, limit=20)
+                except Exception:
+                    comments_by_post[p_id] = []
+
+        followers = []
+        following = []
+        try:
+            followers = self.get_followers(limit=50)
+        except Exception:
+            pass
+        try:
+            following = self.get_followings(limit=50)
+        except Exception:
+            pass
+
+        analyzer = InnerCircleAnalyzer(self.target)
+        return analyzer.analyze(
+            posts=posts,
+            comments_by_post=comments_by_post,
+            followers=followers,
+            following=following,
+            limit=limit,
+        )
+
+
 def check_hiker_token(token: str) -> dict:
     """Verify a token by asking HikerAPI for its own balance.
 
