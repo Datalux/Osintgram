@@ -1365,6 +1365,49 @@ class OsintgramService:
             self.api.user_following_g2, "contact_phone_number", "contact_phone_number", match_limit, max_checks
         )
 
+    def take_snapshot(self, include_network: bool = False, limit_network: int = 200, db_path=None) -> dict:
+        """Capture and record a new historical profile snapshot."""
+        from src.snapshot_tracker import create_snapshot, DEFAULT_DB_PATH
+        profile = self.get_profile_info()
+        followers = None
+        followings = None
+        if include_network and not self.is_private:
+            try:
+                followers = self.get_followers(limit=limit_network)
+            except Exception:
+                followers = None
+            try:
+                followings = self.get_followings(limit=limit_network)
+            except Exception:
+                followings = None
+        return create_snapshot(
+            target=self.target,
+            profile_data=profile,
+            followers=followers,
+            followings=followings,
+            db_path=db_path or DEFAULT_DB_PATH,
+        )
+
+    def list_snapshots(self, limit: int = 50, db_path=None) -> list:
+        """List historical snapshots recorded for the current target."""
+        from src.snapshot_tracker import list_snapshots, DEFAULT_DB_PATH
+        return list_snapshots(self.target, limit=limit, db_path=db_path or DEFAULT_DB_PATH)
+
+    def diff_snapshots(self, old_id: Optional[int] = None, new_id: Optional[int] = None, db_path=None) -> dict:
+        """Compare two historical snapshots (or latest vs previous) for the target."""
+        from src.snapshot_tracker import compare_snapshots, diff_latest_two, get_snapshot, DEFAULT_DB_PATH
+        db = db_path or DEFAULT_DB_PATH
+        if old_id is not None and new_id is not None:
+            old_s = get_snapshot(old_id, db_path=db)
+            new_s = get_snapshot(new_id, db_path=db)
+            if not old_s or not new_s:
+                raise OsintServiceError(f"Snapshot ID not found (old={old_id}, new={new_id})")
+            return compare_snapshots(old_s, new_s)
+        diff = diff_latest_two(self.target, db_path=db)
+        if diff is None:
+            raise OsintServiceError(f"Not enough snapshots to compare for @{self.target}. At least 2 snapshots are required.")
+        return diff
+
 
 def check_hiker_token(token: str) -> dict:
     """Verify a token by asking HikerAPI for its own balance.
