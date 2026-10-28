@@ -21,7 +21,7 @@ USERS_PER_PAGE = (25, 50)
 COMMENTS_PER_PAGE = (15, 20)
 
 # Capabilities that only read the already-fetched profile object.
-_FREE = {"get_user_info", "get_user_propic"}
+_FREE = {"get_user_info", "get_user_propic", "search_cross_platform"}
 # HikerAPI bills these at a flat rate per call (its docs say 2 per call for
 # the story/highlight endpoints).
 _FLAT = {"get_user_stories": 2, "get_highlights": 2, "get_suggested_profiles": 1, "get_account_about": 1}
@@ -78,13 +78,13 @@ def estimate_command(name: str, params: dict, profile: dict, max_items: Optional
         posts = _capped(params.get("limit_posts"), posts_total)
         # At least one comments request per post, more when a post has many.
         return (low + posts, high + posts * 2)
-    if name in {"get_followers", "get_followings"}:
+    if name in {"get_followers", "get_followings", "audit_followers"}:
         total = followers_total if name == "get_followers" else following_total
         limit = params.get("limit")
         if max_items is not None:
             limit = max_items if limit is None else min(limit, max_items)
         return _pages(_capped(limit, total), USERS_PER_PAGE)
-    if name == "get_people_who_tagged":
+    if name in {"get_people_who_tagged", "get_tagged_posts"}:
         return _pages(_capped(params.get("limit"), None, fallback=100), POSTS_PER_PAGE)
     if name in _CONTACTS:
         total = followers_total if "followers" in name else following_total

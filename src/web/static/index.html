@@ -1024,6 +1024,21 @@
   .details-heading { display: flex; align-items: baseline; gap: 8px; }
   .details-heading .export-btn { margin-left: auto; text-transform: none; letter-spacing: 0; }
 
+  /* ---- audience authenticity & bot audit ---- */
+  .badge-auth-good { background: rgba(34, 197, 94, 0.15); color: #22c55e; border-color: rgba(34, 197, 94, 0.3); }
+  .badge-auth-warn { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+  .badge-auth-crit { background: rgba(239, 68, 68, 0.15); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+  .stat-good { color: #22c55e !important; }
+  .stat-warn { color: #f59e0b !important; }
+  .stat-crit { color: #ef4444 !important; }
+  .audit-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border-bottom: 1px solid var(--term-border); font-size: 0.82rem; }
+  .audit-row:last-child { border-bottom: none; }
+  .audit-user { flex: 1 1 180px; min-width: 0; display: flex; flex-direction: column; }
+  .audit-user strong a { color: var(--term-text); text-decoration: none; }
+  .audit-user strong a:hover { text-decoration: underline; }
+  .audit-reasons { flex: 2 1 300px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .audit-score { flex: none; }
+
   /* ---- posting times heatmap ---- */
   .tz-toggle { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 8px; }
   .tz-toggle button {
@@ -1780,6 +1795,9 @@
     get_user_info: ["🧑", "Profile info", "Bio and bio links, follower/following/post counts, category, business/verified flags, public contact details and address."],
     get_account_about: ["🪪", "Account info", "Instagram's \"About this account\": country of registration, creation month and how many times the username changed (HikerAPI only)."],
     get_followers: ["👥", "Followers", "The target's followers (id, username, full name)."],
+    audit_followers: ["🤖", "Bot & anomaly audit", "Audit followers to calculate audience authenticity indicator score and detect fake, bot, or inactive accounts."],
+    get_tagged_posts: ["📸", "Tagged posts", "Full details of posts where the target was tagged: author, caption, photo/video, location, likes and co-tagged accounts."],
+    search_cross_platform: ["🌐", "Cross-platform search", "Pivot search across 9 major platforms (GitHub, GitLab, Telegram, Hacker News, Dev.to, Docker Hub, Linktree, Gravatar, Pinterest)."],
     get_followings: ["👥", "Following", "The accounts the target follows."],
     get_hashtags: ["#️⃣", "Hashtags", "Hashtags used in posts, most frequent first."],
     get_addrs: ["📍", "Addresses", "Addresses of the locations tagged in posts, most recent first."],
@@ -1813,10 +1831,10 @@
 
   const TOOL_GROUPS = [
     ["Profile", ["get_user_info", "get_account_about", "snapshot_profile", "diff_profile", "get_user_propic", "get_user_stories", "get_highlights", "get_user_photos"]],
-    ["Network", ["get_followers", "get_followings", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_people_tagged_by_user", "get_people_who_commented"]],
+    ["Network", ["get_followers", "get_followings", "audit_followers", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_tagged_posts", "get_people_tagged_by_user", "get_people_who_commented"]],
     ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions"]],
     ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
-["Search (no target)", ["search_hashtag", "search_location", "get_post_comments", "search_public_context"]],
+["Search (no target)", ["search_hashtag", "search_location", "get_post_comments", "search_public_context", "search_cross_platform"]],
   ];
 
   const PARAM_LABELS = {
@@ -2969,6 +2987,155 @@
       ${Array.isArray(result.previews) ? renderPostPreviews(result.previews) : ""}`;
   }
 
+  // ---- cross-platform username search ----
+  function renderCrossPlatform(result) {
+    if (result.error) {
+      return `<p class="hint" style="color:#ef4444;">⚠️ ${escapeHtml(result.error)}</p>`;
+    }
+    const list = result.platforms || [];
+    const count = result.found_count || 0;
+    const errors = result.error_count || 0;
+    const total = result.total_checked || 0;
+    const header = `<p class="hint">Found <strong>${count}</strong> matching accounts (${errors} errors / rate-limits) out of <strong>${total}</strong> checked networks for <strong>@${escapeHtml(result.target || "")}</strong>.</p>`;
+    if (!list.length) return header + `<p class="empty">No public profiles detected on checked networks.</p>`;
+
+    const rows = list.map(p => {
+      let statusBadge = "";
+      let openLink = "";
+      if (p.status === "found") {
+        statusBadge = `<span class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e;">Found</span>`;
+        openLink = `<a class="pill" href="${escapeHtml(p.url)}" target="_blank" rel="noopener" style="text-decoration:none;">Open ↗</a>`;
+      } else if (p.status === "error") {
+        statusBadge = `<span class="badge" style="background:rgba(239,68,68,0.15); color:#ef4444;">Error / Rate limit</span>`;
+      } else {
+        statusBadge = `<span class="badge" style="background:rgba(148,163,184,0.15); color:#94a3b8;">Not found</span>`;
+      }
+
+      return `
+        <div class="audit-row">
+          <div class="audit-user">
+            <strong>${escapeHtml(p.icon || "🌐")} ${escapeHtml(p.platform)}</strong>
+            <span class="n">${escapeHtml(p.category || "")}</span>
+          </div>
+          <div class="audit-reasons">
+            <span class="n">${escapeHtml(p.details || "")}</span>
+          </div>
+          <div class="audit-score" style="display:flex; align-items:center; gap:8px;">
+            ${statusBadge}
+            ${openLink}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    return header + `<div class="audit-list">${rows}</div>`;
+  }
+
+  // ---- tagged posts deep dive ----
+  function renderTaggedPosts(posts) {
+    if (!posts.length) return `<p class="empty">No tagged posts found.</p>`;
+    const cards = posts.map(p => {
+      const author = p.author || {};
+      const authorLink = author.username ? `<a href="https://instagram.com/${encodeURIComponent(author.username)}" target="_blank" rel="noopener">@${escapeHtml(author.username)}</a>` : "(unknown)";
+      const when = p.taken_at ? new Date(p.taken_at * 1000).toLocaleDateString() : "";
+      const loc = p.location && p.location.name ? `<span class="pill">📍 ${escapeHtml(p.location.name)}</span>` : "";
+      const coTagged = (p.co_tagged || []).slice(0, 3).map(u => `<span class="pill">@${escapeHtml(u.username)}</span>`).join(" ");
+      const extraTags = (p.co_tagged || []).length > 3 ? `<span class="n">+${(p.co_tagged || []).length - 3}</span>` : "";
+      const dlBtn = p.url ? `<a class="story-dl" href="${escapeHtml(p.url)}" target="_blank" rel="noopener" download style="margin-left:auto; text-decoration:none; font-size:12px;">⬇ Direct</a>` : "";
+
+      const img = p.thumbnail_url || p.url ? `<img src="${escapeHtml(p.thumbnail_url || p.url)}" alt="Tagged post thumbnail" style="width:64px; height:64px; object-fit:cover; border-radius:4px; flex:none;">` : "";
+
+      return `
+        <div class="audit-row" style="align-items:flex-start; padding:10px 0;">
+          ${img}
+          <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:4px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <strong>${authorLink}</strong>
+              ${when ? `<span class="n">${when}</span>` : ""}
+              ${loc}
+              ${dlBtn}
+            </div>
+            ${p.caption ? `<div style="font-size:0.82rem; color:var(--term-text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(p.caption)}</div>` : ""}
+            <div style="display:flex; gap:12px; font-size:0.75rem; color:var(--term-dim);">
+              <span>❤️ ${fmtNumber(p.like_count || 0)}</span>
+              <span>💬 ${fmtNumber(p.comment_count || 0)}</span>
+              ${coTagged ? `<span>With: ${coTagged} ${extraTags}</span>` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    return `<p class="hint">Showing <strong>${posts.length}</strong> posts where the target was tagged.</p><div class="audit-list">${cards}</div>`;
+  }
+
+  // ---- audience authenticity & bot audit ----
+  function renderAuditResult(result) {
+    const score = result.authenticity_score !== undefined ? result.authenticity_score : 100;
+    const m = result.metrics || {};
+    const stats = `
+      <div class="stat-grid audit-stat-grid">
+        <div class="stat-cell">
+          <div class="stat-value ${score >= 75 ? 'stat-good' : (score >= 50 ? 'stat-warn' : 'stat-crit')}">${score}%</div>
+          <div class="stat-label">Authenticity</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value">${fmtNumber(result.total_analyzed || 0)}</div>
+          <div class="stat-label">Sampled</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value stat-crit">${fmtNumber(m.bot_count || 0)}</div>
+          <div class="stat-label">Likely Bots</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value stat-warn">${fmtNumber(m.suspicious_count || 0)}</div>
+          <div class="stat-label">Suspicious</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value">${fmtNumber(m.no_avatar_count || 0)}</div>
+          <div class="stat-label">No Avatar</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-value">${fmtNumber(m.digit_heavy_count || 0)}</div>
+          <div class="stat-label">Digit-padded</div>
+        </div>
+      </div>
+    `;
+
+    const summary = `<p class="hint"><strong>${escapeHtml(result.rating || "")}</strong> &middot; ${escapeHtml(result.summary || "")}</p>`;
+    const disclaimer = `<p class="hint" style="font-size:0.75rem; color:var(--term-dim); margin-top:6px;">⚠️ Indicator disclaimer: Heuristic authenticity score based on profile metadata sampling; not a definitive verdict.</p>`;
+
+    const flagged = result.flagged_accounts || [];
+    let flaggedHtml = "";
+    if (flagged.length > 0) {
+      const rows = flagged.map(f => {
+        const u = f.username || "";
+        const uLink = u ? `<a href="https://instagram.com/${encodeURIComponent(u)}" target="_blank" rel="noopener">@${escapeHtml(u)}</a>` : "(no handle)";
+        const reasons = (f.reasons || []).map(r => `<span class="pill">${escapeHtml(r)}</span>`).join(" ");
+        const riskClass = f.risk_score >= 70 ? "badge-auth-crit" : "badge-auth-warn";
+        return `
+          <div class="audit-row">
+            <div class="audit-user">
+              <strong>${uLink}</strong>
+              ${f.full_name ? `<span class="n">${escapeHtml(f.full_name)}</span>` : ""}
+            </div>
+            <div class="audit-reasons">${reasons}</div>
+            <div class="audit-score"><span class="badge ${riskClass}">${f.risk_score}% risk</span></div>
+          </div>
+        `;
+      }).join("");
+
+      flaggedHtml = `
+        <div class="details-heading"><span>Flagged accounts <span class="n">${flagged.length}</span></span></div>
+        <div class="audit-list">${rows}</div>
+      `;
+    } else {
+      flaggedHtml = `<p class="hint">No suspicious accounts detected in this sample.</p>`;
+    }
+
+    return summary + stats + disclaimer + flaggedHtml;
+  }
+
   // ---- compare two accounts (connections in common) ----
   function renderCompare(result) {
     const section = (title, list) => {
@@ -3520,6 +3687,7 @@
         if ("url" in first) return renderGallery(result);
         if ("hashtag" in first) return renderHashtags(result);
         if ("address" in first) return renderAddresses(result);
+        if ("author" in first && "co_tagged" in first) return renderTaggedPosts(result);
         if ("comment" in first) return renderComments(result);
         if ("username" in first) return renderUserList(result);
       }
@@ -3527,6 +3695,8 @@
     }
     if (result && typeof result === "object") {
       if ("url" in result && Object.keys(result).length === 1) return renderGallery([result]);
+      if ("platforms" in result && "total_checked" in result) return renderCrossPlatform(result);
+      if ("authenticity_score" in result && "flagged_accounts" in result) return renderAuditResult(result);
       if ("common_followers" in result || "common_followings" in result) return renderCompare(result);
       if ("hashtag" in result || "place" in result) return renderSearch(result);
       if (Array.isArray(result.timestamps)) return renderPostingTimes(result);

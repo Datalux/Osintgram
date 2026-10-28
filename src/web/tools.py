@@ -216,6 +216,14 @@ def build_tools(service: OsintgramService) -> list:
         """
         return _call(service.get_followers, limit=limit)
 
+    def audit_followers(limit: Optional[int] = 200) -> str:
+        """Audit the target's audience to compute an authenticity indicator score and detect fake or inactive accounts.
+
+        Args:
+            limit: Maximum number of followers to sample for the audit (default: 200).
+        """
+        return _call(service.audit_followers, limit=limit)
+
     def get_followings(limit: Optional[int] = 200) -> str:
         """List accounts the target follows (id, username, full name).
 
@@ -323,6 +331,14 @@ def build_tools(service: OsintgramService) -> list:
         """
         return _call(service.get_people_who_tagged, limit=limit)
 
+    def get_tagged_posts(limit: Optional[int] = None) -> str:
+        """Get full details of posts where the target was tagged: author, caption, media, location, likes, and co-tagged accounts.
+
+        Args:
+            limit: Maximum number of tagged posts to collect (omit for all).
+        """
+        return _call(service.get_tagged_posts, limit=limit)
+
     def get_people_tagged_by_user(limit_posts: Optional[int] = None) -> str:
         """List the accounts the target tagged in their own posts, ranked by
         how many posts each one appears in.
@@ -401,6 +417,14 @@ def build_tools(service: OsintgramService) -> list:
             return _to_json(search_public_web(query, target_username=target_name, extra_identifiers=extra_ids))
         except Exception as e:
             return _to_json({"error": str(e)})
+
+    def search_cross_platform(username: Optional[str] = None) -> str:
+        """Search for accounts matching a username across 9 major platforms (GitHub, GitLab, Telegram, Hacker News, Dev.to, Docker Hub, Linktree, Gravatar, Pinterest).
+
+        Args:
+            username: Username to check across platforms (defaults to the target username).
+        """
+        return _call(service.search_cross_platform, username=username)
 
     def get_post_comments(post: str = "", limit: Optional[int] = None) -> str:
         """Get every comment on one specific post or reel, given directly -
@@ -482,6 +506,7 @@ def build_tools(service: OsintgramService) -> list:
         get_user_info,
         get_account_about,
         get_followers,
+        audit_followers,
         get_followings,
         get_hashtags,
         get_addrs,
@@ -494,6 +519,7 @@ def build_tools(service: OsintgramService) -> list:
         get_comment_data,
         get_people_who_commented,
         get_people_who_tagged,
+        get_tagged_posts,
         get_people_tagged_by_user,
         get_user_photos,
         get_user_propic,
@@ -509,4 +535,5 @@ def build_tools(service: OsintgramService) -> list:
         search_location,
         get_post_comments,
         search_public_context,
+        search_cross_platform,
     ]
