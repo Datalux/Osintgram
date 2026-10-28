@@ -304,15 +304,15 @@ def build_tools(service: OsintgramService) -> list:
         """
         return _call(service.get_photo_descriptions, limit_posts=limit_posts)
 
-    def analyze_sentiment(limit_posts: Optional[int] = 10) -> str:
-        """Analyze audience sentiment, toxicity, hostility, and detect coordinated comment raids across post comments.
+    def analyze_sentiment(limit_posts: int = 10) -> str:
+        """Analyze audience sentiment, toxicity, hostility, and detect coordinated commentary across post comments.
 
         Args:
-            limit_posts: Maximum number of recent posts to scan for comments (default: 10).
+            limit_posts: Maximum number of recent posts to scan for comments (default: 10, max: 30).
         """
         return _call(service.analyze_sentiment, limit_posts=limit_posts)
 
-    def extract_topics(source: str = "all", limit_posts: Optional[int] = 15) -> str:
+    def extract_topics(source: str = "all", limit_posts: int = 15) -> str:
         """Extract top keywords, n-gram phrases, and weighted topic cloud from post captions and comments.
 
         Args:

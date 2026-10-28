@@ -32,11 +32,20 @@ COMMON_STOPWORDS: Set[str] = {
     "jego", "jej", "ich", "nas", "was", "tym", "też", "tylko", "czy", "przez", "przy",
     "oraz", "więc", "ma", "są", "być", "był", "była", "było", "będzie", "tam", "tu",
 
-    # Italian / Spanish
-    "el", "la", "de", "que", "y", "en", "un", "ser", "se", "no", "haber", "por", "con",
-    "su", "para", "como", "estar", "tener", "le", "lo", "lo", "todo", "pero", "más",
-    "di", "il", "che", "per", "un", "in", "del", "della", "non", "sono", "con", "una",
-    "questo", "questa", "anche", "più", "molto",
+    # Italian
+    "di", "il", "che", "per", "un", "in", "del", "della", "dello",
+    "dei", "degli", "delle", "non", "sono", "con", "una", "uno",
+    "questo", "questa", "questi", "queste", "anche", "più", "molto",
+    "nel", "nella", "nello", "nei", "negli", "nelle", "alla", "allo",
+    "agli", "alle", "al", "gli", "hanno", "ha", "ho", "abbiamo",
+    "dallo", "dalla", "dai", "sul", "sulla", "sui", "sugli", "sulle",
+
+    # Spanish
+    "el", "la", "de", "que", "y", "en", "un", "ser", "se", "no",
+    "haber", "por", "con", "su", "para", "como", "estar", "tener",
+    "le", "lo", "todo", "pero", "más", "las", "los", "del", "una",
+    "unos", "unas", "han", "hemos", "sin", "sobre", "este", "esta",
+    "estos", "estas", "esto", "sus", "mis", "tus", "nos", "les",
 }
 
 

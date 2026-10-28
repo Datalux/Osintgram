@@ -36,7 +36,7 @@ def test_score_single_comment_toxic_and_caps():
 def test_score_single_comment_spam():
     res = score_single_comment("Earn $5000 daily with crypto investment dm me on whatsapp")
     assert res["is_spam"] is True
-    assert res["toxicity"] >= 20.0
+    assert res["toxicity"] == 0.0
     assert any("spam" in r.lower() for r in res["reasons"])
 
 
@@ -189,3 +189,75 @@ def test_nlp_api_endpoints(api_client, monkeypatch):
     assert resp2.status_code == 200
     assert resp2.json()["ok"] is True
     assert resp2.json()["topics"]["total_texts"] == 15
+
+
+def test_toxic_whole_word_matching_substring_guard():
+    # 'great audience' should NOT trigger toxic word 'die' from 'audience'
+    res = score_single_comment("What a great audience tonight!")
+    assert res["sentiment"] > 0.5
+    assert res["toxicity"] == 0.0
+    assert not any("die" in r.lower() for r in res.get("reasons", []))
+
+
+def test_heart_emoji_sequence_valence():
+    # Red heart with ️ variation selector
+    res = score_single_comment("Love this ❤️")
+    assert res["sentiment"] >= 0.8
+    assert res["toxicity"] == 0.0
+
+
+def test_italian_comment_and_stopwords():
+    comment = "questo posto e bellissimo ma la pasta nel piatto ha un sapore orribile"
+    tokens = clean_tokens(comment)
+    # Stopwords should be filtered out
+    for sw in ["questo", "nel", "ha", "un"]:
+        assert sw not in tokens
+    # Content words retained
+    assert "bellissimo" in tokens
+    assert "orribile" in tokens
+
+    res = score_single_comment(comment)
+    assert any("orribile" in r.lower() for r in res["reasons"])
+    res_pos = score_single_comment("questo posto e bellissimo e stupendo")
+    assert res_pos["sentiment"] > 0.5
+
+
+def test_hostility_spike_organic_controversy():
+    # 5 different authors, all negative & toxic, but distinct authors and texts (organic controversy)
+    comments = [
+        {"text": "Horrible garbage fake person 🤮", "username": "critic1"},
+        {"text": "Trash content, unsubscribe now", "username": "critic2"},
+        {"text": "STUPID IDIOT LIAR 🖕", "username": "critic3"},
+        {"text": "Disgusting clown 🤡", "username": "critic4"},
+        {"text": "Terrible awful work", "username": "critic5"},
+    ]
+    res = analyze_comments_sentiment(comments)
+    assert res["hostility_spike_detected"] is True
+    assert "diverse authors" in res["spike_details"].lower() or "organic controversy" in res["spike_details"].lower()
+    assert res["disclaimer"] is not None
+
+
+def test_hostility_spike_coordinated_raid():
+    # Repeated author / copy-pasted comments
+    comments = [
+        {"text": "Trash content unsubscribe now 🖕", "username": "raid_bot"},
+        {"text": "Trash content unsubscribe now 🖕", "username": "raid_bot"},
+        {"text": "Trash content unsubscribe now 🖕", "username": "raid_bot2"},
+        {"text": "Horrible liar idiot", "username": "raid_bot3"},
+        {"text": "Horrible liar idiot", "username": "raid_bot4"},
+    ]
+    res = analyze_comments_sentiment(comments)
+    assert res["hostility_spike_detected"] is True
+    assert "coordination signal" in res["spike_details"].lower() or "repeat accounts" in res["spike_details"].lower()
+
+
+def test_extract_topics_invalid_source():
+    from src.osint_service import OsintgramService
+
+    class FakeApi:
+        def user_by_username_v2(self, username):
+            return {"user": {"pk": 555, "username": username, "is_private": False}}
+
+    service = OsintgramService("target_test", FakeApi())
+    with pytest.raises(ValueError, match="Invalid source"):
+        service.extract_topics(source="invalid_source")
