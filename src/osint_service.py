@@ -885,6 +885,34 @@ class OsintgramService:
         ]
         return {"photos_scanned": len(photos), "with_alt_text": len(descriptions), "descriptions": descriptions}
 
+    def analyze_sentiment(self, limit_posts: Optional[int] = 10) -> dict:
+        """Analyze sentiment, toxicity, and potential raid activity across post comments."""
+        from src.sentiment_analyzer import analyze_comments_sentiment
+        raw_comments = self.get_comment_data(limit_posts=limit_posts)
+        comments = [
+            {"text": c.get("comment") or c.get("text") or "", "username": c.get("username", "")}
+            for c in raw_comments
+        ]
+        res = analyze_comments_sentiment(comments)
+        res["posts_scanned"] = limit_posts
+        return res
+
+    def extract_topics(self, source: str = "all", limit_posts: Optional[int] = 15) -> dict:
+        """Extract top keywords, bigrams, and topic cloud from post captions and comments."""
+        from src.topic_extractor import extract_topics_and_cloud
+        texts = []
+        if source in ("captions", "all"):
+            captions = self.get_captions(limit_posts=limit_posts)
+            texts.extend(captions)
+        if source in ("comments", "all"):
+            comments = self.get_comment_data(limit_posts=limit_posts)
+            texts.extend([c.get("comment") or c.get("text") or "" for c in comments])
+
+        res = extract_topics_and_cloud(texts)
+        res["source"] = source
+        res["posts_scanned"] = limit_posts
+        return res
+
     def get_comment_data(self, limit_posts: Optional[int] = None) -> list:
         self._require_public()
         data = self._get_feed(limit=limit_posts)

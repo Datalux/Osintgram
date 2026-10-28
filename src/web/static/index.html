@@ -1807,6 +1807,8 @@
     get_media_type: ["🖼️", "Media types", "How many posts are photos, videos or carousels, with views, collaborations and paid partnerships."],
     get_posting_times: ["🕒", "Posting times", "Which days and hours they post on (heatmap) and how often."],
     get_photo_descriptions: ["🔍", "Photo descriptions", "Alt text of the photos (what they show), when the post's author wrote it."],
+    analyze_sentiment: ["💬", "Sentiment & toxicity", "Analyze audience sentiment, toxicity, hostility, and detect coordinated raids."],
+    extract_topics: ["☁️", "Topic cloud", "Extract top keywords, n-gram phrases, and weighted topic cloud from captions and comments."],
     get_comment_data: ["💬", "Comments", "Every comment on the posts, with its author and post."],
     get_people_who_commented: ["💬", "Who commented", "Accounts that commented on the posts, by number of comments."],
     get_people_who_tagged: ["🏷️", "Who tagged", "Accounts that tagged the target in their own posts."],
@@ -1832,7 +1834,7 @@
   const TOOL_GROUPS = [
     ["Profile", ["get_user_info", "get_account_about", "snapshot_profile", "diff_profile", "get_user_propic", "get_user_stories", "get_highlights", "get_user_photos"]],
     ["Network", ["get_followers", "get_followings", "audit_followers", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_tagged_posts", "get_people_tagged_by_user", "get_people_who_commented"]],
-    ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions"]],
+    ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions", "analyze_sentiment", "extract_topics"]],
     ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
 ["Search (no target)", ["search_hashtag", "search_location", "get_post_comments", "search_public_context", "search_cross_platform"]],
   ];
@@ -3658,6 +3660,97 @@
     if (Array.isArray(net.new_followers) && net.new_followers.length > 0) {
       html += `<div class="details-heading"><span>📈 New followers <span class="n">${net.new_followers.length}</span></span></div>
         <p class="hint" style="color:#34d399;">${net.new_followers.map(u => `@${escapeHtml(u)}`).join(", ")}</p>`;
+  function renderSentimentResult(res) {
+    const dist = res.distribution || {};
+    const alertBanner = res.brigading_alert
+      ? `<div style="margin-bottom:12px; padding:8px 12px; background:rgba(225,29,72,0.15); border:1px solid #e11d48; border-radius:6px; color:#fda4af; font-size:13px;">🚨 <strong>Hostility / Raid Alert:</strong> ${escapeHtml(res.brigading_details || "High negative sentiment spike detected.")}</div>`
+      : "";
+
+    const sentScore = typeof res.overall_sentiment_score === "number" ? res.overall_sentiment_score : 0;
+    const toxScore = typeof res.average_toxicity_score === "number" ? res.average_toxicity_score : 0;
+
+    let html = `<div class="sentiment-card">
+      ${alertBanner}
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; text-align:center;">
+          <div style="font-size:11px; opacity:0.7; text-transform:uppercase;">Sentiment</div>
+          <div style="font-size:18px; font-weight:700; margin-top:4px;">${escapeHtml(res.sentiment_label || "Neutral")}</div>
+          <div style="font-size:12px; opacity:0.8;">Score: ${sentScore > 0 ? "+" : ""}${sentScore}</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; text-align:center;">
+          <div style="font-size:11px; opacity:0.7; text-transform:uppercase;">Toxicity</div>
+          <div style="font-size:18px; font-weight:700; margin-top:4px; color:${toxScore > 35 ? '#fb7185' : '#34d399'};">${escapeHtml(res.toxicity_rating || "Clean")}</div>
+          <div style="font-size:12px; opacity:0.8;">Index: ${toxScore}%</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; text-align:center;">
+          <div style="font-size:11px; opacity:0.7; text-transform:uppercase;">Analyzed</div>
+          <div style="font-size:18px; font-weight:700; margin-top:4px;">${res.total_analyzed || 0}</div>
+          <div style="font-size:12px; opacity:0.8;">Comments</div>
+        </div>
+      </div>`;
+
+    html += `<div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+        <span style="color:#34d399;">Positive: ${dist.positive || 0} (${dist.positive_pct || 0}%)</span>
+        <span style="opacity:0.7;">Neutral: ${dist.neutral || 0} (${dist.neutral_pct || 0}%)</span>
+        <span style="color:#fb7185;">Negative: ${dist.negative || 0} (${dist.negative_pct || 0}%)</span>
+      </div>
+      <div style="display:flex; height:8px; border-radius:4px; overflow:hidden; background:rgba(255,255,255,0.1);">
+        <div style="width:${dist.positive_pct || 0}%; background:#10b981;"></div>
+        <div style="width:${dist.neutral_pct || 0}%; background:#6b7280;"></div>
+        <div style="width:${dist.negative_pct || 0}%; background:#ef4444;"></div>
+      </div>
+    </div>`;
+
+    if (Array.isArray(res.top_toxic_comments) && res.top_toxic_comments.length > 0) {
+      html += `<div class="details-heading"><span>⚠️ Flagged Toxic Comments (${res.top_toxic_comments.length})</span></div><div style="margin-bottom:12px;">`;
+      for (const item of res.top_toxic_comments) {
+        html += `<div style="background:rgba(239,68,68,0.1); border-left:3px solid #ef4444; padding:6px 10px; margin-bottom:6px; border-radius:3px; font-size:12px;">
+          <strong>@${escapeHtml(item.author || "user")}</strong>: "${escapeHtml(item.text)}"
+          <div style="font-size:11px; opacity:0.75; margin-top:2px;">Toxicity: ${item.toxicity}% · Reasons: ${escapeHtml((item.reasons || []).join(", "))}</div>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+    return html;
+  }
+
+  function renderTopicCloudResult(res) {
+    let html = `<div class="topic-cloud-card">`;
+    const cloud = res.word_cloud || [];
+    if (cloud.length > 0) {
+      html += `<div class="details-heading"><span>☁️ Weighted Topic Cloud (${cloud.length} keywords)</span></div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:16px; padding:12px; background:rgba(255,255,255,0.03); border-radius:6px;">`;
+      for (const item of cloud) {
+        const fontSize = Math.max(12, Math.min(22, 11 + Math.round((item.weight || 10) / 10)));
+        const opacity = Math.max(0.6, Math.min(1.0, 0.5 + ((item.weight || 10) / 200)));
+        html += `<span style="font-size:${fontSize}px; opacity:${opacity}; padding:3px 8px; background:rgba(99,102,241,0.15); border:1px solid rgba(99,102,241,0.3); border-radius:12px; font-weight:600;" title="Occurrences: ${item.count}">
+          ${escapeHtml(item.text)} <small style="font-size:10px; opacity:0.7;">(${item.count})</small>
+        </span>`;
+      }
+      html += `</div>`;
+    }
+
+    const phrases = res.top_bigrams || [];
+    if (phrases.length > 0) {
+      html += `<div class="details-heading"><span>Common 2-Word Phrases</span></div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">`;
+      for (const p of phrases) {
+        html += `<span class="badge" style="background:rgba(255,255,255,0.08); font-size:12px;">${escapeHtml(p.phrase)} (${p.count})</span>`;
+      }
+      html += `</div>`;
+    }
+
+    const tags = res.hashtags || [];
+    if (tags.length > 0) {
+      html += `<div class="details-heading"><span>Hashtags</span></div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">`;
+      for (const t of tags) {
+        html += `<span class="badge" style="background:rgba(14,165,233,0.2); color:#38bdf8; font-size:12px;">${escapeHtml(t.hashtag)} (${t.count})</span>`;
+      }
+      html += `</div>`;
     }
     html += `</div>`;
     return html;
@@ -3703,6 +3796,8 @@
       if (Array.isArray(result.descriptions)) return renderDescriptions(result);
       if (result.has_changes !== undefined && Array.isArray(result.summary)) return renderDiffResult(result);
       if (result.avatar_hash !== undefined && result.timestamp) return renderSnapshotResult(result);
+      if ("overall_sentiment_score" in result) return renderSentimentResult(result);
+      if (Array.isArray(result.word_cloud)) return renderTopicCloudResult(result);
       return renderStatGrid(result) + renderProfileLists(result)
         + (Array.isArray(result.previews) ? renderPostPreviews(result.previews) : "");
     }
