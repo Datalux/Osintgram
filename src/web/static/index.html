@@ -1918,7 +1918,7 @@
           <button class="export-btn" type="button" id="graph-toggle-physics" title="Pause or resume physics simulation">⏸ Freeze</button>
           <button class="export-btn" type="button" id="graph-reset-zoom" title="Reset zoom and center graph">⟲ Reset</button>
           <button class="export-btn" type="button" id="graph-export-png" title="Export graph view as high-resolution PNG image">📷 PNG</button>
-          <button class="graph-close-btn" type="button" id="graph-modal-close" title="Close graph view">&times;</button>
+          <button class="graph-close-btn" type="button" id="graph-modal-close" title="Close graph view" aria-label="Close graph view">&times;</button>
         </div>
       </header>
       <div class="graph-viewport">
@@ -4230,9 +4230,10 @@
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const blob = await resp.blob();
       const ext = format === "cytoscape" ? "cytoscape.json" : (format === "vis" ? "vis.json" : (format === "json" ? "json" : "gexf"));
+      const safeTarget = String(target || "target").replace(/[^\w.-]+/g, "_");
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `${target}_network.${ext}`;
+      a.download = `${safeTarget}_network.${ext}`;
       a.click();
       URL.revokeObjectURL(a.href);
       button.textContent = "✓ Downloaded";
@@ -4394,21 +4395,27 @@
       return edges.filter((e) => visSet.has(e.source) && visSet.has(e.target));
     }
 
+    let physicsSettled = false;
+    function wakePhysics() {
+      physicsSettled = false;
+    }
+
     function simulate() {
-      if (!physicsRunning) return;
+      if (!physicsRunning || physicsSettled) return;
       const visNodes = getVisibleNodes();
       const visEdges = getVisibleEdges(visNodes);
+      const step = visNodes.length > 250 ? 2 : 1;
 
       // Node repulsion (Coulomb)
-      for (let i = 0; i < visNodes.length; i++) {
+      for (let i = 0; i < visNodes.length; i += step) {
         const n1 = visNodes[i];
-        for (let j = i + 1; j < visNodes.length; j++) {
+        for (let j = i + 1; j < visNodes.length; j += step) {
           const n2 = visNodes[j];
           const dx = n2.x - n1.x;
           const dy = n2.y - n1.y;
           const distSq = dx * dx + dy * dy + 100;
           const dist = Math.sqrt(distSq);
-          const force = 1600 / distSq;
+          const force = (1600 * step) / distSq;
           const fx = (dx / dist) * force;
           const fy = (dy / dist) * force;
           if (n1 !== dragNode) { n1.vx -= fx; n1.vy -= fy; }
@@ -4432,6 +4439,7 @@
       }
 
       // Center gravity & damping
+      let totalKinetic = 0;
       for (const n of visNodes) {
         if (n === dragNode) continue;
         const distCenter = Math.sqrt(n.x * n.x + n.y * n.y) || 1;
@@ -4441,6 +4449,11 @@
         n.vy *= 0.88;
         n.x += n.vx;
         n.y += n.vy;
+        totalKinetic += n.vx * n.vx + n.vy * n.vy;
+      }
+
+      if (totalKinetic < 0.04 && !isDragging && !dragNode) {
+        physicsSettled = true;
       }
     }
 
@@ -4598,6 +4611,7 @@
     function onMouseDown(e) {
       const wpos = screenToWorld(e.clientX, e.clientY);
       const hit = findNodeAt(wpos);
+      wakePhysics();
       if (hit) {
         isDragging = true;
         dragNode = hit;
@@ -4708,6 +4722,7 @@
       togglePhysicsBtn.onclick = () => {
         physicsRunning = !physicsRunning;
         togglePhysicsBtn.textContent = physicsRunning ? "⏸ Freeze" : "▶ Resume";
+        if (physicsRunning) wakePhysics();
       };
     }
 
@@ -4727,9 +4742,10 @@
       exportPngBtn.onclick = () => {
         canvas.toBlob((blob) => {
           if (!blob) return;
+          const safeTarget = String(target || "target").replace(/[^\w.-]+/g, "_");
           const a = document.createElement("a");
           a.href = URL.createObjectURL(blob);
-          a.download = `${target}_network.png`;
+          a.download = `${safeTarget}_network.png`;
           a.click();
           URL.revokeObjectURL(a.href);
         });
@@ -4739,6 +4755,7 @@
     if (searchInput) {
       searchInput.oninput = (e) => {
         searchFilter = e.target.value.trim().toLowerCase();
+        wakePhysics();
       };
     }
 
