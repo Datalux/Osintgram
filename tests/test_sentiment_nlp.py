@@ -135,7 +135,7 @@ def test_service_sentiment_and_topics_mock(monkeypatch):
             return {"user": {"pk": 555, "username": username, "is_private": False}}
 
     service = OsintgramService("target_test", FakeApi())
-    monkeypatch.setattr(service, "get_comment_data", lambda limit_posts=10: [
+    monkeypatch.setattr(service, "get_comment_data", lambda limit_posts=10, max_comments_per_post=None: [
         {"comment": "Amazing post, love your work! ❤️", "username": "alice"},
         {"comment": "Awesome content", "username": "bob"},
     ])

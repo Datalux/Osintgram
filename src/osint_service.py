@@ -890,10 +890,7 @@ class OsintgramService:
         """Analyze audience sentiment, toxicity, hostility spikes across post comments."""
         from src.sentiment_analyzer import analyze_comments_sentiment
         eff_limit = min(30, max(1, limit_posts if limit_posts is not None else 10))
-        try:
-            raw_comments = self.get_comment_data(limit_posts=eff_limit, max_comments_per_post=max_comments_per_post)
-        except TypeError:
-            raw_comments = self.get_comment_data(limit_posts=eff_limit)
+        raw_comments = self.get_comment_data(limit_posts=eff_limit, max_comments_per_post=max_comments_per_post)
         comments = [
             {
                 "text": c.get("comment") or c.get("text") or "",
@@ -919,10 +916,7 @@ class OsintgramService:
             texts.extend(captions)
             scanned_count = getattr(self, "_last_posts_scanned", len(captions))
         if source in ("comments", "all"):
-            try:
-                comments = self.get_comment_data(limit_posts=eff_limit, max_comments_per_post=50)
-            except TypeError:
-                comments = self.get_comment_data(limit_posts=eff_limit)
+            comments = self.get_comment_data(limit_posts=eff_limit, max_comments_per_post=50)
             texts.extend([c.get("comment") or c.get("text") or "" for c in comments])
             comment_scanned = getattr(self, "_last_posts_scanned", len(comments))
             scanned_count = max(scanned_count or 0, comment_scanned)
