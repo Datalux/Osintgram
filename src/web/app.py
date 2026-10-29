@@ -10,6 +10,7 @@ key/billing is required - only Ollama running locally with a tool-calling
 capable model pulled (see README).
 """
 import configparser
+import inspect
 import json
 import os
 import queue
@@ -185,10 +186,15 @@ def _run_tool_call(name: str, args: dict, fn) -> str:
     cache keyed on (tool, arguments) could never do."""
     if not fn:
         return json.dumps({"error": f"unknown tool {name}"})
+    # Check the arguments against the signature first, so only a missing or
+    # unexpected argument is handed back to the model (which can then retry).
+    # A TypeError raised inside the tool is a bug and must not be mislabelled
+    # as bad arguments, so the call itself is not wrapped.
     try:
-        return fn(**args)
+        inspect.signature(fn).bind(**args)
     except TypeError as e:
         return json.dumps({"error": f"Invalid tool arguments for {name}: {e}"})
+    return fn(**args)
 
 
 app = FastAPI(title="Osintgram Web")
