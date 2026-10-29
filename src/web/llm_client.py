@@ -129,7 +129,7 @@ def _read_ai_config() -> dict:
     if os.path.exists(ini_path):
         try:
             parser = configparser.ConfigParser(interpolation=None)
-            parser.read(ini_path)
+            parser.read(ini_path, encoding="utf-8")
             if parser.has_section("AI"):
                 sec = parser["AI"]
                 if not (os.getenv("LLM_PROVIDER") or os.getenv("LLM_BACKEND")):
@@ -173,7 +173,7 @@ def save_ai_config(provider: str, base_url: str, model: str, api_key: Optional[s
     parser = configparser.ConfigParser(interpolation=None)
     if ini_path.exists():
         try:
-            parser.read(ini_path)
+            parser.read(ini_path, encoding="utf-8")
         except Exception:
             pass
 

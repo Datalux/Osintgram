@@ -96,7 +96,7 @@ def hiker_token_source(credentials_path: str = "config/credentials.ini") -> Opti
 def _token_from_file(credentials_path: str) -> Optional[str]:
     try:
         parser = configparser.ConfigParser(interpolation=None)
-        parser.read(credentials_path)
+        parser.read(credentials_path, encoding="utf-8")
         return parser.get("Credentials", "hikerapi_token", fallback=None) or None
     except Exception:
         return None
@@ -107,14 +107,14 @@ def save_hiker_token(token: str, credentials_path: str = "config/credentials.ini
     Preserves whatever else is in the file - the instagrapi credentials live
     in the same section."""
     parser = configparser.ConfigParser(interpolation=None)
-    parser.read(credentials_path)
+    parser.read(credentials_path, encoding="utf-8")
     if not parser.has_section("Credentials"):
         parser.add_section("Credentials")
     parser.set("Credentials", "hikerapi_token", token)
     directory = os.path.dirname(credentials_path)
     if directory:
         os.makedirs(directory, exist_ok=True)
-    with open(credentials_path, "w") as handle:
+    with open(credentials_path, "w", encoding="utf-8") as handle:
         parser.write(handle)
     # Credentials file: keep it readable only by its owner.
     try:
