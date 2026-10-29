@@ -38,3 +38,13 @@ def test_web_search_wikipedia_provider():
     results = search_public_web("Louvre Museum")
     assert len(results) > 0
     assert any("louvre" in r["title"].lower() or "louvre" in r["snippet"].lower() for r in results)
+
+
+def test_search_public_context_empty_query():
+    from src.web.tools import build_tools
+    import json
+    tools = build_tools(None)
+    search_tool = next(t for t in tools if t.__name__ == "search_public_context")
+    res = json.loads(search_tool())
+    assert "error" in res
+    assert "Specify a public landmark" in res["error"]

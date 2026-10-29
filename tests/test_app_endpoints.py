@@ -395,3 +395,47 @@ def test_llm_tool_call_subscriptable_and_properties():
     assert tc.name == "get_user_info"
     assert tc.arguments == {"target": "test"}
     assert tc.get("name") == "get_user_info"
+
+
+def test_run_tool_call_catches_type_error():
+    from src.web.app import _run_tool_call
+    import json
+    def dummy_tool(required_arg: str):
+        return "ok"
+    res = json.loads(_run_tool_call("dummy_tool", {}, dummy_tool))
+    assert "error" in res
+    assert "Invalid tool arguments" in res["error"]
+    assert "required_arg" in res["error"]
+
+
+def test_run_tool_call_rejects_unexpected_argument():
+    from src.web.app import _run_tool_call
+    import json
+
+    def dummy_tool(limit: int = 10):
+        return "ok"
+
+    res = json.loads(_run_tool_call("dummy_tool", {"made_up": 1}, dummy_tool))
+    assert "Invalid tool arguments" in res["error"]
+    assert "made_up" in res["error"]
+
+
+def test_run_tool_call_runs_a_valid_call():
+    from src.web.app import _run_tool_call
+
+    def dummy_tool(limit: int = 10):
+        return f"limit={limit}"
+
+    assert _run_tool_call("dummy_tool", {"limit": 3}, dummy_tool) == "limit=3"
+    assert _run_tool_call("dummy_tool", {}, dummy_tool) == "limit=10"
+
+
+def test_run_tool_call_does_not_hide_a_bug_inside_the_tool():
+    import pytest
+    from src.web.app import _run_tool_call
+
+    def buggy_tool():
+        return None + 1  # a TypeError that has nothing to do with the arguments
+
+    with pytest.raises(TypeError):
+        _run_tool_call("buggy_tool", {}, buggy_tool)

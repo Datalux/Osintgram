@@ -393,7 +393,7 @@ def build_tools(service: OsintgramService) -> list:
             return _to_json({"error": "Specify a place to search for."})
         return _call(service.search_location, place=place, limit=limit)
 
-    def search_public_context(query: str) -> str:
+    def search_public_context(query: str = "") -> str:
         """Search the public web for context about a public place, venue, landmark, organization, or event.
 
         Strictly privacy-guarded: queries containing personal usernames, profile URLs, or target handles will be rejected.
@@ -401,6 +401,8 @@ def build_tools(service: OsintgramService) -> list:
         Args:
             query: Name of the public landmark, venue, brand, or event to search for (e.g. 'Milan Cathedral', 'Uffizi Gallery').
         """
+        if not (query or "").strip():
+            return _to_json({"error": "Specify a public landmark, venue, brand, or event to search for."})
         from src.web.web_search import search_public_web, resolve_web_search_config
         cfg = resolve_web_search_config()
         if not cfg.enabled:
