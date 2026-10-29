@@ -61,7 +61,7 @@ def resolve_instagrapi_proxy(
         return proxy.strip()
     try:
         parser = configparser.ConfigParser(interpolation=None)
-        parser.read(credentials_path)
+        parser.read(credentials_path, encoding="utf-8")
         val = parser.get("Credentials", "proxy", fallback=None)
         if val and val.strip():
             return val.strip()
@@ -85,7 +85,7 @@ def resolve_instagrapi_credentials(
         return username, password
     try:
         parser = configparser.ConfigParser(interpolation=None)
-        parser.read(credentials_path)
+        parser.read(credentials_path, encoding="utf-8")
         username = username or parser.get("Credentials", "username", fallback=None) or None
         password = password or parser.get("Credentials", "password", fallback=None) or None
     except Exception:
