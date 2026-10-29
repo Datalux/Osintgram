@@ -47,7 +47,7 @@ def test_accepting_a_key_validates_it_and_saves_it(client):
     assert body["balance"]["requests"] == 474
     # Usable straight away, and written where the CLI reads it too.
     assert svcmod.resolve_hiker_token(str(creds)) == "hik_valid_key_0000"
-    assert "hik_valid_key_0000" in creds.read_text()
+    assert "hik_valid_key_0000" in creds.read_text(encoding="utf-8")
 
 
 def test_the_key_is_never_returned_only_masked(client):
