@@ -2,44 +2,144 @@
 
 Zero external C-dependencies: generates standard PDF 1.4 documents using
 built-in standard Type 1 fonts (Helvetica, Helvetica-Bold, Courier, Courier-Bold).
-Produces standalone, print-ready, vectorized investigation dossier reports.
+Produces standalone, print-ready investigation dossier reports.
+
+Text is written with WinAnsiEncoding (Windows-1252), so Western European
+accents are shown correctly. Standard fonts cannot draw other scripts
+(Cyrillic, Arabic, CJK, emoji, ...): accents Windows-1252 lacks are reduced to
+their base letter (ś -> s, ł -> l) and anything else is shown as "?".
 """
 import datetime
-import html
-import re
+import unicodedata
 from typing import Any, Dict, List, Optional, Tuple
+
+# Punctuation and symbols with a plain-ASCII reading.
+_PUNCTUATION = {
+    "—": "-", "–": "-", "“": '"', "”": '"', "‘": "'", "’": "'",
+    "•": "*", "·": "*", "✓": "[x]", "✔": "[x]", "✗": "[ ]", "✘": "[ ]",
+}
+
+# Letters that do not decompose into a base letter plus an accent.
+_TRANSLITERATE = {"ł": "l", "Ł": "L", "đ": "d", "Đ": "D", "ı": "i"}
+
+
+def _winansi_fallback(ch: str) -> str:
+    """Return `ch` if WinAnsi can show it, else its base letter, else ''."""
+    try:
+        ch.encode("cp1252")
+        return ch
+    except UnicodeEncodeError:
+        pass
+    ch = _TRANSLITERATE.get(ch, ch)
+    base = "".join(c for c in unicodedata.normalize("NFKD", ch) if not unicodedata.combining(c))
+    try:
+        base.encode("cp1252")
+        return base
+    except UnicodeEncodeError:
+        return ""
+
+
+def _clean_text(text: Any) -> str:
+    """Reduce text to what WinAnsiEncoding can show (no PDF escaping)."""
+    out: List[str] = []
+    lost = False
+    for ch in unicodedata.normalize("NFC", str(text or "")):
+        rep = _PUNCTUATION.get(ch)
+        category = unicodedata.category(ch)
+        if rep is None:
+            if category in ("Cc", "Zs", "Zl", "Zp"):
+                rep = " "
+            elif category in ("Cf", "Mn", "Me"):
+                continue  # zero-width joiners, variation selectors, stray accents
+            elif 32 <= ord(ch) <= 126:
+                rep = ch
+            else:
+                rep = _winansi_fallback(ch)
+        if rep:
+            out.append(rep)
+            lost = False
+        elif not lost:
+            out.append("?")  # one "?" per run of characters we cannot draw
+            lost = True
+    return "".join(out)
 
 
 def _escape_pdf(text: Any) -> str:
-    """Escape text for PDF string literals, converting unicode to clean Latin-1/ASCII."""
-    s = str(text or "")
-    out = []
-    for ch in s:
-        if ch in ("(", ")", "\\"):
-            out.append("\\" + ch)
-        elif 32 <= ord(ch) <= 126:
-            out.append(ch)
-        elif ch in "\r\n\t":
-            out.append(" ")
-        elif ch in "—–":
-            out.append("-")
-        elif ch in "“”":
-            out.append('"')
-        elif ch in "‘’":
-            out.append("'")
-        elif ch in "•·":
-            out.append("*")
-        elif ch in "✓✔":
-            out.append("[x]")
-        elif ch in "✗✘":
-            out.append("[ ]")
+    """Escape text for a PDF string literal (WinAnsi-safe, parentheses escaped)."""
+    return _clean_text(text).replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+
+
+# Rough Helvetica advance widths (in em), enough to wrap and truncate text
+# without shipping the full font metrics.
+_NARROW = set("iljtfI.,;:'!|()[] ")
+_WIDE = set("mwMW@%")
+
+
+def _text_width(text: str, size: float) -> float:
+    width = 0.0
+    for ch in text:
+        if ch in _NARROW:
+            width += 0.28
+        elif ch in _WIDE:
+            width += 0.83
+        elif ch.isupper():
+            width += 0.68
         else:
-            try:
-                ch.encode("latin-1")
-                out.append(ch)
-            except UnicodeEncodeError:
-                out.append("?")
-    return "".join(out)
+            width += 0.52
+    return width * size
+
+
+def _truncate_to_width(text: Any, max_width: float, size: float) -> str:
+    """Cut `text` so it fits `max_width`, ending with '..' when shortened."""
+    clean = _clean_text(text)
+    if _text_width(clean, size) <= max_width:
+        return clean
+    while clean and _text_width(clean + "..", size) > max_width:
+        clean = clean[:-1]
+    return clean.rstrip() + ".."
+
+
+def _wrap_text(text: Any, max_width: float, size: float, max_lines: int) -> List[str]:
+    """Word-wrap `text` into at most `max_lines` lines; the last one ends in '...'."""
+    words = _clean_text(text).split()
+    lines: List[str] = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if _text_width(candidate, size) <= max_width:
+            current = candidate
+            continue
+        if current:
+            lines.append(current)
+        current = word
+        while _text_width(current, size) > max_width and len(current) > 1:
+            cut = len(current) - 1
+            while cut > 1 and _text_width(current[:cut], size) > max_width:
+                cut -= 1
+            lines.append(current[:cut])
+            current = current[cut:]
+    if current:
+        lines.append(current)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        lines[-1] = _truncate_to_width(lines[-1] + "...", max_width, size)
+    return lines or [""]
+
+
+def _safe_timestamp(value: Any) -> float:
+    """A usable POSIX timestamp, or now when `value` is missing or out of range."""
+    now = datetime.datetime.now().timestamp()
+    try:
+        ts = float(value)
+        datetime.datetime.fromtimestamp(ts, datetime.timezone.utc)
+    except (TypeError, ValueError, OverflowError, OSError):
+        return now
+    return ts if ts > 0 else now
+
+
+def _dicts(value: Any) -> List[Dict[str, Any]]:
+    """The dict items of a list; anything else yields an empty list."""
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
 
 
 class PDFDocument:
@@ -47,7 +147,7 @@ class PDFDocument:
 
     def __init__(self, page_width: float = 595.28, page_height: float = 841.89):
         self.width = page_width   # A4 width in points
-        self.height = page_height # A4 height in points
+        self.height = page_height  # A4 height in points
         self.objects: List[bytes] = []
         self.page_streams: List[bytes] = []
 
@@ -72,10 +172,18 @@ class PDFDocument:
         pages_id = add_obj(b"")
 
         # Fonts: F1 (Helvetica), F2 (Helvetica-Bold), F3 (Courier), F4 (Courier-Bold)
-        f1_id = add_obj(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>")
-        f2_id = add_obj(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>")
-        f3_id = add_obj(b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>")
-        f4_id = add_obj(b"<< /Type /Font /Subtype /Type1 /BaseFont /Courier-Bold >>")
+        # WinAnsiEncoding: without it viewers fall back to StandardEncoding and
+        # accented letters (e.g. é, ñ, ü) are drawn as the wrong glyph.
+        def font(base: str) -> bytes:
+            return (
+                f"<< /Type /Font /Subtype /Type1 /BaseFont /{base} "
+                "/Encoding /WinAnsiEncoding >>"
+            ).encode("ascii")
+
+        f1_id = add_obj(font("Helvetica"))
+        f2_id = add_obj(font("Helvetica-Bold"))
+        f3_id = add_obj(font("Courier"))
+        f4_id = add_obj(font("Courier-Bold"))
 
         font_res = (
             f"<< /Font << /F1 {f1_id} 0 R /F2 {f2_id} 0 R "
@@ -125,10 +233,13 @@ class PDFDocument:
 class DossierPDFCanvas:
     """High-level dossier report formatter with automatic multi-page flow."""
 
+    MAX_VALUE_LINES = 6      # longest wrapped value (e.g. a biography), in lines
+    VALUE_LINE_HEIGHT = 11.0
+
     def __init__(self, target: str, dossier_id: str = "", timestamp: Optional[float] = None):
-        self.target = target.lstrip("@")
+        self.target = str(target or "target").lstrip("@")
         self.dossier_id = dossier_id or "RUN-1"
-        self.timestamp = timestamp or datetime.datetime.now().timestamp()
+        self.timestamp = _safe_timestamp(timestamp)
         self.doc = PDFDocument()
 
         self.width = 595.28
@@ -256,27 +367,31 @@ class DossierPDFCanvas:
         self.current_y -= 12
 
     def add_key_value_rows(self, rows: List[Tuple[str, str]]):
+        value_x = self.left + 150
+        value_width = self.right - value_x - 4
         for k, v in rows:
-            self._ensure_space(18)
+            lines = _wrap_text(v, value_width, 8, self.MAX_VALUE_LINES)
+            extra = self.VALUE_LINE_HEIGHT * (len(lines) - 1)
+            self._ensure_space(18 + extra)
             self.current_y -= 16
             y = self.current_y
-            # Zebra line
-            self.current_stream.append(
-                f"q 0.91 0.93 0.96 RG 0.5 w {self.left:.2f} {y:.2f} m {self.right:.2f} {y:.2f} l S Q\n"
-            )
             # Key
             self.current_stream.append(
                 f"BT /F2 8 Tf 0.3 0.35 0.45 rg {self.left + 4:.2f} {y + 4:.2f} Td "
                 f"({_escape_pdf(k)}) Tj ET\n"
             )
-            # Val (wrapped / truncated if needed)
-            val_str = _escape_pdf(v)
-            if len(val_str) > 85:
-                val_str = val_str[:82] + "..."
+            # Value, wrapped over up to MAX_VALUE_LINES lines
+            for i, line in enumerate(lines):
+                self.current_stream.append(
+                    f"BT /F1 8 Tf 0.1 0.12 0.18 rg {value_x:.2f} "
+                    f"{y + 4 - self.VALUE_LINE_HEIGHT * i:.2f} Td ({_escape_pdf(line)}) Tj ET\n"
+                )
+            # Zebra line under the last line of the row
+            y -= extra
             self.current_stream.append(
-                f"BT /F1 8 Tf 0.1 0.12 0.18 rg {self.left + 150:.2f} {y + 4:.2f} Td "
-                f"({val_str}) Tj ET\n"
+                f"q 0.91 0.93 0.96 RG 0.5 w {self.left:.2f} {y:.2f} m {self.right:.2f} {y:.2f} l S Q\n"
             )
+            self.current_y -= extra
         self.current_y -= 8
 
     def add_table(self, headers: List[str], rows: List[List[str]], col_widths: Optional[List[float]] = None):
@@ -316,10 +431,9 @@ class DossierPDFCanvas:
 
             cur_x = self.left
             for cell, w in zip(row, col_widths):
-                c_str = _escape_pdf(cell)
-                max_chars = max(8, int(w / 6.0))
-                if len(c_str) > max_chars:
-                    c_str = c_str[:max_chars - 2] + ".."
+                # Truncate the clean text, then escape: cutting an escaped string
+                # could leave a lone backslash that swallows the closing ")".
+                c_str = _escape_pdf(_truncate_to_width(cell, w - 10, 7.5))
                 self.current_stream.append(
                     f"BT /F1 7.5 Tf 0.1 0.12 0.18 rg {cur_x + 6:.2f} {y + 3:.2f} Td "
                     f"({c_str}) Tj ET\n"
@@ -342,24 +456,23 @@ class DossierPDFCanvas:
                 f"(Page {page_idx} of {total_pages}) Tj ET\n",
             ]
             full_stream = "".join(stream_ops) + "".join(footer_ops)
-            self.doc.add_page(full_stream.encode("latin-1", errors="replace"))
+            self.doc.add_page(full_stream.encode("cp1252", errors="replace"))
 
         return self.doc.to_bytes()
 
 
 def generate_dossier_pdf(dossier_data: Dict[str, Any]) -> bytes:
     """Generate a formatted investigation dossier PDF document from scan/dossier data."""
-    target = dossier_data.get("target") or "target"
+    target = str(dossier_data.get("target") or "target")
     dossier_id = str(dossier_data.get("id") or dossier_data.get("case_id") or "RUN-1")
-    timestamp = float(dossier_data.get("saved_at") or datetime.datetime.now().timestamp())
 
-    pdf = DossierPDFCanvas(target=target, dossier_id=dossier_id, timestamp=timestamp)
+    pdf = DossierPDFCanvas(target=target, dossier_id=dossier_id, timestamp=dossier_data.get("saved_at"))
     pdf.draw_cover_banner()
 
-    # Normalize cards / results
-    cards = dossier_data.get("cards") or []
-    if not cards and "results" in dossier_data:
-        cards = [{"name": r.get("name"), "result": r.get("result")} for r in dossier_data["results"]]
+    # Normalize cards / results (skipping anything that isn't an object)
+    cards = _dicts(dossier_data.get("cards"))
+    if not cards:
+        cards = [{"name": r.get("name"), "result": r.get("result")} for r in _dicts(dossier_data.get("results"))]
 
     # 1. Target Profile
     user_info = None
@@ -400,9 +513,9 @@ def generate_dossier_pdf(dossier_data: Dict[str, Any]) -> bytes:
     following_sample = []
     for c in cards:
         if c.get("name") == "get_followers" and isinstance(c.get("result"), list):
-            followers_sample = c.get("result")[:15]
+            followers_sample = _dicts(c.get("result"))[:15]
         elif c.get("name") == "get_followings" and isinstance(c.get("result"), list):
-            following_sample = c.get("result")[:15]
+            following_sample = _dicts(c.get("result"))[:15]
 
     if followers_sample:
         pdf.add_section_header("2. Followers Sample (First 15)")
@@ -435,7 +548,7 @@ def generate_dossier_pdf(dossier_data: Dict[str, Any]) -> bytes:
     for c in cards:
         if c.get("name") in ("get_people_who_commented", "get_comment_data"):
             res = c.get("result")
-            items = res if isinstance(res, list) else (res.get("comments", []) if isinstance(res, dict) else [])
+            items = _dicts(res if isinstance(res, list) else (res.get("comments") if isinstance(res, dict) else None))
             if items:
                 commenters = items[:15]
                 break
@@ -444,7 +557,8 @@ def generate_dossier_pdf(dossier_data: Dict[str, Any]) -> bytes:
         pdf.add_section_header("4. Key Commenters & Interactions")
         rows = []
         for item in commenters:
-            uname = item.get("username") or (item.get("user") or {}).get("username") or "-"
+            user = item.get("user") if isinstance(item.get("user"), dict) else {}
+            uname = item.get("username") or user.get("username") or "-"
             cnt = str(item.get("count") or item.get("comments_count") or 1)
             text = item.get("text") or "-"
             rows.append([f"@{uname}", cnt, text])
@@ -454,7 +568,7 @@ def generate_dossier_pdf(dossier_data: Dict[str, Any]) -> bytes:
     locations = []
     for c in cards:
         if c.get("name") == "get_addrs" and isinstance(c.get("result"), list):
-            locations = c.get("result")[:15]
+            locations = _dicts(c.get("result"))[:15]
 
     if locations:
         pdf.add_section_header("5. Geotagged Locations & Addresses")
@@ -495,7 +609,7 @@ def generate_dossier_pdf(dossier_data: Dict[str, Any]) -> bytes:
             while len(chunk) < 4:
                 chunk.append("")
             rows.append(chunk)
-        col_w = self_w = 515.0 / 4
+        col_w = 515.0 / 4
         pdf.add_table(["Tag 1", "Tag 2", "Tag 3", "Tag 4"], rows, [col_w, col_w, col_w, col_w])
 
     # 6. Overall Investigation Summary

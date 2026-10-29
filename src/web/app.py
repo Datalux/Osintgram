@@ -20,7 +20,7 @@ import uuid
 from contextlib import contextmanager
 from importlib import metadata
 from pathlib import Path
-from typing import Callable, Iterator, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional
 
 import httpx
 
@@ -1307,8 +1307,8 @@ class PDFExportRequest(BaseModel):
     target: str = "target"
     id: Optional[str] = None
     saved_at: Optional[float] = None
-    cards: list = []
-    results: list = []
+    cards: List[Dict[str, Any]] = []
+    results: List[Dict[str, Any]] = []
 
 
 @app.post("/api/export/pdf")
@@ -1318,6 +1318,9 @@ def export_search_pdf(req: PDFExportRequest, request: Request):
     content_len = request.headers.get("content-length")
     if content_len and int(content_len) > 10 * 1024 * 1024:
         raise HTTPException(413, "Payload too large (maximum 10MB)")
+    # A POSIX timestamp from 1970 to 2100; anything else (or NaN) is rejected.
+    if req.saved_at is not None and not 0 < req.saved_at < 4102444800:
+        raise HTTPException(400, "saved_at must be a valid POSIX timestamp.")
 
     from src.pdf_report import generate_dossier_pdf
     dossier_data = {

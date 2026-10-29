@@ -1,7 +1,14 @@
 import pytest
 from starlette.testclient import TestClient
 
-from src.pdf_report import _escape_pdf, generate_dossier_pdf, PDFDocument
+from src.pdf_report import (
+    PDFDocument,
+    _escape_pdf,
+    _text_width,
+    _truncate_to_width,
+    _wrap_text,
+    generate_dossier_pdf,
+)
 from src.web.app import app
 from src.web import dossier
 
@@ -16,6 +23,76 @@ def test_escape_pdf():
     assert _escape_pdf("Test (with) parens \\ and slashes") == "Test \\(with\\) parens \\\\ and slashes"
     assert _escape_pdf("Special — dashes and “quotes”") == 'Special - dashes and "quotes"'
     assert _escape_pdf("Check ✓ mark") == "Check [x] mark"
+
+
+def test_escape_pdf_keeps_western_accents():
+    text = "Perché è già così, señor Müller, Zoë, façade, €5, Šimek"
+    assert _escape_pdf(text) == text
+    # A decomposed accent (e + combining acute) is composed first
+    assert _escape_pdf("Café") == "Café"
+
+
+def test_escape_pdf_reduces_characters_winansi_cannot_show():
+    # Accents missing from Windows-1252 fall back to the base letter
+    assert _escape_pdf("Łódź Gdańsk") == "Lódz Gdansk"
+    # Other scripts and emoji become a single "?" per run
+    assert _escape_pdf("Привет") == "?"
+    assert _escape_pdf("a😀😀b") == "a?b"
+    assert _escape_pdf("I ❤️ you") == "I ? you"
+    # Zero-width characters are dropped
+    assert _escape_pdf("a‍b") == "ab"
+
+
+def test_truncation_never_leaves_a_dangling_backslash():
+    for width in range(20, 200, 7):
+        out = _escape_pdf(_truncate_to_width("(a)\\" * 60, width, 7.5))
+        assert (len(out) - len(out.rstrip("\\"))) % 2 == 0
+
+
+def test_long_values_wrap_instead_of_being_cut():
+    bio = " ".join(f"word{i}" for i in range(40))
+    lines = _wrap_text(bio, 361, 8, 6)
+    assert 1 < len(lines) <= 6
+    assert all(_text_width(line, 8) <= 361 for line in lines)
+    assert " ".join(lines) == bio
+    assert _wrap_text("short bio", 361, 8, 6) == ["short bio"]
+
+    clipped = _wrap_text("lorem " * 500, 361, 8, 6)
+    assert len(clipped) == 6 and clipped[-1].endswith("...")
+
+
+def test_pdf_declares_winansi_and_encodes_accents():
+    run = {
+        "target": "x",
+        "cards": [{
+            "name": "get_user_info",
+            "result": {
+                "username": "x",
+                "full_name": "Perché è già così",
+                "biography": "Łódź " + " ".join(f"word{i}" for i in range(40)),
+            },
+        }],
+    }
+    pdf = generate_dossier_pdf(run)
+    assert pdf.count(b"/Encoding /WinAnsiEncoding") == 4
+    assert "Perché è già così".encode("cp1252") in pdf
+    assert b"L\xf3dz" in pdf  # "Lódz": the ó is byte 0xF3 in Windows-1252
+    assert b"word39" in pdf  # the end of a long biography is not cut
+
+
+def test_malformed_input_does_not_crash():
+    pdf = generate_dossier_pdf({
+        "target": "x",
+        "saved_at": 1e30,
+        "cards": [
+            "junk",
+            5,
+            {"name": "get_followers", "result": ["a", {"username": "ok_follower"}]},
+            {"name": "get_comment_data", "result": [{"user": "not-a-dict", "text": "hi"}]},
+        ],
+    })
+    assert pdf.startswith(b"%PDF-1.4\n")
+    assert b"ok_follower" in pdf
 
 
 def test_pdf_document_low_level():
@@ -131,6 +208,11 @@ def test_pdf_export_endpoint(api_client):
     assert 'attachment; filename="osintgram_report_alice.pdf"' in resp.headers.get("content-disposition", "")
     assert resp.content.startswith(b"%PDF-1.4\n")
     assert b"Alice Wonderland" in resp.content
+
+
+def test_pdf_export_rejects_bad_payloads(api_client):
+    assert api_client.post("/api/export/pdf", json={"target": "a", "cards": ["x"]}).status_code == 422
+    assert api_client.post("/api/export/pdf", json={"target": "a", "saved_at": 1e30}).status_code == 400
 
 
 def test_dossier_pdf_endpoint(api_client, tmp_path, monkeypatch):
