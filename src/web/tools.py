@@ -348,6 +348,22 @@ def build_tools(service: OsintgramService) -> list:
         """
         return _call(service.get_people_tagged_by_user, limit_posts=limit_posts)
 
+    def get_sleep_schedule(limit_posts: Optional[int] = 50) -> str:
+        """Infer target's circadian sleep pattern, quiet hours, and probable timezone.
+
+        Args:
+            limit_posts: Number of recent posts to analyze for temporal activity (default: 50).
+        """
+        return _call(service.get_sleep_schedule, limit_posts=limit_posts)
+
+    def get_travel_route(limit_posts: Optional[int] = 50) -> str:
+        """Reconstruct target's chronological travel trajectory, distances, and transit legs.
+
+        Args:
+            limit_posts: Number of recent posts to scan for geotags (default: 50).
+        """
+        return _call(service.get_travel_route, limit_posts=limit_posts)
+
     def get_user_photos(limit: Optional[int] = None) -> str:
         """Get direct CDN URLs for the target's posted photos (no download,
         just the URLs and media ids).
@@ -521,6 +537,8 @@ def build_tools(service: OsintgramService) -> list:
         get_people_who_tagged,
         get_tagged_posts,
         get_people_tagged_by_user,
+        get_sleep_schedule,
+        get_travel_route,
         get_user_photos,
         get_user_propic,
         get_user_stories,
