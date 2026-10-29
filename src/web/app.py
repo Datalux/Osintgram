@@ -20,7 +20,7 @@ import uuid
 from contextlib import contextmanager
 from importlib import metadata
 from pathlib import Path
-from typing import Callable, Iterator, Optional
+from typing import Any, Callable, Dict, Iterator, List, Optional
 
 import httpx
 
@@ -1283,6 +1283,60 @@ def diff_dossiers(target: str, before_id: str, after_id: str, request: Request):
     if before.get("saved_at", 0) > after.get("saved_at", 0):
         before, after = after, before  # always compare oldest -> newest
     return dossier.compare(before, after)
+
+
+@app.get("/api/dossier/{target}/{dossier_id}/pdf")
+def get_dossier_pdf(target: str, dossier_id: str, request: Request):
+    """Download saved dossier as a standalone, printable PDF document."""
+    _require_local_origin(request)
+    run = dossier.load(target, dossier_id)
+    if run is None:
+        raise HTTPException(404, "Dossier not found.")
+    from src.pdf_report import generate_dossier_pdf
+    pdf_bytes = generate_dossier_pdf(run)
+    safe_target = re.sub(r"[^\w.-]+", "_", target or "target")
+    safe_id = re.sub(r"[^\w.-]+", "_", dossier_id or "dossier")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="dossier_{safe_target}_{safe_id}.pdf"'},
+    )
+
+
+class PDFExportRequest(BaseModel):
+    target: str = "target"
+    id: Optional[str] = None
+    saved_at: Optional[float] = None
+    cards: List[Dict[str, Any]] = []
+    results: List[Dict[str, Any]] = []
+
+
+@app.post("/api/export/pdf")
+def export_search_pdf(req: PDFExportRequest, request: Request):
+    """Export current investigation run directly as a formatted PDF."""
+    _require_local_origin(request)
+    content_len = request.headers.get("content-length")
+    if content_len and int(content_len) > 10 * 1024 * 1024:
+        raise HTTPException(413, "Payload too large (maximum 10MB)")
+    # A POSIX timestamp from 1970 to 2100; anything else (or NaN) is rejected.
+    if req.saved_at is not None and not 0 < req.saved_at < 4102444800:
+        raise HTTPException(400, "saved_at must be a valid POSIX timestamp.")
+
+    from src.pdf_report import generate_dossier_pdf
+    dossier_data = {
+        "target": req.target,
+        "id": req.id or "LIVE-RUN",
+        "saved_at": req.saved_at,
+        "cards": req.cards,
+        "results": req.results,
+    }
+    pdf_bytes = generate_dossier_pdf(dossier_data)
+    safe_target = re.sub(r"[^\w.-]+", "_", req.target or "target")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="osintgram_report_{safe_target}.pdf"'},
+    )
 
 
 @app.post("/api/estimate")

@@ -503,7 +503,14 @@ the comparison, so it reports real changes only.
 | **⬇ CSV** | The same as a table — comma separated with a BOM, so Excel reads it as UTF-8 |
 | **⬇ Media (N)** | The original photos and videos, as one zip |
 | **⬇ Export all** | Request, answer and every result in one JSON file |
-| **📄 Report** | The whole search as a standalone HTML page |
+| **📄 Report (PDF)** | Standalone investigation dossier as a clean, vectorized PDF document |
+| **📄 Report (HTML)** | The whole search as a standalone HTML page |
+
+**PDF text:** the PDF uses the standard PDF fonts, which only cover Western
+European (Windows-1252) text. Other accents are reduced to the base letter
+(`ś` → `s`) and other scripts (Cyrillic, Arabic, CJK) and emoji appear as `?`.
+Long values such as a biography wrap over a few lines; table cells are
+shortened with `..`. The HTML report keeps the full text in any script.
 
 **CSV safety:** any text starting with `=`, `+`, `-` or `@` is prefixed with
 `'`, so a spreadsheet can't execute it as a formula.

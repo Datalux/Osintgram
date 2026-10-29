@@ -3943,6 +3943,34 @@
     }
   }
 
+  async function exportPDF(button) {
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "⏳ Generating…";
+    try {
+      const payload = currentRunPayload();
+      const resp = await fetch("/api/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const blob = await resp.blob();
+      const target = exportState.meta?.target || "target";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `osintgram_report_${target}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      button.textContent = "✓ Downloaded";
+      setTimeout(() => { button.textContent = original; button.disabled = false; }, 2000);
+    } catch (err) {
+      alert(`PDF export failed: ${err.message || err}`);
+      button.textContent = original;
+      button.disabled = false;
+    }
+  }
+
   async function exportReport(button) {
     const original = button.textContent;
     button.disabled = true;
@@ -4077,7 +4105,8 @@
         <button class="export-btn" type="button" data-save-dossier title="Save this search: you can reopen it without spending requests again, and compare it with a later one">Save dossier</button>
         <button class="export-btn" type="button" data-export-all title="Download request, answer and every result as one JSON file">Export all (JSON)</button>
         <button class="export-btn" type="button" data-export-graph title="Export relationship graph of followers, following, and interactions as GEXF (for Gephi)">Export graph (GEXF)</button>
-        <button class="export-btn" type="button" data-export-report title="Download a standalone HTML report, readable without Osintgram and printable to PDF">Report (HTML / PDF)</button>
+        <button class="export-btn" type="button" data-export-pdf title="Download investigation dossier as a formatted PDF document">Report (PDF)</button>
+        <button class="export-btn" type="button" data-export-report title="Download a standalone HTML report, readable without Osintgram and printable to PDF">Report (HTML)</button>
       </div></details>`;
     outHeading.hidden = false;
     if (exportState.meta && backend) exportState.meta.backend = backend;
@@ -4087,6 +4116,7 @@
     if (menu && event.target.closest(".export-btn")) setTimeout(() => menu.removeAttribute("open"), 0);
     if (event.target.closest("[data-export-all]")) exportAll();
     else if (event.target.closest("[data-export-graph]")) exportSocialGraph(event.target.closest("[data-export-graph]"));
+    else if (event.target.closest("[data-export-pdf]")) exportPDF(event.target.closest("[data-export-pdf]"));
     else if (event.target.closest("[data-export-report]")) exportReport(event.target.closest("[data-export-report]"));
     else if (event.target.closest("[data-save-dossier]")) saveDossier(event.target.closest("[data-save-dossier]"));
   });
@@ -4148,6 +4178,7 @@
           <span class="dossier-what">@${escapeHtml(d.target)} · ${escapeHtml(what)}</span>
         </div>
         <button type="button" class="link-btn" data-action="open">Open</button>
+        <a class="link-btn" href="/api/dossier/${encodeURIComponent(d.target)}/${encodeURIComponent(d.id)}/pdf" title="Download dossier as PDF" download>PDF</a>
         ${older ? `<button type="button" class="link-btn" data-action="diff" data-other="${escapeHtml(older.id)}"
             title="Compare with the dossier from ${escapeHtml(older.saved_at ? new Date(older.saved_at * 1000).toLocaleString() : "")}">What changed</button>` : ""}
         <button type="button" class="history-remove" data-action="delete" title="Delete this dossier" aria-label="Delete the dossier">×</button>
