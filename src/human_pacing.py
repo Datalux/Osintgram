@@ -1,10 +1,11 @@
-"""Human Emulation & Anti-Throttling Pacing Engine for Osintgram.
+"""Adaptive Rate Limiting & Backoff Engine for Osintgram.
 
-Simulates authentic human browsing behavior during bulk pagination (followers,
-followings, comments, post feeds) to evade bot heuristics, Instagram
-feedback_required action blocks, and rate limit triggers.
+Controls request pacing with jitter, reading breaks, and adaptive backoff
+during bulk pagination on private API backends (followers, followings,
+comments, feeds) to respect Instagram rate limits and handle throttling gracefully.
 """
 import configparser
+import logging
 import os
 import random
 import time
@@ -12,24 +13,29 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
+logger = logging.getLogger(__name__)
+
 CREDENTIALS_PATH = Path("config/credentials.ini")
 
 
 class PacingMode:
-    STEALTH = "stealth"  # Slowest, highest human-realism (Gaussian + breaks)
-    NORMAL = "normal"    # Balanced pacing with minor jitter
-    FAST = "fast"        # Minimal delays, suitable for paid high-throughput
+    CONSERVATIVE = "conservative"  # Slower pacing with reading breaks and backoff
+    NORMAL = "normal"              # Balanced pacing matching baseline instagrapi delays (1.2-2.6s)
+    FAST = "fast"                  # Minimal delays; high risk of Instagram action blocks
     CUSTOM = "custom"
+
+    # Backwards-compatible alias for existing configs
+    STEALTH = "conservative"
 
 
 @dataclass
 class PacingConfig:
     mode: str = PacingMode.NORMAL
-    min_delay: float = 1.5
-    max_delay: float = 3.5
-    break_frequency: int = 20      # requests between reading breaks
-    break_min: float = 12.0        # reading break min duration (seconds)
-    break_max: float = 22.0        # reading break max duration (seconds)
+    min_delay: float = 1.2
+    max_delay: float = 2.6
+    break_frequency: int = 25      # requests between reading breaks
+    break_min: float = 10.0        # reading break min duration (seconds)
+    break_max: float = 20.0        # reading break max duration (seconds)
     adaptive_backoff: bool = True  # back off on rate-limit warnings
 
 
@@ -41,38 +47,98 @@ def resolve_pacing_config() -> PacingConfig:
 
     cfg = PacingConfig()
     if CREDENTIALS_PATH.exists():
+        parser = configparser.ConfigParser(interpolation=None)
         try:
-            parser = configparser.ConfigParser(interpolation=None)
             parser.read(CREDENTIALS_PATH, encoding="utf-8")
-            if parser.has_section("Pacing"):
-                sec = parser["Pacing"]
-                cfg.mode = sec.get("mode", fallback=cfg.mode).strip().lower()
-                cfg.min_delay = float(
-                    sec.get("min_delay", fallback=str(cfg.min_delay))
-                )
-                cfg.max_delay = float(
-                    sec.get("max_delay", fallback=str(cfg.max_delay))
-                )
-                cfg.break_frequency = int(
-                    sec.get(
-                        "break_frequency", fallback=str(cfg.break_frequency)
-                    )
-                )
-                cfg.break_min = float(
-                    sec.get("break_min", fallback=str(cfg.break_min))
-                )
-                cfg.break_max = float(
-                    sec.get("break_max", fallback=str(cfg.break_max))
-                )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to read credentials file %s: %s", CREDENTIALS_PATH, e)
+
+        if parser.has_section("Pacing"):
+            sec = parser["Pacing"]
+
+            if "mode" in sec:
+                raw_mode = sec.get("mode", "").strip().lower()
+                if raw_mode == "stealth":
+                    raw_mode = PacingMode.CONSERVATIVE
+                if raw_mode in (
+                    PacingMode.CONSERVATIVE,
+                    PacingMode.NORMAL,
+                    PacingMode.FAST,
+                    PacingMode.CUSTOM,
+                ):
+                    cfg.mode = raw_mode
+                else:
+                    logger.warning("Invalid pacing mode in credentials.ini: %r", raw_mode)
+
+            if "min_delay" in sec:
+                try:
+                    val = float(sec.get("min_delay"))
+                    if val >= 0:
+                        cfg.min_delay = val
+                    else:
+                        logger.warning("Invalid min_delay in credentials.ini: %s", sec.get("min_delay"))
+                except (ValueError, TypeError) as e:
+                    logger.warning("Failed to parse min_delay in credentials.ini: %s", e)
+
+            if "max_delay" in sec:
+                try:
+                    val = float(sec.get("max_delay"))
+                    if val >= 0:
+                        cfg.max_delay = val
+                    else:
+                        logger.warning("Invalid max_delay in credentials.ini: %s", sec.get("max_delay"))
+                except (ValueError, TypeError) as e:
+                    logger.warning("Failed to parse max_delay in credentials.ini: %s", e)
+
+            if "break_frequency" in sec:
+                try:
+                    val = int(sec.get("break_frequency"))
+                    if val >= 0:
+                        cfg.break_frequency = val
+                    else:
+                        logger.warning("Invalid break_frequency in credentials.ini: %s", sec.get("break_frequency"))
+                except (ValueError, TypeError) as e:
+                    logger.warning("Failed to parse break_frequency in credentials.ini: %s", e)
+
+            if "break_min" in sec:
+                try:
+                    val = float(sec.get("break_min"))
+                    if val >= 0:
+                        cfg.break_min = val
+                    else:
+                        logger.warning("Invalid break_min in credentials.ini: %s", sec.get("break_min"))
+                except (ValueError, TypeError) as e:
+                    logger.warning("Failed to parse break_min in credentials.ini: %s", e)
+
+            if "break_max" in sec:
+                try:
+                    val = float(sec.get("break_max"))
+                    if val >= 0:
+                        cfg.break_max = val
+                    else:
+                        logger.warning("Invalid break_max in credentials.ini: %s", sec.get("break_max"))
+                except (ValueError, TypeError) as e:
+                    logger.warning("Failed to parse break_max in credentials.ini: %s", e)
+
+            if "adaptive_backoff" in sec:
+                try:
+                    cfg.adaptive_backoff = sec.getboolean("adaptive_backoff")
+                except (ValueError, TypeError) as e:
+                    logger.warning("Failed to parse adaptive_backoff in credentials.ini: %s", e)
+
+            if cfg.min_delay > cfg.max_delay:
+                cfg.max_delay = cfg.min_delay
+            if cfg.break_min > cfg.break_max:
+                cfg.break_max = cfg.break_min
 
     valid_modes = (
-        PacingMode.STEALTH,
+        PacingMode.CONSERVATIVE,
         PacingMode.NORMAL,
         PacingMode.FAST,
         PacingMode.CUSTOM,
     )
+    if env_mode == "stealth":
+        env_mode = PacingMode.CONSERVATIVE
     if env_mode in valid_modes:
         cfg.mode = env_mode
 
@@ -99,30 +165,29 @@ class HumanPacer:
         self.is_on_break: bool = False
 
     def compute_delay(self, is_subsequent: bool = True) -> float:
-        """Compute human-like delay duration using Gaussian distribution with
-        bounded clipping.
-        """
+        """Compute delay duration using Gaussian distribution with bounded clipping."""
         if not is_subsequent or self.config.mode == PacingMode.FAST:
             return 0.05
 
         mode = self.config.mode
-        if mode == PacingMode.STEALTH:
-            mean = 2.8
-            std_dev = 0.7
-            low = 1.6
+        if mode in (PacingMode.CONSERVATIVE, "stealth"):
+            low = 2.0
             high = 4.8
+            mean = 3.2
+            std_dev = 0.7
         elif mode == PacingMode.CUSTOM:
-            low = self.config.min_delay
-            high = self.config.max_delay
+            low = max(0.01, self.config.min_delay)
+            high = max(low, self.config.max_delay)
             mean = (low + high) / 2.0
             std_dev = max(0.1, (high - low) / 4.0)
         else:  # NORMAL
-            mean = 1.4
+            # Baseline conservative range (1.2s - 2.6s, mean 1.85s)
+            low = 1.2
+            high = 2.6
+            mean = 1.85
             std_dev = 0.35
-            low = 0.8
-            high = 2.4
 
-        # Gaussian random with realistic right-tail clipping
+        # Gaussian random with realistic clipping
         delay = random.gauss(mean, std_dev)
         delay = max(low, min(high, delay))
 
@@ -133,12 +198,12 @@ class HumanPacer:
             and self.request_count > 0
             and (self.request_count % break_freq == 0)
         ):
-            if mode == PacingMode.STEALTH:
+            if mode in (PacingMode.CONSERVATIVE, "stealth"):
                 break_duration = random.uniform(
                     self.config.break_min, self.config.break_max
                 )
             else:
-                break_duration = random.uniform(4.0, 8.0)
+                break_duration = random.uniform(3.0, 6.0)
             delay += break_duration
             self.reading_breaks_taken += 1
             self.is_on_break = True
@@ -181,3 +246,20 @@ class HumanPacer:
             "last_delay_sec": self.last_delay,
             "throttle_level": self.consecutive_errors,
         }
+
+
+_SHARED_PACER: Optional[HumanPacer] = None
+
+
+def get_shared_pacer() -> HumanPacer:
+    """Return the global shared pacer instance to preserve throttle/backoff state across scans."""
+    global _SHARED_PACER
+    if _SHARED_PACER is None:
+        _SHARED_PACER = HumanPacer()
+    return _SHARED_PACER
+
+
+def reset_shared_pacer() -> None:
+    """Reset the global shared pacer (for test isolation)."""
+    global _SHARED_PACER
+    _SHARED_PACER = None

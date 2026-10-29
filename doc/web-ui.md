@@ -563,8 +563,18 @@ instagrapi when a saved session exists.
 | `HIKER_CONTACT_MAX_CHECKS` | `100` | Ceiling on accounts examined by the contact commands |
 | `INSTAGRAPI_PROXY` | *(empty)* | Optional HTTP/SOCKS5 proxy URL for instagrapi backend |
 | `INSTAGRAM_PROXY` | *(empty)* | Alias for `INSTAGRAPI_PROXY` |
-| `SCRAPE_PACING` | `normal` | Pacing mode for bulk operations (`normal`, `stealth`, `fast`, `custom`) |
+| `SCRAPE_PACING` | `normal` | Adaptive rate limiting mode for instagrapi (`normal`, `conservative`, `fast`, `custom`) |
 | `OSINTGRAM_PACING` | `normal` | Alias for `SCRAPE_PACING` |
+
+#### Instagrapi rate limiting & pacing
+When using the `instagrapi` backend, Osintgram applies adaptive rate limiting between paginated requests (followers, followings, comments) to avoid Instagram `feedback_required` action blocks and 429 rate limit errors:
+* **normal** (default): Balanced delay (1.2s - 2.6s) matching baseline instagrapi intervals.
+* **conservative**: Slower pacing (2.0s - 4.8s) with pauses every 25 requests and adaptive exponential backoff on errors.
+* **fast**: Minimal delays (~0.05s).
+* **custom**: User-specified delay ranges in `config/credentials.ini` under `[Pacing]`.
+
+> [!WARNING]
+> Using the `instagrapi` backend with fast pacing (especially in `fast` mode) carries a high risk of Instagram temporarily blocking actions (`feedback_required`) or suspending the account. For bulk or automated scans, use `conservative` or `normal` pacing.
 
 ### AI mode
 

@@ -1563,24 +1563,24 @@
         <p class="key-status" id="proxy-status-msg" hidden style="margin-top:8px; font-size:0.78rem;"></p>
       </div>
 
-      <!-- Stealth Human Pacing & Anti-Throttling -->
+      <!-- Adaptive Rate Limiting & Backoff -->
       <div class="ai-web-section" style="margin-top: 14px;">
         <div class="ai-web-head">
           <label class="ai-web-toggle">
-            <span class="ai-web-toggle-label">⏱️ Stealth Human Pacing &amp; Anti-Throttling</span>
+            <span class="ai-web-toggle-label">⏱️ Adaptive Rate Limiting &amp; Backoff</span>
           </label>
           <span class="ai-web-privacy-badge" id="pacing-status-badge">Normal</span>
         </div>
         <p class="ai-web-desc">
-          Simulate human browsing pauses (Gaussian distribution + reading breaks) during bulk scrapes (followers/followings/comments) to evade bot heuristics and feedback_required action blocks.
+          Adaptive request pacing and backoff during bulk pagination on instagrapi (followers, following, comments) to respect Instagram rate limits. Note: fast mode carries a high risk of action blocks.
         </p>
         <div class="ai-grid" style="margin-top: 10px; grid-template-columns: 1fr auto; align-items: end;">
           <div class="ai-field">
             <label for="pacing-mode-select">Pacing Mode</label>
             <select id="pacing-mode-select" class="ai-select">
-              <option value="normal">Normal (0.8s - 2.4s Gaussian jitter)</option>
-              <option value="stealth">Stealth (1.6s - 4.8s + reading breaks every 20 pages)</option>
-              <option value="fast">Fast (Minimal ~0.05s delay)</option>
+              <option value="normal">Normal (1.2s - 2.6s balanced delay)</option>
+              <option value="conservative">Conservative (2.0s - 4.8s + reading breaks every 25 pages)</option>
+              <option value="fast">Fast (Minimal ~0.05s delay; high block risk)</option>
             </select>
           </div>
           <button type="button" class="ai-btn-sm" id="pacing-save-btn" style="height:38px; border-color:var(--accent); color:var(--accent);">Apply</button>
@@ -2268,12 +2268,12 @@
       const resp = await fetch("/api/pacing/settings");
       if (!resp.ok) return;
       const data = await resp.json();
-      pacingModeSelect.value = data.mode || "normal";
-      if (data.mode === "stealth") {
-        pacingStatusBadge.textContent = "● Stealth Active";
+      pacingModeSelect.value = data.mode === "stealth" ? "conservative" : (data.mode || "normal");
+      if (data.mode === "conservative" || data.mode === "stealth") {
+        pacingStatusBadge.textContent = "● Conservative Active";
         pacingStatusBadge.style.color = "var(--ok)";
       } else if (data.mode === "fast") {
-        pacingStatusBadge.textContent = "● Fast Mode";
+        pacingStatusBadge.textContent = "● Fast Mode (Risk)";
         pacingStatusBadge.style.color = "var(--warn)";
       } else {
         pacingStatusBadge.textContent = "Normal";

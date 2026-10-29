@@ -1222,11 +1222,41 @@ def get_pacing_settings():
 @app.post("/api/pacing/settings")
 def update_pacing_settings(req: PacingSettingsRequest, request: Request):
     _require_local_origin(request)
-    from src.human_pacing import PacingMode
+    from src.human_pacing import PacingMode, get_shared_pacer, resolve_pacing_config
     mode = (req.mode or PacingMode.NORMAL).strip().lower()
-    valid = (PacingMode.STEALTH, PacingMode.NORMAL, PacingMode.FAST, PacingMode.CUSTOM)
+    if mode == "stealth":
+        mode = PacingMode.CONSERVATIVE
+    valid = (PacingMode.CONSERVATIVE, PacingMode.NORMAL, PacingMode.FAST, PacingMode.CUSTOM)
     if mode not in valid:
         raise HTTPException(status_code=400, detail=f"Invalid pacing mode: {mode}")
+
+    cfg = resolve_pacing_config()
+    target_min = req.min_delay if req.min_delay is not None else cfg.min_delay
+    target_max = req.max_delay if req.max_delay is not None else cfg.max_delay
+    target_bmin = req.break_min if req.break_min is not None else cfg.break_min
+    target_bmax = req.break_max if req.break_max is not None else cfg.break_max
+
+    if req.min_delay is not None and req.min_delay < 0:
+        raise HTTPException(status_code=400, detail="min_delay cannot be negative")
+    if req.max_delay is not None and req.max_delay < 0:
+        raise HTTPException(status_code=400, detail="max_delay cannot be negative")
+    if req.break_frequency is not None and req.break_frequency < 0:
+        raise HTTPException(status_code=400, detail="break_frequency cannot be negative")
+    if req.break_min is not None and req.break_min < 0:
+        raise HTTPException(status_code=400, detail="break_min cannot be negative")
+    if req.break_max is not None and req.break_max < 0:
+        raise HTTPException(status_code=400, detail="break_max cannot be negative")
+
+    if mode == PacingMode.CUSTOM:
+        if target_min <= 0:
+            raise HTTPException(status_code=400, detail="min_delay must be greater than 0 for custom mode")
+        if target_max <= 0:
+            raise HTTPException(status_code=400, detail="max_delay must be greater than 0 for custom mode")
+
+    if target_min > target_max:
+        raise HTTPException(status_code=400, detail="min_delay cannot be greater than max_delay")
+    if target_bmin > target_bmax:
+        raise HTTPException(status_code=400, detail="break_min cannot be greater than break_max")
 
     saved = False
     if req.remember:
@@ -1259,6 +1289,8 @@ def update_pacing_settings(req: PacingSettingsRequest, request: Request):
         saved = True
 
     os.environ["SCRAPE_PACING"] = mode
+    shared_pacer = get_shared_pacer()
+    shared_pacer.config = resolve_pacing_config()
     return {
         "ok": True,
         "mode": mode,

@@ -100,9 +100,11 @@ def session_exists(session_path: str = DEFAULT_SESSION_PATH) -> bool:
 class InstagrapiClient:
     """HikerAPI-shaped wrapper around an authenticated instagrapi.Client."""
 
+    pacer = None
+
     def __init__(self, username: str, password: str, session_path: str = DEFAULT_SESSION_PATH, proxy: Optional[str] = None, pacer: Optional[object] = None):
-        from src.human_pacing import HumanPacer
-        self.pacer = pacer or HumanPacer()
+        from src.human_pacing import get_shared_pacer
+        self.pacer = pacer or get_shared_pacer()
         session_file = Path(session_path)
         if not session_file.exists():
             raise InstagrapiBackendError(
@@ -257,9 +259,24 @@ class InstagrapiClient:
 
     # ---- HikerAPI-shaped methods used by OsintgramService ----
 
+    def _call(self, func, *args, **kwargs):
+        pacer = getattr(self, "pacer", None)
+        try:
+            res = func(*args, **kwargs)
+            if pacer is not None and hasattr(pacer, "record_success"):
+                pacer.record_success()
+            return res
+        except Exception as e:
+            err_name = type(e).__name__
+            err_str = str(e).lower()
+            if err_name not in ("UserNotFound", "MediaNotFound") and "not found" not in err_str:
+                if pacer is not None and hasattr(pacer, "record_throttle_or_error"):
+                    pacer.record_throttle_or_error()
+            raise
+
     def user_by_username_v2(self, username: str) -> dict:
         try:
-            user = self._cl.user_info_by_username_v1(username)
+            user = self._call(self._cl.user_info_by_username_v1, username)
         except Exception as e:
             if "not found" in str(e).lower() or type(e).__name__ == "UserNotFound":
                 return {"detail": str(e)}
@@ -268,13 +285,13 @@ class InstagrapiClient:
 
     def user_by_id_v2(self, pk) -> dict:
         try:
-            user = self._cl.user_info_v1(str(pk))
+            user = self._call(self._cl.user_info_v1, str(pk))
         except Exception as e:
             return {"error": str(e)}
         return {"user": self._full_user_to_dict(user)}
 
     def user_medias_g2(self, user_id, next_page_id: Optional[str] = None) -> dict:
-        medias, cursor = self._cl.user_medias_paginated_v1(str(user_id), amount=33, end_cursor=next_page_id or "")
+        medias, cursor = self._call(self._cl.user_medias_paginated_v1, str(user_id), amount=33, end_cursor=next_page_id or "")
         return {
             "response": {"items": [self._media_to_dict(m) for m in medias]},
             "next_page_id": cursor or None,
@@ -282,7 +299,7 @@ class InstagrapiClient:
 
     def media_comments_v2(self, media_id, page_id: str = "") -> dict:
         try:
-            comments, cursor = self._cl.media_comments_chunk(str(media_id), max_amount=20, min_id=page_id or None)
+            comments, cursor = self._call(self._cl.media_comments_chunk, str(media_id), max_amount=20, min_id=page_id or None)
         except Exception as e:
             if type(e).__name__ == "MediaNotFound":
                 raise RuntimeError(f"Entries not found: {e}") from e
@@ -293,11 +310,10 @@ class InstagrapiClient:
         }
 
     def user_followers_g2(self, user_id, page_id: Optional[str] = None) -> dict:
-        if page_id:
-            self.pacer.pace(is_subsequent=True)
         try:
             # Modern private GraphQL endpoint - mirrors official mobile app and avoids feedback_required
-            users, cursor = self._cl.user_followers_private_gql_chunk(
+            users, cursor = self._call(
+                self._cl.user_followers_private_gql_chunk,
                 str(user_id), max_amount=50, max_id=page_id or None
             )
         except Exception as e_gql:
@@ -306,7 +322,8 @@ class InstagrapiClient:
                 raise RuntimeError("Profile is private and the logged-in session does not follow it") from e_gql
             # Fallback to v1 chunk
             try:
-                users, cursor = self._cl.user_followers_v1_chunk(
+                users, cursor = self._call(
+                    self._cl.user_followers_v1_chunk,
                     str(user_id), max_amount=50, max_id=page_id or ""
                 )
             except Exception as e:
@@ -320,11 +337,10 @@ class InstagrapiClient:
         }
 
     def user_following_g2(self, user_id, page_id: Optional[str] = None) -> dict:
-        if page_id:
-            self.pacer.pace(is_subsequent=True)
         try:
             # Modern private GraphQL endpoint - mirrors official mobile app and avoids feedback_required
-            users, cursor = self._cl.user_following_private_gql_chunk(
+            users, cursor = self._call(
+                self._cl.user_following_private_gql_chunk,
                 str(user_id), max_amount=50, max_id=page_id or None
             )
         except Exception as e_gql:
@@ -333,7 +349,8 @@ class InstagrapiClient:
                 raise RuntimeError("Profile is private and the logged-in session does not follow it") from e_gql
             # Fallback to v1 chunk
             try:
-                users, cursor = self._cl.user_following_v1_chunk(
+                users, cursor = self._call(
+                    self._cl.user_following_v1_chunk,
                     str(user_id), max_amount=50, max_id=page_id or ""
                 )
             except Exception as e:
@@ -347,19 +364,19 @@ class InstagrapiClient:
         }
 
     def user_tag_medias_v2(self, user_id, page_id: str = "") -> dict:
-        medias, cursor = self._cl.usertag_medias_paginated_v1(str(user_id), amount=33, end_cursor=page_id or "")
+        medias, cursor = self._call(self._cl.usertag_medias_paginated_v1, str(user_id), amount=33, end_cursor=page_id or "")
         return {
             "response": {"items": [self._media_to_dict(m) for m in medias]},
             "next_page_id": cursor or None,
         }
 
     def user_stories_v2(self, user_id) -> dict:
-        stories = self._cl.user_stories_v1(str(user_id))
+        stories = self._call(self._cl.user_stories_v1, str(user_id))
         return {"reel": {"items": [self._story_to_dict(s) for s in stories]}}
 
     def user_highlights_v2(self, user_id, **kwargs) -> dict:
         tray = []
-        for h in self._cl.user_highlights(str(user_id)):
+        for h in self._call(self._cl.user_highlights, str(user_id)):
             cover = getattr(h, "cover_media", None)
             url = getattr(getattr(cover, "cropped_image_version", None), "url", None) if cover else None
             tray.append({
@@ -384,7 +401,7 @@ class InstagrapiClient:
     def _hashtag_chunk(self, name: str, tab_key: str, page_id) -> dict:
         chunked = getattr(self._cl, "hashtag_medias_v1_chunk", None)
         if chunked is not None:
-            medias, cursor = chunked(name, max_amount=30, tab_key=tab_key, max_id=page_id or None)
+            medias, cursor = self._call(chunked, name, max_amount=30, tab_key=tab_key, max_id=page_id or None)
         else:
             one_shot = getattr(self._cl, f"hashtag_medias_{tab_key}_v1")
             medias = one_shot(name, amount=30) if not page_id else []
@@ -401,7 +418,7 @@ class InstagrapiClient:
         return self._hashtag_chunk(name, "recent", page_id)
 
     def fbsearch_places_v2(self, query: str, **kwargs) -> dict:
-        places = self._cl.fbsearch_places(query)
+        places = self._call(self._cl.fbsearch_places, query)
         return {"items": [{"location": {
             "pk": location.pk,
             "name": location.name,
@@ -415,7 +432,7 @@ class InstagrapiClient:
         """Answers [medias, next_max_id] - the shape HikerAPI uses here."""
         chunked = getattr(self._cl, "location_medias_v1_chunk", None)
         if chunked is not None:
-            medias, cursor = chunked(int(location_pk), max_amount=30, tab_key="recent", max_id=max_id or None)
+            medias, cursor = self._call(chunked, int(location_pk), max_amount=30, tab_key="recent", max_id=max_id or None)
         else:
             medias = self._cl.location_medias_recent_v1(int(location_pk), amount=30) if not max_id else []
             cursor = None
