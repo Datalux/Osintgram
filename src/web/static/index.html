@@ -1813,6 +1813,7 @@
     get_people_tagged_by_user: ["🏷️", "Tagged by target", "Accounts the target tagged in their own posts."],
     get_user_photos: ["🖼️", "Photos", "URLs of the published photos (no download)."],
     get_user_propic: ["🖼️", "Profile picture", "URL of the profile picture at full resolution."],
+    get_reverse_image_search: ["🔎", "Reverse image search", "1-click reverse visual search & facial recognition pivot links (Lens, Yandex, Bing, TinEye)."],
     get_user_stories: ["🎬", "Stories", "URLs of the currently active stories, if any."],
     get_highlights: ["✨", "Story highlights", "The highlights pinned on the profile: title, count and cover."],
     get_suggested_profiles: ["🫂", "Suggested profiles", "Accounts Instagram suggests as related to the target (HikerAPI only)."],
@@ -1830,7 +1831,7 @@
   };
 
   const TOOL_GROUPS = [
-    ["Profile", ["get_user_info", "get_account_about", "snapshot_profile", "diff_profile", "get_user_propic", "get_user_stories", "get_highlights", "get_user_photos"]],
+    ["Profile", ["get_user_info", "get_account_about", "snapshot_profile", "diff_profile", "get_user_propic", "get_reverse_image_search", "get_user_stories", "get_highlights", "get_user_photos"]],
     ["Network", ["get_followers", "get_followings", "audit_followers", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_tagged_posts", "get_people_tagged_by_user", "get_people_who_commented"]],
     ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions"]],
     ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
@@ -2953,6 +2954,41 @@
     </div>`;
   }
 
+  // ---- Reverse Image Search & Face Pivot ----
+  function renderReverseImageSearch(result) {
+    const urls = result.search_engines || {};
+    const labels = result.engine_labels || {};
+    const imgUrl = result.image_url || "";
+    const dhash = result.dhash ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">dHash: <code>${escapeHtml(result.dhash)}</code></div>` : "";
+
+    const buttons = Object.entries(urls).map(([key, href]) => {
+      const lbl = labels[key] || key;
+      const isExternal = key === "facecheck" || key === "pimeyes";
+      const icon = key === "yandex" ? "👤" : (key === "google_lens" ? "🔍" : (isExternal ? "🧬" : "🌐"));
+      return `
+        <a class="ai-btn-sm" href="${escapeHtml(href)}" target="_blank" rel="noopener" style="text-decoration:none; display:flex; align-items:center; gap:8px; padding:8px 12px; height:auto; margin-bottom:6px; background:rgba(255,255,255,0.03);">
+          <span>${icon}</span>
+          <span style="font-weight:600; font-size:0.85rem; color:var(--fg);">${escapeHtml(lbl)}</span>
+          <span style="margin-left:auto; color:var(--muted); font-size:0.75rem;">↗</span>
+        </a>
+      `;
+    }).join("");
+
+    return `
+      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
+        <div style="width:160px; text-align:center;">
+          <img src="${escapeHtml(imgUrl)}" loading="lazy" referrerpolicy="no-referrer" alt="" style="width:100%; max-height:160px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+          <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">${escapeHtml(result.context || "target photo")}</div>
+          ${dhash}
+        </div>
+        <div style="flex:1; min-width:260px;">
+          <div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">1-Click Reverse Image &amp; Facial Recognition Pivots:</div>
+          ${buttons}
+        </div>
+      </div>
+    `;
+  }
+
   // ---- Story Highlights (archived stories pinned on the profile) ----
   function renderHighlights(items) {
     const cells = items.map((h) => {
@@ -3697,6 +3733,7 @@
       if ("url" in result && Object.keys(result).length === 1) return renderGallery([result]);
       if ("platforms" in result && "total_checked" in result) return renderCrossPlatform(result);
       if ("authenticity_score" in result && "flagged_accounts" in result) return renderAuditResult(result);
+      if ("search_engines" in result && "engine_labels" in result) return renderReverseImageSearch(result);
       if ("common_followers" in result || "common_followings" in result) return renderCompare(result);
       if ("hashtag" in result || "place" in result) return renderSearch(result);
       if (Array.isArray(result.timestamps)) return renderPostingTimes(result);

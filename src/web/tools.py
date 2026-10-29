@@ -362,6 +362,14 @@ def build_tools(service: OsintgramService) -> list:
         resolution available)."""
         return _call(service.get_user_propic)
 
+    def get_reverse_image_search(photo_url: Optional[str] = None) -> str:
+        """Generate 1-click reverse visual search & face recognition pivot links for an avatar or media.
+
+        Args:
+            photo_url: Image CDN URL to reverse-search (omit to use target's profile picture).
+        """
+        return _call(service.get_reverse_image_search, photo_url=photo_url)
+
     def get_user_stories() -> str:
         """Get direct CDN URLs for the target's currently active stories, if
         any (no download, just the URLs and media type)."""
@@ -523,6 +531,7 @@ def build_tools(service: OsintgramService) -> list:
         get_people_tagged_by_user,
         get_user_photos,
         get_user_propic,
+        get_reverse_image_search,
         get_user_stories,
         get_highlights,
         get_suggested_profiles,
