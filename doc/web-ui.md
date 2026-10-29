@@ -266,7 +266,7 @@ both modes.
 
 ## 5. What you can ask for
 
-33 commands, grouped by what they tell you. Parameters are in `code`.
+35 commands, grouped by what they tell you. Parameters are in .
 
 ### Profile
 
@@ -316,6 +316,8 @@ half the requests of `both`.
 | **Media types** | How many posts are photos, videos, carousels, with views, collaborations and paid partnerships |
 | **Posting times** | Weekday × hour heatmap of when they post, and how often |
 | **Photo descriptions** | Alt text of each photo, carousel slides included |
+| **Sentiment & toxicity** | Audience sentiment score (-1 to +1), toxicity index (0-100%), and hostility spike / coordination signals |
+| **Topic cloud** | Weighted keyword cloud, n-gram phrases and top hashtags from captions & comments |
 
 All of these take `limit_posts`.
 
@@ -325,6 +327,8 @@ All of these take `limit_posts`.
 > many photos were checked, so you know it looked rather than failed.
 
 > **On "Bot & anomaly audit":** Scores are heuristic triage indicators based on follower metadata sampling (missing avatars, digit-heavy handles, entropy, and commercial keywords). They serve as investigative triage signals, not definitive proof of account automation or follower buying.
+
+> **On "Sentiment & toxicity":** Uses a zero-dependency multilingual heuristic designed for investigative triage. It does not perform full syntactic/semantic parsing (no negation handling, sarcasm detection, or dynamic language identification). Hostility spike alerts and author rankings are heuristic triage indicators, not definitive proof of intent or coordinated brigade.
 
 ### Contacts
 

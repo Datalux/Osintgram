@@ -764,6 +764,7 @@ class OsintgramService:
     def get_captions(self, limit_posts: Optional[int] = None) -> list:
         self._require_public()
         data = self._get_feed(limit=limit_posts)
+        self._last_posts_scanned = len(data)
         captions = []
         for item in data:
             caption = item.get("caption")
@@ -885,19 +886,62 @@ class OsintgramService:
         ]
         return {"photos_scanned": len(photos), "with_alt_text": len(descriptions), "descriptions": descriptions}
 
-    def get_comment_data(self, limit_posts: Optional[int] = None) -> list:
+    def analyze_sentiment(self, limit_posts: Optional[int] = 10, max_comments_per_post: int = 50) -> dict:
+        """Analyze audience sentiment, toxicity, hostility spikes across post comments."""
+        from src.sentiment_analyzer import analyze_comments_sentiment
+        eff_limit = min(30, max(1, limit_posts if limit_posts is not None else 10))
+        raw_comments = self.get_comment_data(limit_posts=eff_limit, max_comments_per_post=max_comments_per_post)
+        comments = [
+            {
+                "text": c.get("comment") or c.get("text") or "",
+                "username": c.get("username", ""),
+                "created_at": c.get("created_at"),
+            }
+            for c in raw_comments
+        ]
+        res = analyze_comments_sentiment(comments)
+        res["posts_scanned"] = getattr(self, "_last_posts_scanned", len(raw_comments))
+        return res
+
+    def extract_topics(self, source: str = "all", limit_posts: Optional[int] = 15) -> dict:
+        """Extract top keywords, bigrams, and topic cloud from post captions and comments."""
+        from src.topic_extractor import extract_topics_and_cloud
+        if source not in ("captions", "comments", "all"):
+            raise ValueError(f"Invalid source '{source}'. Must be one of: 'captions', 'comments', 'all'.")
+        eff_limit = min(30, max(1, limit_posts if limit_posts is not None else 15))
+        texts = []
+        scanned_count = None
+        if source in ("captions", "all"):
+            captions = self.get_captions(limit_posts=eff_limit)
+            texts.extend(captions)
+            scanned_count = getattr(self, "_last_posts_scanned", len(captions))
+        if source in ("comments", "all"):
+            comments = self.get_comment_data(limit_posts=eff_limit, max_comments_per_post=50)
+            texts.extend([c.get("comment") or c.get("text") or "" for c in comments])
+            comment_scanned = getattr(self, "_last_posts_scanned", len(comments))
+            scanned_count = max(scanned_count or 0, comment_scanned)
+
+        res = extract_topics_and_cloud(texts)
+        res["source"] = source
+        res["posts_scanned"] = scanned_count if scanned_count is not None else 0
+        return res
+
+    def get_comment_data(self, limit_posts: Optional[int] = None, max_comments_per_post: Optional[int] = None) -> list:
         self._require_public()
         data = self._get_feed(limit=limit_posts)
+        self._last_posts_scanned = len(data)
         comments = []
+        eff_cap = min(100, max(1, max_comments_per_post)) if max_comments_per_post is not None else None
         for post in data:
             post_id = post.get("id")
-            for comment in self._get_comments(post_id):
+            for comment in self._get_comments(post_id, limit=eff_cap):
                 comments.append(
                     {
                         "post_id": post_id,
                         "user_id": comment.get("user_id"),
                         "username": (comment.get("user") or {}).get("username"),
                         "comment": comment.get("text"),
+                        "created_at": comment.get("created_at") or comment.get("created_at_utc"),
                     }
                 )
         return comments

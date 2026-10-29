@@ -1449,6 +1449,37 @@ def _respond(req: _BaseRequest, service: OsintgramService, make_events):
     )
 
 
+class SentimentAnalysisRequest(BaseModel):
+    limit_posts: int = 10
+
+
+class TopicExtractionRequest(BaseModel):
+    source: str = "all"
+    limit_posts: int = 15
+
+
+@app.post("/api/target/{target}/nlp/sentiment")
+def analyze_target_sentiment(target: str, req: SentimentAnalysisRequest, request: Request):
+    _require_local_origin(request)
+    service = build_service(target)
+    try:
+        res = service.analyze_sentiment(limit_posts=req.limit_posts)
+        return {"ok": True, "target": target, "sentiment": res}
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+
+@app.post("/api/target/{target}/nlp/topics")
+def extract_target_topics(target: str, req: TopicExtractionRequest, request: Request):
+    _require_local_origin(request)
+    service = build_service(target)
+    try:
+        res = service.extract_topics(source=req.source, limit_posts=req.limit_posts)
+        return {"ok": True, "target": target, "topics": res}
+    except Exception as e:
+        raise HTTPException(400, str(e))
+
+
 @app.middleware("http")
 async def _response_headers(request, call_next):
     response = await call_next(request)
