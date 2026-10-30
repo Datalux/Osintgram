@@ -1159,8 +1159,9 @@ def update_proxy_settings(req: ProxySettingsRequest, request: Request):
     # Persist or clear in credentials.ini
     saved = False
     if req.remember:
+        from src.human_pacing import CREDENTIALS_PATH
         cp = configparser.ConfigParser(interpolation=None)
-        cred_path = Path("config/credentials.ini")
+        cred_path = CREDENTIALS_PATH
         if cred_path.exists():
             try:
                 cp.read(cred_path, encoding="utf-8")
@@ -1189,6 +1190,123 @@ def update_proxy_settings(req: ProxySettingsRequest, request: Request):
         "saved": saved,
         "origin_ip": origin_ip,
         "warning": test_warning,
+    }
+
+
+class PacingSettingsRequest(BaseModel):
+    mode: str = "normal"
+    min_delay: Optional[float] = None
+    max_delay: Optional[float] = None
+    break_frequency: Optional[int] = None
+    break_min: Optional[float] = None
+    break_max: Optional[float] = None
+    adaptive_backoff: Optional[bool] = None
+    remember: bool = True
+
+
+@app.get("/api/pacing/settings")
+def get_pacing_settings():
+    from src.human_pacing import get_shared_pacer
+    cfg = get_shared_pacer().config
+    return {
+        "mode": cfg.mode,
+        "min_delay": cfg.min_delay,
+        "max_delay": cfg.max_delay,
+        "break_frequency": cfg.break_frequency,
+        "break_min": cfg.break_min,
+        "break_max": cfg.break_max,
+        "adaptive_backoff": cfg.adaptive_backoff,
+    }
+
+
+@app.post("/api/pacing/settings")
+def update_pacing_settings(req: PacingSettingsRequest, request: Request):
+    _require_local_origin(request)
+    from src.human_pacing import PacingMode, get_shared_pacer, resolve_pacing_config
+    mode = (req.mode or PacingMode.NORMAL).strip().lower()
+    valid = (PacingMode.CONSERVATIVE, PacingMode.NORMAL, PacingMode.FAST, PacingMode.CUSTOM)
+    if mode not in valid:
+        raise HTTPException(status_code=400, detail=f"Invalid pacing mode: {mode}")
+
+    cfg = resolve_pacing_config()
+    target_min = req.min_delay if req.min_delay is not None else cfg.min_delay
+    target_max = req.max_delay if req.max_delay is not None else cfg.max_delay
+    target_bmin = req.break_min if req.break_min is not None else cfg.break_min
+    target_bmax = req.break_max if req.break_max is not None else cfg.break_max
+
+    if req.min_delay is not None and req.min_delay < 0:
+        raise HTTPException(status_code=400, detail="min_delay cannot be negative")
+    if req.max_delay is not None and req.max_delay < 0:
+        raise HTTPException(status_code=400, detail="max_delay cannot be negative")
+    if req.break_frequency is not None and req.break_frequency < 0:
+        raise HTTPException(status_code=400, detail="break_frequency cannot be negative")
+    if req.break_min is not None and req.break_min < 0:
+        raise HTTPException(status_code=400, detail="break_min cannot be negative")
+    if req.break_max is not None and req.break_max < 0:
+        raise HTTPException(status_code=400, detail="break_max cannot be negative")
+
+    if mode == PacingMode.CUSTOM:
+        if target_min <= 0:
+            raise HTTPException(status_code=400, detail="min_delay must be greater than 0 for custom mode")
+        if target_max <= 0:
+            raise HTTPException(status_code=400, detail="max_delay must be greater than 0 for custom mode")
+
+    if target_min > target_max:
+        raise HTTPException(status_code=400, detail="min_delay cannot be greater than max_delay")
+    if target_bmin > target_bmax:
+        raise HTTPException(status_code=400, detail="break_min cannot be greater than break_max")
+
+    saved = False
+    if req.remember:
+        from src.human_pacing import CREDENTIALS_PATH
+        cp = configparser.ConfigParser(interpolation=None)
+        cred_path = CREDENTIALS_PATH
+        if cred_path.exists():
+            try:
+                cp.read(cred_path, encoding="utf-8")
+            except Exception:
+                pass
+        if not cp.has_section("Pacing"):
+            cp.add_section("Pacing")
+        cp.set("Pacing", "mode", mode)
+        if req.min_delay is not None:
+            cp.set("Pacing", "min_delay", str(req.min_delay))
+        if req.max_delay is not None:
+            cp.set("Pacing", "max_delay", str(req.max_delay))
+        if req.break_frequency is not None:
+            cp.set("Pacing", "break_frequency", str(req.break_frequency))
+        if req.break_min is not None:
+            cp.set("Pacing", "break_min", str(req.break_min))
+        if req.break_max is not None:
+            cp.set("Pacing", "break_max", str(req.break_max))
+        if req.adaptive_backoff is not None:
+            cp.set("Pacing", "adaptive_backoff", str(req.adaptive_backoff).lower())
+        cred_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(cred_path, "w", encoding="utf-8") as f:
+            cp.write(f)
+        saved = True
+
+    os.environ["SCRAPE_PACING"] = mode
+    shared_pacer = get_shared_pacer()
+    p_cfg = resolve_pacing_config()
+    p_cfg.mode = mode
+    if req.min_delay is not None:
+        p_cfg.min_delay = req.min_delay
+    if req.max_delay is not None:
+        p_cfg.max_delay = req.max_delay
+    if req.break_frequency is not None:
+        p_cfg.break_frequency = req.break_frequency
+    if req.break_min is not None:
+        p_cfg.break_min = req.break_min
+    if req.break_max is not None:
+        p_cfg.break_max = req.break_max
+    if req.adaptive_backoff is not None:
+        p_cfg.adaptive_backoff = req.adaptive_backoff
+    shared_pacer.config = p_cfg
+    return {
+        "ok": True,
+        "mode": mode,
+        "saved": saved,
     }
 
 
