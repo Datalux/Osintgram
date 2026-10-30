@@ -1516,15 +1516,22 @@ class OsintgramService:
         return diff
 
     def get_reverse_image_search(self, photo_url: Optional[str] = None) -> dict:
-        """Generate 1-click reverse image search & facial recognition pivot links for avatar or media."""
+        """Generate 1-click reverse visual search links for avatar or media photo."""
         self._require_target()
+        import urllib.parse
         url = photo_url
         context = "media_photo"
-        if not url:
+        if url:
+            url_str = url.strip()
+            parsed = urllib.parse.urlparse(url_str)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise OsintServiceError(f"Invalid photo_url: {photo_url!r}. Only http and https URLs are accepted.")
+            url = url_str
+        else:
             try:
                 propic = self.get_user_propic()
                 url = propic.get("url") or propic.get("profile_pic_url") or ""
-            except Exception:
+            except HikerAPIError:
                 url = self.user.get("profile_pic_url") or ""
             context = "profile_pic"
 

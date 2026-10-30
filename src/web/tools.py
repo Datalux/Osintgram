@@ -363,7 +363,7 @@ def build_tools(service: OsintgramService) -> list:
         return _call(service.get_user_propic)
 
     def get_reverse_image_search(photo_url: Optional[str] = None) -> str:
-        """Generate 1-click reverse visual search & face recognition pivot links for an avatar or media.
+        """Generate 1-click reverse visual search links for an avatar or media photo.
 
         Args:
             photo_url: Image CDN URL to reverse-search (omit to use target's profile picture).

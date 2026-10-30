@@ -1813,7 +1813,7 @@
     get_people_tagged_by_user: ["🏷️", "Tagged by target", "Accounts the target tagged in their own posts."],
     get_user_photos: ["🖼️", "Photos", "URLs of the published photos (no download)."],
     get_user_propic: ["🖼️", "Profile picture", "URL of the profile picture at full resolution."],
-    get_reverse_image_search: ["🔎", "Reverse image search", "1-click reverse visual search & facial recognition pivot links (Lens, Yandex, Bing, TinEye)."],
+    get_reverse_image_search: ["🔎", "Reverse image search", "1-click reverse visual search links (Lens, Yandex, Bing, TinEye, Baidu)."],
     get_user_stories: ["🎬", "Stories", "URLs of the currently active stories, if any."],
     get_highlights: ["✨", "Story highlights", "The highlights pinned on the profile: title, count and cover."],
     get_suggested_profiles: ["🫂", "Suggested profiles", "Accounts Instagram suggests as related to the target (HikerAPI only)."],
@@ -2959,12 +2959,10 @@
     const urls = result.search_engines || {};
     const labels = result.engine_labels || {};
     const imgUrl = result.image_url || "";
-    const dhash = result.dhash ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:6px;">dHash: <code>${escapeHtml(result.dhash)}</code></div>` : "";
 
     const buttons = Object.entries(urls).map(([key, href]) => {
       const lbl = labels[key] || key;
-      const isExternal = key === "facecheck" || key === "pimeyes";
-      const icon = key === "yandex" ? "👤" : (key === "google_lens" ? "🔍" : (isExternal ? "🧬" : "🌐"));
+      const icon = key === "yandex" ? "🖼️" : (key === "google_lens" ? "🔍" : "🌐");
       return `
         <a class="ai-btn-sm" href="${escapeHtml(href)}" target="_blank" rel="noopener" style="text-decoration:none; display:flex; align-items:center; gap:8px; padding:8px 12px; height:auto; margin-bottom:6px; background:rgba(255,255,255,0.03);">
           <span>${icon}</span>
@@ -2979,11 +2977,11 @@
         <div style="width:160px; text-align:center;">
           <img src="${escapeHtml(imgUrl)}" loading="lazy" referrerpolicy="no-referrer" alt="" style="width:100%; max-height:160px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
           <div style="font-size:0.75rem; color:var(--muted); margin-top:4px;">${escapeHtml(result.context || "target photo")}</div>
-          ${dhash}
         </div>
         <div style="flex:1; min-width:260px;">
-          <div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">1-Click Reverse Image &amp; Facial Recognition Pivots:</div>
+          <div style="font-size:0.8rem; color:var(--muted); margin-bottom:8px;">1-Click Reverse Visual Search Links:</div>
           ${buttons}
+          <p class="hint" style="font-size:0.75rem; color:var(--muted); margin-top:8px;">Instagram CDN URLs are signed and temporary; search engines fetch them server-side, so links may expire after several hours. If an engine cannot load the image, download the photo and upload it manually.</p>
         </div>
       </div>
     `;

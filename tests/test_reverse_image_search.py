@@ -1,25 +1,14 @@
-"""Unit tests for Reverse Image Search & Facial Pivot Helper."""
-import io
+"""Unit tests for Reverse Image Search Helper."""
 from unittest.mock import MagicMock
 
 import pytest
-from PIL import Image
 
-from src.osint_service import OsintgramService, OsintServiceError
+from src.osint_service import HikerAPIError, OsintgramService, OsintServiceError
 from src.reverse_image_search import (
     ReverseImageSearchEngine,
     build_reverse_search_urls,
-    compute_dhash,
-    hamming_distance,
 )
 from src.web.tools import build_tools, tool_specs
-
-
-def _create_test_image(color=(255, 0, 0), size=(64, 64)) -> bytes:
-    buf = io.BytesIO()
-    img = Image.new("RGB", size, color=color)
-    img.save(buf, format="PNG")
-    return buf.getvalue()
 
 
 def test_build_reverse_search_urls():
@@ -31,37 +20,14 @@ def test_build_reverse_search_urls():
     assert "bing.com/images" in urls["bing"]
     assert "tineye.com" in urls["tineye"]
     assert "baidu.com" in urls["baidu"]
-    assert "facecheck.id" in urls["facecheck"]
-    assert "pimeyes.com" in urls["pimeyes"]
+
+    # Biometric facial indexing services dropped per review feedback
+    assert "facecheck" not in urls
+    assert "pimeyes" not in urls
 
     # Empty url handling
     assert build_reverse_search_urls("") == {}
     assert build_reverse_search_urls(None) == {}
-
-
-def test_compute_dhash_and_hamming():
-    img_bytes1 = _create_test_image(color=(255, 0, 0))
-    img_bytes2 = _create_test_image(color=(255, 0, 0))
-
-    hash1 = compute_dhash(img_bytes1)
-    hash2 = compute_dhash(img_bytes2)
-
-    assert hash1 is not None and len(hash1) == 16
-    assert hash1 == hash2
-    assert hamming_distance(hash1, hash2) == 0
-
-    # Contrast image (left bright, right dark) vs solid
-    img_contrast = Image.new("L", (64, 64))
-    for x in range(64):
-        for y in range(64):
-            img_contrast.putpixel((x, y), (64 - x) * 3)
-    buf = io.BytesIO()
-    img_contrast.save(buf, format="PNG")
-    hash_contrast = compute_dhash(buf.getvalue())
-
-    assert hash_contrast is not None
-    assert hash_contrast != hash1
-    assert hamming_distance(hash1, hash_contrast) > 0
 
 
 def test_reverse_image_search_engine():
@@ -73,6 +39,7 @@ def test_reverse_image_search_engine():
     assert res["context"] == "avatar"
     assert "google_lens" in res["search_engines"]
     assert "yandex" in res["engine_labels"]
+    assert "expiry_warning" in res
 
 
 def test_osint_service_get_reverse_image_search_explicit_url():
@@ -87,6 +54,18 @@ def test_osint_service_get_reverse_image_search_explicit_url():
     assert res["image_url"] == explicit_url
     assert res["context"] == "media_photo"
     assert "google_lens" in res["search_engines"]
+
+
+def test_osint_service_invalid_photo_url_rejected():
+    mock_api = MagicMock()
+    mock_api.user_by_username_v2.return_value = {
+        "user": {"pk": "100", "username": "alice", "is_private": False}
+    }
+    service = OsintgramService("alice", mock_api)
+
+    for invalid in ["javascript:alert(1)", "file:///etc/passwd", "not-a-url", "ftp://example.com/img.jpg"]:
+        with pytest.raises(OsintServiceError):
+            service.get_reverse_image_search(photo_url=invalid)
 
 
 def test_osint_service_get_reverse_image_search_fallback_propic():
@@ -104,6 +83,24 @@ def test_osint_service_get_reverse_image_search_fallback_propic():
     res = service.get_reverse_image_search()
     assert res["image_url"] == "https://cdn.example.com/avatar_hd.jpg"
     assert res["context"] == "profile_pic"
+
+
+def test_osint_service_propic_error_classification():
+    mock_api = MagicMock()
+    mock_api.user_by_username_v2.return_value = {
+        "user": {"pk": "100", "username": "alice", "profile_pic_url": "https://cdn.example.com/saved.jpg", "is_private": False}
+    }
+    service = OsintgramService("alice", mock_api)
+
+    # When get_user_propic raises HikerAPIError, it gracefully falls back to user profile_pic_url
+    service.get_user_propic = MagicMock(side_effect=HikerAPIError("propic endpoint 404"))
+    res = service.get_reverse_image_search()
+    assert res["image_url"] == "https://cdn.example.com/saved.jpg"
+
+    # When get_user_propic raises an unexpected exception (e.g. ValueError or connection crash), it is raised
+    service.get_user_propic = MagicMock(side_effect=RuntimeError("unexpected crash"))
+    with pytest.raises(RuntimeError):
+        service.get_reverse_image_search()
 
 
 def test_osint_service_get_reverse_image_search_no_pic_error():
