@@ -1560,6 +1560,62 @@ class OsintgramService:
         return diff
 
 
+    def get_inner_circle(self, limit: int = 10, scan_posts: int = 12) -> list:
+        """Rank interacting accounts by affinity. Interaction indicator, not evidence of a relationship."""
+        self._require_public()
+        from src.inner_circle import InnerCircleAnalyzer
+
+        # Cap scan_posts and limit server-side to prevent excessive API costs
+        scan_posts = max(1, min(int(scan_posts or 12), 30))
+        limit = max(1, min(int(limit or 10), 100))
+
+        posts = self._get_feed(limit=scan_posts)
+        comments_by_post = {}
+        for post in posts:
+            p_id = str(post.get("id") or post.get("pk") or "")
+            if p_id:
+                try:
+                    comments_by_post[p_id] = self._get_comments(p_id, limit=20)
+                except Exception as e:
+                    comments_by_post[p_id] = []
+                    warn = f"Failed to fetch comments for post {p_id}: {e}"
+                    self.partial_warning = f"{self.partial_warning}; {warn}" if getattr(self, "partial_warning", None) else warn
+
+        followers = []
+        following = []
+        try:
+            followers = self.get_followers(limit=50)
+        except Exception as e:
+            warn = f"Failed to fetch followers: {e}"
+            self.partial_warning = f"{self.partial_warning}; {warn}" if getattr(self, "partial_warning", None) else warn
+
+        try:
+            following = self.get_followings(limit=50)
+        except Exception as e:
+            warn = f"Failed to fetch following: {e}"
+            self.partial_warning = f"{self.partial_warning}; {warn}" if getattr(self, "partial_warning", None) else warn
+
+        total_followers = self.user.get("follower_count")
+        total_following = self.user.get("following_count")
+
+        followers_truncated = bool(total_followers is not None and total_followers > len(followers))
+        following_truncated = bool(total_following is not None and total_following > len(following))
+
+        if (followers_truncated or following_truncated) and not getattr(self, "partial_warning", None):
+            self.partial_warning = "Follower/following sample is truncated; mutual follows and follow flags are based on a partial sample."
+
+        analyzer = InnerCircleAnalyzer(self.target)
+        return analyzer.analyze(
+            posts=posts,
+            comments_by_post=comments_by_post,
+            followers=followers,
+            following=following,
+            limit=limit,
+            followers_truncated=followers_truncated,
+            following_truncated=following_truncated,
+        )
+
+
 def check_hiker_token(token: str) -> dict:
     """Verify a token by asking HikerAPI for its own balance.
 

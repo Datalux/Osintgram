@@ -1813,6 +1813,7 @@
     get_people_who_commented: ["💬", "Who commented", "Accounts that commented on the posts, by number of comments."],
     get_people_who_tagged: ["🏷️", "Who tagged", "Accounts that tagged the target in their own posts."],
     get_people_tagged_by_user: ["🏷️", "Tagged by target", "Accounts the target tagged in their own posts."],
+    get_inner_circle: ["👥", "Inner Circle", "Rank interacting accounts by affinity (mutuals, tags, comments, mentions). Interaction indicator, not evidence of a relationship."],
     get_user_photos: ["🖼️", "Photos", "URLs of the published photos (no download)."],
     get_user_propic: ["🖼️", "Profile picture", "URL of the profile picture at full resolution."],
     get_user_stories: ["🎬", "Stories", "URLs of the currently active stories, if any."],
@@ -1833,7 +1834,7 @@
 
   const TOOL_GROUPS = [
     ["Profile", ["get_user_info", "get_account_about", "snapshot_profile", "diff_profile", "get_user_propic", "get_user_stories", "get_highlights", "get_user_photos"]],
-    ["Network", ["get_followers", "get_followings", "audit_followers", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_tagged_posts", "get_people_tagged_by_user", "get_people_who_commented"]],
+    ["Network", ["get_followers", "get_followings", "get_inner_circle", "audit_followers", "get_suggested_profiles", "compare_with", "get_people_who_tagged", "get_tagged_posts", "get_people_tagged_by_user", "get_people_who_commented"]],
     ["Content", ["get_hashtags", "get_captions", "get_addrs", "get_comment_data", "get_total_likes", "get_total_comments", "get_media_type", "get_posting_times", "get_photo_descriptions", "analyze_sentiment", "extract_topics"]],
     ["Contacts", ["get_followers_email", "get_followings_email", "get_followers_phone", "get_followings_phone"]],
 ["Search (no target)", ["search_hashtag", "search_location", "get_post_comments", "search_public_context", "search_cross_platform"]],
@@ -2955,6 +2956,45 @@
     </div>`;
   }
 
+  // ---- Inner Circle (affinity ranked contacts) ----
+  function renderInnerCircle(items) {
+    if (!items || items.length === 0) {
+      return `<p class="empty">No inner circle interactions identified within the scanned range.</p>`;
+    }
+    const disclaimer = `<p class="hint" style="margin-bottom:8px; font-size:0.8rem; color:var(--muted);">Interaction indicator, not evidence of a relationship.</p>`;
+    const rows = items.map((u, i) => {
+      const tierClass = u.tier === "High Interaction" ? "ok" : (u.tier === "Medium Interaction" ? "accent" : "muted");
+      const mutualBadge = u.is_mutual ? `<span class="badge ok" style="font-size:0.75rem;">⇄ Mutual</span>` : "";
+      const taggedBadge = u.tagged_count ? `<span class="badge" style="font-size:0.75rem;">🏷️ ${u.tagged_count} tags</span>` : "";
+      const commentsBadge = u.comments_count ? `<span class="badge" style="font-size:0.75rem;">💬 ${u.comments_count} cmts</span>` : "";
+      const mentionsBadge = u.mentions_count ? `<span class="badge" style="font-size:0.75rem;">@ ${u.mentions_count} mentions</span>` : "";
+
+      const pic = u.profile_pic_url
+        ? `<img class="user-row-pic" src="${escapeHtml(u.profile_pic_url)}" loading="lazy" referrerpolicy="no-referrer" alt="" onerror="this.style.visibility='hidden'">`
+        : `<span class="user-row-pic-stub">${escapeHtml((u.username || "?").charAt(0).toUpperCase())}</span>`;
+
+      return `<div class="user-row" style="align-items:center;">
+        <span class="user-row-rank" style="min-width:28px; font-size:0.9rem; color:var(--muted); font-weight:bold;">#${i + 1}</span>
+        <a class="user-row-link" href="https://www.instagram.com/${encodeURIComponent(u.username)}/" target="_blank" rel="noopener">
+          ${pic}
+          <div class="user-row-names">
+            <span class="user-row-uname">${escapeHtml(u.username)}</span>
+            ${u.full_name ? `<span class="user-row-name">${escapeHtml(u.full_name)}</span>` : ""}
+          </div>
+        </a>
+        <div style="margin-left:auto; display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+          ${mutualBadge}
+          ${taggedBadge}
+          ${commentsBadge}
+          ${mentionsBadge}
+          <span class="badge ${tierClass}" style="font-size:0.8rem; font-weight:600;">${escapeHtml(u.tier)}</span>
+          <span class="badge" style="background:var(--accent-glow); font-size:0.82rem; font-weight:bold; color:var(--accent);">⭐ ${u.score}</span>
+        </div>
+      </div>`;
+    });
+    return disclaimer + filterable(`<div class="user-list">${rows.join("")}</div>`, items.length, "contact");
+  }
+
   // ---- Story Highlights (archived stories pinned on the profile) ----
   function renderHighlights(items) {
     const cells = items.map((h) => {
@@ -3781,6 +3821,7 @@
         if ("hashtag" in first) return renderHashtags(result);
         if ("address" in first) return renderAddresses(result);
         if ("author" in first && "co_tagged" in first) return renderTaggedPosts(result);
+        if ("tier" in first && "score" in first) return renderInnerCircle(result);
         if ("comment" in first) return renderComments(result);
         if ("username" in first) return renderUserList(result);
       }

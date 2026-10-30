@@ -365,6 +365,15 @@ def build_tools(service: OsintgramService) -> list:
         """
         return _call(service.get_people_tagged_by_user, limit_posts=limit_posts)
 
+    def get_inner_circle(limit: int = 10, scan_posts: int = 12) -> str:
+        """Rank interacting accounts by affinity (mutuals, tags, comments, mentions). Interaction indicator, not evidence of a relationship.
+
+        Args:
+            limit: Maximum number of closest contacts to return (default: 10).
+            scan_posts: Number of recent posts to scan for tags, mentions and comments (default: 12).
+        """
+        return _call(service.get_inner_circle, limit=limit, scan_posts=scan_posts)
+
     def get_user_photos(limit: Optional[int] = None) -> str:
         """Get direct CDN URLs for the target's posted photos (no download,
         just the URLs and media ids).
@@ -540,6 +549,7 @@ def build_tools(service: OsintgramService) -> list:
         get_people_who_tagged,
         get_tagged_posts,
         get_people_tagged_by_user,
+        get_inner_circle,
         get_user_photos,
         get_user_propic,
         get_user_stories,
