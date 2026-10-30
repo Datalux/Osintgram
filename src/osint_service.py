@@ -1516,17 +1516,19 @@ class OsintgramService:
         return diff
 
     def get_sleep_schedule(self, limit_posts: Optional[int] = 50) -> dict:
-        """Infer target's circadian sleep pattern, quiet hours, and probable timezone."""
+        """Infer target's circadian sleep pattern, quiet hours, and timezone range (rough estimate)."""
         self._require_public()
         from src.chronology_tracker import SleepScheduleAnalyzer
+        limit_posts = max(1, min(int(limit_posts or 50), 100))
         posts = self._get_feed(limit=limit_posts)
         analyzer = SleepScheduleAnalyzer()
         return analyzer.analyze(posts)
 
     def get_travel_route(self, limit_posts: Optional[int] = 50) -> dict:
-        """Reconstruct target's chronological travel trajectory, distances, and transit legs."""
+        """Reconstruct target's chronological travel trajectory, distances, and transit legs from geotags."""
         self._require_public()
         from src.chronology_tracker import TravelRouteTracker
+        limit_posts = max(1, min(int(limit_posts or 50), 100))
         posts = self._get_feed(limit=limit_posts)
         tracker = TravelRouteTracker()
         return tracker.analyze(posts)

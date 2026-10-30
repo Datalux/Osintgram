@@ -1,8 +1,11 @@
 """Chronology, Sleep Pattern & Travel Route Tracker for Instagram OSINT.
 
 Analyzes post timestamps and geotags to reconstruct:
-1. Circadian sleep schedule & probable local timezone.
+1. Circadian sleep schedule & probable local timezone (rough estimate).
 2. Chronological geolocation route, distances traveled, and travel hops.
+
+Note: Rough estimates, not evidence. Geotags and post timestamps do not prove
+physical presence, and social media activity does not reliably reflect sleep.
 """
 import math
 from datetime import datetime, timezone
@@ -26,7 +29,7 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 def parse_timestamp(val: Any) -> Optional[datetime]:
     """Parse various timestamp representations into UTC datetime."""
-    if not val:
+    if val is None:
         return None
     if isinstance(val, (int, float)):
         try:
@@ -52,7 +55,12 @@ def parse_timestamp(val: Any) -> Optional[datetime]:
 
 
 class SleepScheduleAnalyzer:
-    """Estimates sleep window and timezone from publication timestamps."""
+    """Estimates sleep window and timezone range from publication timestamps.
+
+    Disclaimer: Rough estimate, not evidence. Social media activity does not
+    reliably reflect sleep or physical presence (scheduled posts, nocturnal habits,
+    and irregular routines can significantly skew results).
+    """
 
     def analyze(self, posts: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Infer sleep window and timezone from 24h activity histogram."""
@@ -71,60 +79,99 @@ class SleepScheduleAnalyzer:
                 valid_posts.append((dt, p))
 
         total_posts = len(valid_posts)
+        disclaimer_text = (
+            "Rough estimate, not evidence. Social media activity does not "
+            "reliably reflect sleep or physical presence."
+        )
+
         if total_posts < 3:
             return {
                 "insufficient_data": True,
+                "disclaimer": disclaimer_text,
                 "total_analyzed": total_posts,
                 "histogram_utc": histogram,
                 "sleep_window_utc": None,
-                "estimated_timezone": "UTC+00:00",
+                "estimated_timezone": "Unknown (Insufficient data)",
                 "confidence": "Low",
+                "is_ambiguous": True,
                 "circadian_anomalies": [],
             }
 
-        # Find best 7-hour contiguous quiet window (wrapping 24h)
+        # 7-hour contiguous quiet window (wrapping 24h)
         window_size = 7
-        min_activity = float("inf")
-        best_start = 0
+        window_sums = [
+            sum(histogram[(start + i) % 24] for i in range(window_size))
+            for start in range(24)
+        ]
+        min_activity = min(window_sums)
+        tied_starts = [start for start, s in enumerate(window_sums) if s == min_activity]
 
-        for start in range(24):
-            window_sum = sum(
-                histogram[(start + i) % 24] for i in range(window_size)
-            )
-            if window_sum < min_activity:
-                min_activity = window_sum
-                best_start = start
+        # Handle ties: pick the center of the longest contiguous run of tied start hours
+        def get_center_start(starts: List[int]) -> int:
+            if not starts:
+                return 0
+            if len(starts) == 1:
+                return starts[0]
+            # Identify contiguous runs
+            runs = []
+            curr = [starts[0]]
+            for i in range(1, len(starts)):
+                if starts[i] == starts[i - 1] + 1:
+                    curr.append(starts[i])
+                else:
+                    runs.append(curr)
+                    curr = [starts[i]]
+            runs.append(curr)
 
+            # Check circular wrap (starts[0] == 0 and starts[-1] == 23)
+            if len(runs) > 1 and runs[0][0] == 0 and runs[-1][-1] == 23:
+                wrapped_run = runs[-1] + runs[0]
+                runs = runs[1:-1] + [wrapped_run]
+
+            longest_run = max(runs, key=len)
+            mid_val = longest_run[len(longest_run) // 2]
+            return mid_val % 24
+
+        best_start = get_center_start(tied_starts)
         best_end = (best_start + window_size) % 24
 
-        # Assume natural sleep starts around 23:00 local time
-        offset_hours = round(23 - best_start)
-        # Normalize offset between -12 and +14
-        while offset_hours > 14:
-            offset_hours -= 24
-        while offset_hours < -12:
-            offset_hours += 24
+        # Ambiguity: more than 1 tied window or completely flat
+        expected_window = total_posts * (window_size / 24.0)
+        depth = 1.0 - (min_activity / expected_window) if expected_window > 0 else 0.0
+        is_ambiguous = len(tied_starts) > 1 or depth < 0.2
 
-        sign = "+" if offset_hours >= 0 else "-"
-        abs_h = abs(offset_hours)
-        tz_str = f"UTC{sign}{abs_h:02d}:00"
+        # Present timezone as a range / rough estimate:
+        # Assuming natural sleep window start falls between 22:00 and 01:00 local time:
+        def norm_offset(h: int) -> int:
+            while h > 14:
+                h -= 24
+            while h < -12:
+                h += 24
+            return h
 
-        # Confidence based on sample size and inactivity depth
-        quiet_ratio = (
-            (total_posts - min_activity) / total_posts if total_posts else 0
-        )
-        if total_posts >= 20 and quiet_ratio >= 0.85:
-            confidence = "High"
-        elif total_posts >= 8:
-            confidence = "Medium"
-        else:
+        def fmt_tz(offset: int) -> str:
+            sign = "+" if offset >= 0 else "-"
+            return f"UTC{sign}{abs(offset):02d}:00"
+
+        offset_min = norm_offset(22 - best_start)
+        offset_max = norm_offset(25 - best_start)
+        if offset_min > offset_max:
+            offset_min, offset_max = offset_max, offset_min
+
+        tz_str = f"{fmt_tz(offset_min)} to {fmt_tz(offset_max)} (rough estimate)"
+
+        # Confidence based on quiet window depth relative to average and ambiguity
+        if is_ambiguous or depth < 0.4 or total_posts < 8:
             confidence = "Low"
+        elif total_posts >= 25 and depth >= 0.75:
+            confidence = "High"
+        else:
+            confidence = "Medium"
 
-        # Detect nocturnal anomalies (posts during sleep window)
+        # Detect nocturnal anomalies
         anomalies = []
         for dt, p in valid_posts:
             h = dt.hour
-            in_window = False
             if best_start <= best_end:
                 in_window = best_start <= h < best_end
             else:
@@ -144,6 +191,7 @@ class SleepScheduleAnalyzer:
 
         return {
             "insufficient_data": False,
+            "disclaimer": disclaimer_text,
             "total_analyzed": total_posts,
             "histogram_utc": histogram,
             "sleep_window_utc": {
@@ -151,29 +199,40 @@ class SleepScheduleAnalyzer:
                 "end_hour": best_end,
                 "duration_hours": window_size,
                 "posts_in_window": min_activity,
+                "candidate_start_hours": tied_starts,
             },
             "estimated_timezone": tz_str,
-            "tz_offset_hours": offset_hours,
+            "tz_offset_hours": round((offset_min + offset_max) / 2),
+            "tz_offset_range": [offset_min, offset_max],
+            "quiet_depth_ratio": round(depth, 2),
+            "is_ambiguous": is_ambiguous,
             "confidence": confidence,
             "circadian_anomalies": anomalies[:10],
         }
 
 
 class TravelRouteTracker:
-    """Reconstructs chronological travel trajectory from geotagged posts."""
+    """Reconstructs chronological travel trajectory from geotagged posts.
+
+    Disclaimer: Geotags and post timestamps do not prove physical presence:
+    users frequently tag locations remotely, after traveling, or on old photos.
+    """
 
     def analyze(self, posts: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Extract locations, sort chronologically, and compute travel legs."""
         geotagged = []
 
+        def _first_coord(*values):
+            for v in values:
+                if v is not None:
+                    return v
+            return None
+
         for p in posts:
             loc = p.get("location") or {}
-            lat = loc.get("lat") or loc.get("latitude") or p.get("lat")
-            lng = (
-                loc.get("lng")
-                or loc.get("longitude")
-                or loc.get("long")
-                or p.get("lng")
+            lat = _first_coord(loc.get("lat"), loc.get("latitude"), p.get("lat"))
+            lng = _first_coord(
+                loc.get("lng"), loc.get("longitude"), loc.get("long"), p.get("lng")
             )
             raw_ts = (
                 p.get("taken_at")
@@ -219,7 +278,7 @@ class TravelRouteTracker:
 
             leg_km = 0.0
             days_gap = 0.0
-            speed_kmh = 0.0
+            speed_kmh = None
 
             if i > 0:
                 prev = geotagged[i - 1]
@@ -232,14 +291,21 @@ class TravelRouteTracker:
                 )
                 days_gap = round(seconds_diff / 86400.0, 1)
                 hours_diff = seconds_diff / 3600.0
-                if hours_diff > 0:
+                # Meaningful speed only computed for short intervals (<= 48 hours)
+                if 0 < hours_diff <= 48.0:
                     speed_kmh = round(leg_km / hours_diff, 1)
 
-            transit_type = "Local / Stationary"
-            if leg_km > 500:
-                transit_type = "Flight / Long Distance Transit"
+            # Classify transit using both distance and time gap
+            if leg_km == 0.0:
+                transit_type = "Same Location / Co-located"
+            elif days_gap > 3.0:
+                transit_type = f"Distant post ({leg_km:.0f} km, {days_gap:.0f}d gap)"
+            elif leg_km > 500:
+                transit_type = "Likely Flight / Fast Transit"
             elif leg_km > 80:
                 transit_type = "Intercity Road / Rail Travel"
+            else:
+                transit_type = "Local / Stationary"
 
             hops.append({
                 "sequence": i + 1,
@@ -255,6 +321,10 @@ class TravelRouteTracker:
             })
 
         return {
+            "disclaimer": (
+                "Geotags indicate tagged locations, not verified physical presence "
+                "(posts may be retroactive or tagged remotely)."
+            ),
             "total_geotagged_stops": len(geotagged),
             "total_distance_km": round(total_distance, 1),
             "unique_locations_count": len(unique_places),

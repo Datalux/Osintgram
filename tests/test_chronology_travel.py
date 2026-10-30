@@ -114,7 +114,8 @@ def test_travel_route_tracker():
     assert hops[1]["location"] == "Berlin Alexanderplatz"
     assert 500 <= hops[1]["distance_from_prev_km"] <= 530
     assert hops[1]["days_since_prev"] == 4.0
-    assert "Flight" in hops[1]["transit_type"] or "Travel" in hops[1]["transit_type"]
+    assert "Distant post" in hops[1]["transit_type"]
+    assert hops[1]["speed_kmh"] is None  # Long gap > 48h, speed is not computed
 
     assert hops[2]["location"] == "Eiffel Tower"
     assert 850 <= hops[2]["distance_from_prev_km"] <= 900
@@ -187,3 +188,82 @@ def test_tools_specs_and_execution():
 
     assert sleep_fn is not None and "High" in sleep_fn(limit_posts=10)
     assert travel_fn is not None and "120" in travel_fn(limit_posts=10)
+
+
+def test_sleep_schedule_ties_in_histogram():
+    analyzer = SleepScheduleAnalyzer()
+
+    # Create posts only at hours 12:00, 13:00, 14:00 (multiple 7-hour windows have 0 posts)
+    posts = [
+        {"id": "p1", "taken_at": datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc).timestamp()},
+        {"id": "p2", "taken_at": datetime(2024, 1, 1, 13, 0, tzinfo=timezone.utc).timestamp()},
+        {"id": "p3", "taken_at": datetime(2024, 1, 1, 14, 0, tzinfo=timezone.utc).timestamp()},
+    ]
+
+    res = analyzer.analyze(posts)
+    assert res["is_ambiguous"] is True
+    assert len(res["sleep_window_utc"]["candidate_start_hours"]) > 1
+    # Check that center of run was picked, not just first start hour (0)
+    assert res["sleep_window_utc"]["start_hour"] > 0
+    assert "rough estimate" in res["estimated_timezone"]
+
+
+def test_travel_route_600km_over_long_gap():
+    tracker = TravelRouteTracker()
+    posts = [
+        {
+            "id": "p1",
+            "taken_at": datetime(2024, 1, 1, 10, 0, tzinfo=timezone.utc).timestamp(),
+            "location": {"name": "Munich", "lat": 48.1351, "lng": 11.5820},
+        },
+        # 600km away, 90 days later
+        {
+            "id": "p2",
+            "taken_at": datetime(2024, 4, 1, 10, 0, tzinfo=timezone.utc).timestamp(),
+            "location": {"name": "Hamburg", "lat": 53.5511, "lng": 9.9937},
+        },
+    ]
+    res = tracker.analyze(posts)
+    hops = res["route_hops"]
+    assert len(hops) == 2
+    assert 590 <= hops[1]["distance_from_prev_km"] <= 630
+    assert hops[1]["days_since_prev"] >= 90.0
+    # Over distant dates, transit label should be neutral and NOT claimed as a Flight
+    assert "Flight" not in hops[1]["transit_type"]
+    assert "Distant post" in hops[1]["transit_type"]
+    assert hops[1]["speed_kmh"] is None
+
+
+def test_travel_route_coordinate_equal_to_zero():
+    tracker = TravelRouteTracker()
+    posts = [
+        {
+            "id": "null_island",
+            "taken_at": datetime(2024, 1, 1, 12, 0, tzinfo=timezone.utc).timestamp(),
+            # Coordinates are exactly 0.0 (Null Island in Gulf of Guinea)
+            "location": {"name": "Null Island Buoy", "lat": 0.0, "lng": 0.0},
+        },
+        {
+            "id": "accra",
+            "taken_at": datetime(2024, 1, 2, 12, 0, tzinfo=timezone.utc).timestamp(),
+            "location": {"name": "Accra", "lat": 5.6037, "lng": -0.1870},
+        },
+    ]
+    res = tracker.analyze(posts)
+    # 0.0 coordinates should NOT be dropped
+    assert res["total_geotagged_stops"] == 2
+    assert res["route_hops"][0]["coordinates"] == [0.0, 0.0]
+    assert res["route_hops"][0]["location"] == "Null Island Buoy"
+
+
+def test_service_limit_posts_cap():
+    mock_api = MagicMock()
+    mock_api.user_by_username_v2.return_value = {
+        "user": {"pk": "100", "username": "alice", "is_private": False}
+    }
+    mock_api.user_medias_g2.return_value = {"response": {"items": []}, "next_page_id": None}
+    service = OsintgramService("alice", mock_api)
+
+    service.get_sleep_schedule(limit_posts=999)
+    args, kwargs = mock_api.user_medias_g2.call_args
+    assert kwargs.get("amount", 0) <= 33 or kwargs.get("limit", 0) <= 100

@@ -349,7 +349,7 @@ def build_tools(service: OsintgramService) -> list:
         return _call(service.get_people_tagged_by_user, limit_posts=limit_posts)
 
     def get_sleep_schedule(limit_posts: Optional[int] = 50) -> str:
-        """Infer target's circadian sleep pattern, quiet hours, and probable timezone.
+        """Infer target's circadian quiet hours and timezone range (rough estimate, not evidence).
 
         Args:
             limit_posts: Number of recent posts to analyze for temporal activity (default: 50).
@@ -357,7 +357,7 @@ def build_tools(service: OsintgramService) -> list:
         return _call(service.get_sleep_schedule, limit_posts=limit_posts)
 
     def get_travel_route(limit_posts: Optional[int] = 50) -> str:
-        """Reconstruct target's chronological travel trajectory, distances, and transit legs.
+        """Reconstruct target's chronological travel trajectory and distances between geotags.
 
         Args:
             limit_posts: Number of recent posts to scan for geotags (default: 50).

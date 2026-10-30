@@ -1806,8 +1806,8 @@
     get_total_likes: ["❤️", "Like totals", "Total, min, max and average likes per post."],
     get_media_type: ["🖼️", "Media types", "How many posts are photos, videos or carousels, with views, collaborations and paid partnerships."],
     get_posting_times: ["🕒", "Posting times", "Which days and hours they post on (heatmap) and how often."],
-    get_sleep_schedule: ["🌙", "Sleep schedule", "Infer circadian sleep pattern, quiet hours, and probable timezone from post timestamps."],
-    get_travel_route: ["🗺️", "Travel route", "Chronological travel trajectory, distances between stops, and transit hops from geotags."],
+    get_sleep_schedule: ["🌙", "Sleep schedule", "Circadian quiet hours and timezone range (rough estimate, not evidence)."],
+    get_travel_route: ["🗺️", "Travel route", "Chronological travel trajectory and distances between geotagged posts (geotags indicate tagged places, not physical presence)."],
     get_photo_descriptions: ["🔍", "Photo descriptions", "Alt text of the photos (what they show), when the post's author wrote it."],
     get_comment_data: ["💬", "Comments", "Every comment on the posts, with its author and post."],
     get_people_who_commented: ["💬", "Who commented", "Accounts that commented on the posts, by number of comments."],
@@ -3036,7 +3036,8 @@
       `;
     }).join("");
 
-    return `
+    const travelDisclaimer = `<p class="hint" style="margin-bottom:8px; font-size:0.8rem; color:var(--muted);">Geotags indicate tagged locations, not verified physical presence (posts may be retroactive or tagged remotely).</p>`;
+    return travelDisclaimer + `
       <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
         <div class="stat-pill"><span class="k">Total Distance Traveled</span><span class="v" style="color:var(--accent); font-weight:bold;">${result.total_distance_km} km</span></div>
         <div class="stat-pill"><span class="k">Geotagged Stops</span><span class="v">${result.total_geotagged_stops}</span></div>

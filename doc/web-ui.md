@@ -311,15 +311,18 @@ half the requests of `both`.
 | **Hashtags** | Hashtags used, most frequent first |
 | **Captions** | Post captions |
 | **Addresses** | Geotagged locations, reverse-geocoded, **plotted on a map** |
-| **Travel route** | Chronological travel trajectory, distances between stops, and transit hops from geotags |
+| **Travel route** | Chronological travel trajectory, distances between stops, and transit hops from geotags (geotags indicate tagged places, not verified physical presence) |
 | **Comments** | Every comment with author and post |
 | **Like totals** / **Comment totals** | Total, min, max, average — plus post previews |
 | **Media types** | How many posts are photos, videos, carousels, with views, collaborations and paid partnerships |
 | **Posting times** | Weekday × hour heatmap of when they post, and how often |
-| **Sleep schedule** | Circadian sleep window, quiet hours, and probable timezone estimation |
+| **Sleep schedule** | Circadian quiet hours and timezone range (rough estimate, not evidence) |
 | **Photo descriptions** | Alt text of each photo, carousel slides included |
 
 All of these take `limit_posts`.
+
+> [!NOTE]
+> Travel routes and sleep schedules are based on public post metadata and geotags. They represent rough heuristic estimates, not evidence of physical presence or actual sleep routines.
 
 > **On "Photo descriptions":** Instagram only returns alt text the author wrote
 > themselves — its automatic "May be an image of…" descriptions are no longer
