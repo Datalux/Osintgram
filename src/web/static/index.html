@@ -1813,7 +1813,7 @@
     get_people_who_commented: ["💬", "Who commented", "Accounts that commented on the posts, by number of comments."],
     get_people_who_tagged: ["🏷️", "Who tagged", "Accounts that tagged the target in their own posts."],
     get_people_tagged_by_user: ["🏷️", "Tagged by target", "Accounts the target tagged in their own posts."],
-    get_inner_circle: ["👥", "Inner Circle", "Identify closest friends & inner circle via interaction affinity (mutuals, tags, comments, mentions)."],
+    get_inner_circle: ["👥", "Inner Circle", "Rank interacting accounts by affinity (mutuals, tags, comments, mentions). Interaction indicator, not evidence of a relationship."],
     get_user_photos: ["🖼️", "Photos", "URLs of the published photos (no download)."],
     get_user_propic: ["🖼️", "Profile picture", "URL of the profile picture at full resolution."],
     get_user_stories: ["🎬", "Stories", "URLs of the currently active stories, if any."],
@@ -2961,8 +2961,9 @@
     if (!items || items.length === 0) {
       return `<p class="empty">No inner circle interactions identified within the scanned range.</p>`;
     }
+    const disclaimer = `<p class="hint" style="margin-bottom:8px; font-size:0.8rem; color:var(--muted);">Interaction indicator, not evidence of a relationship.</p>`;
     const rows = items.map((u, i) => {
-      const tierClass = u.tier === "Core Confidant" ? "ok" : (u.tier === "Close Friend" ? "accent" : "muted");
+      const tierClass = u.tier === "High Interaction" ? "ok" : (u.tier === "Medium Interaction" ? "accent" : "muted");
       const mutualBadge = u.is_mutual ? `<span class="badge ok" style="font-size:0.75rem;">⇄ Mutual</span>` : "";
       const taggedBadge = u.tagged_count ? `<span class="badge" style="font-size:0.75rem;">🏷️ ${u.tagged_count} tags</span>` : "";
       const commentsBadge = u.comments_count ? `<span class="badge" style="font-size:0.75rem;">💬 ${u.comments_count} cmts</span>` : "";
@@ -2991,7 +2992,7 @@
         </div>
       </div>`;
     });
-    return filterable(`<div class="user-list">${rows.join("")}</div>`, items.length, "contact");
+    return disclaimer + filterable(`<div class="user-list">${rows.join("")}</div>`, items.length, "contact");
   }
 
   // ---- Story Highlights (archived stories pinned on the profile) ----

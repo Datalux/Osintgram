@@ -300,7 +300,7 @@ both modes.
 | **Tagged posts** | Full details of posts where the target was tagged: author, caption, photo/video, location, likes and co-tagged accounts | `limit` |
 | **Tagged by target** | Accounts the target tagged | `limit_posts` |
 | **Who commented** | Accounts that commented, ranked by how often | `limit_posts` |
-| **Inner Circle** | Identify target's closest friends & inner circle via interaction affinity (mutuals, tags, comments, mentions) | `limit` (10), `scan_posts` (12) |
+| **Inner Circle** | Rank interacting accounts by affinity (mutuals, tags, comments, mentions). Interaction indicator, not evidence of a relationship. | `limit` (10), `scan_posts` (12) |
 
 `scope` on **Compare profiles** is worth knowing: a one-sided comparison costs
 half the requests of `both`.

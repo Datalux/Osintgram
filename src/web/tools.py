@@ -366,7 +366,7 @@ def build_tools(service: OsintgramService) -> list:
         return _call(service.get_people_tagged_by_user, limit_posts=limit_posts)
 
     def get_inner_circle(limit: int = 10, scan_posts: int = 12) -> str:
-        """Identify target's closest friends and inner circle via multi-signal interaction affinity.
+        """Rank interacting accounts by affinity (mutuals, tags, comments, mentions). Interaction indicator, not evidence of a relationship.
 
         Args:
             limit: Maximum number of closest contacts to return (default: 10).
