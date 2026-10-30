@@ -88,3 +88,23 @@ def test_export_vis():
     assert "from" in edge
     assert "to" in edge
     assert "arrows" in edge
+
+
+def test_export_vis_escapes_html():
+    results = [
+        {"name": "get_followers", "result": [{"username": "<script>alert(1)</script>", "id": "1"}]},
+    ]
+    graph = build_social_graph(results, target="test_target")
+    vis = export_vis(graph)
+    node = next(n for n in vis["nodes"] if "<script>" in n["id"])
+    assert "&lt;script&gt;" in node["title"]
+    assert "<script>" not in node["title"]
+
+
+def test_build_social_graph_large_dataset():
+    # Build graph with 600 nodes
+    followers = [{"username": f"user_{i}", "id": str(i)} for i in range(600)]
+    results = [{"name": "get_followers", "result": followers}]
+    graph = build_social_graph(results, target="main_user")
+    assert graph["stats"]["node_count"] == 601
+    assert graph["stats"]["edge_count"] == 600

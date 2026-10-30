@@ -1236,12 +1236,17 @@ def export_network_graph(req: GraphExportRequest, request: Request):
             media_type="application/json",
             headers={"Content-Disposition": f'attachment; filename="{safe_target}_vis.json"'},
         )
-    else:
+    elif fmt in ("gexf", "gephi", "xml"):
         gexf_content = export_gexf(graph)
         return Response(
             content=gexf_content,
             media_type="application/xml",
             headers={"Content-Disposition": f'attachment; filename="{safe_target}_network.gexf"'},
+        )
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format '{req.format}'. Supported formats: gexf, json, cytoscape, vis",
         )
 
 

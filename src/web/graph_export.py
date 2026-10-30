@@ -229,6 +229,8 @@ def export_vis(graph: Dict[str, Any]) -> Dict[str, Any]:
         is_target = cat == "target"
         deg = int(n.get("in_degree", 0)) + int(n.get("out_degree", 0))
         size = 28 if is_target else min(32, max(12, 10 + deg * 2))
+        safe_id = html.escape(str(n["id"]))
+        safe_cat = html.escape(str(cat))
         nodes.append({
             "id": str(n["id"]),
             "label": str(n.get("label") or n["id"]),
@@ -241,10 +243,11 @@ def export_vis(graph: Dict[str, Any]) -> Dict[str, Any]:
             },
             "size": size,
             "value": deg,
-            "title": f"@{n['id']} ({cat}) - connections: {deg}",
+            "title": f"@{safe_id} ({safe_cat}) - connections: {deg}",
         })
     edges = []
     for e in graph.get("edges", []):
+        safe_rel = html.escape(str(e.get("relation", "relates")))
         edges.append({
             "id": str(e["id"]),
             "from": str(e["source"]),
@@ -252,7 +255,7 @@ def export_vis(graph: Dict[str, Any]) -> Dict[str, Any]:
             "label": str(e.get("relation", "")),
             "arrows": "to",
             "value": float(e.get("weight", 1.0)),
-            "title": f"{e.get('relation', 'relates')} (weight: {e.get('weight', 1.0)})",
+            "title": f"{safe_rel} (weight: {e.get('weight', 1.0)})",
         })
     return {
         "format": "vis",

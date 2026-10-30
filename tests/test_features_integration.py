@@ -240,3 +240,19 @@ def test_export_graph_security(api_client):
         headers={"origin": "http://127.0.0.1:8000"},
     )
     assert huge_resp.status_code == 400
+
+
+def test_export_graph_invalid_format_returns_400(api_client):
+    payload = {
+        "target": "target_user",
+        "results": [],
+        "format": "invalid_format_xyz",
+    }
+    resp = api_client.post(
+        "/api/export/graph",
+        json=payload,
+        headers={"origin": "http://127.0.0.1:8000"},
+    )
+    assert resp.status_code == 400
+    assert "Unsupported format" in resp.json().get("detail", "")
+    assert "Supported formats: gexf, json, cytoscape, vis" in resp.json().get("detail", "")

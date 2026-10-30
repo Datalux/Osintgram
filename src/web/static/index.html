@@ -4322,11 +4322,30 @@
     const titleEl = document.getElementById("graph-modal-title");
     const badgeEl = document.getElementById("graph-stats-badge");
     if (titleEl) titleEl.textContent = `@${target} · Relationship Network`;
-    if (badgeEl) badgeEl.textContent = `${data.stats?.node_count || data.nodes.length} nodes · ${data.stats?.edge_count || data.edges.length} edges`;
 
-    const nodes = (data.nodes || []).map((n, idx) => {
+    const MAX_INTERACTIVE_NODES = 400;
+    const totalRawNodes = (data.nodes || []).length;
+    let initialNodes = data.nodes || [];
+    let isCapped = false;
+    if (initialNodes.length > MAX_INTERACTIVE_NODES) {
+      isCapped = true;
+      const targetNodes = initialNodes.filter((n) => n.category === "target");
+      const otherNodes = initialNodes.filter((n) => n.category !== "target");
+      otherNodes.sort((a, b) => ((b.in_degree || 0) + (b.out_degree || 0)) - ((a.in_degree || 0) + (a.out_degree || 0)));
+      initialNodes = targetNodes.concat(otherNodes.slice(0, MAX_INTERACTIVE_NODES - targetNodes.length));
+    }
+
+    if (badgeEl) {
+      if (isCapped) {
+        badgeEl.textContent = `Showing ${initialNodes.length} of ${totalRawNodes} nodes (top connections) · ${data.stats?.edge_count || data.edges.length} edges`;
+      } else {
+        badgeEl.textContent = `${data.stats?.node_count || initialNodes.length} nodes · ${data.stats?.edge_count || data.edges.length} edges`;
+      }
+    }
+
+    const nodes = initialNodes.map((n, idx) => {
       const isTarget = n.category === "target";
-      const angle = (idx / Math.max(1, data.nodes.length - 1)) * Math.PI * 2;
+      const angle = (idx / Math.max(1, initialNodes.length - 1)) * Math.PI * 2;
       const radius = isTarget ? 0 : (160 + (idx % 6) * 35);
       return {
         ...n,
@@ -4404,22 +4423,51 @@
       if (!physicsRunning || physicsSettled) return;
       const visNodes = getVisibleNodes();
       const visEdges = getVisibleEdges(visNodes);
-      const step = visNodes.length > 250 ? 2 : 1;
 
-      // Node repulsion (Coulomb)
-      for (let i = 0; i < visNodes.length; i += step) {
-        const n1 = visNodes[i];
-        for (let j = i + 1; j < visNodes.length; j += step) {
-          const n2 = visNodes[j];
-          const dx = n2.x - n1.x;
-          const dy = n2.y - n1.y;
-          const distSq = dx * dx + dy * dy + 100;
-          const dist = Math.sqrt(distSq);
-          const force = (1600 * step) / distSq;
-          const fx = (dx / dist) * force;
-          const fy = (dy / dist) * force;
-          if (n1 !== dragNode) { n1.vx -= fx; n1.vy -= fy; }
-          if (n2 !== dragNode) { n2.vx += fx; n2.vy += fy; }
+      // Node repulsion using spatial grid (Coulomb; applies to all nodes without skipping)
+      const cellSize = 80;
+      const grid = new Map();
+      for (let i = 0; i < visNodes.length; i++) {
+        const n = visNodes[i];
+        const gx = Math.floor(n.x / cellSize);
+        const gy = Math.floor(n.y / cellSize);
+        const key = `${gx},${gy}`;
+        let cell = grid.get(key);
+        if (!cell) {
+          cell = [];
+          grid.set(key, cell);
+        }
+        cell.push(n);
+      }
+
+      function applyRepulsion(n1, n2) {
+        const dx = n2.x - n1.x;
+        const dy = n2.y - n1.y;
+        const distSq = dx * dx + dy * dy + 100;
+        if (distSq > 360000) return;
+        const dist = Math.sqrt(distSq);
+        const force = 1600 / distSq;
+        const fx = (dx / dist) * force;
+        const fy = (dy / dist) * force;
+        if (n1 !== dragNode) { n1.vx -= fx; n1.vy -= fy; }
+        if (n2 !== dragNode) { n2.vx += fx; n2.vy += fy; }
+      }
+
+      for (const [key, cell] of grid) {
+        const [gx, gy] = key.split(",").map(Number);
+        for (let i = 0; i < cell.length; i++) {
+          const n1 = cell[i];
+          for (let j = i + 1; j < cell.length; j++) {
+            applyRepulsion(n1, cell[j]);
+          }
+          for (const [dx, dy] of [[1, 0], [-1, 1], [0, 1], [1, 1]]) {
+            const neighborCell = grid.get(`${gx + dx},${gy + dy}`);
+            if (neighborCell) {
+              for (let k = 0; k < neighborCell.length; k++) {
+                applyRepulsion(n1, neighborCell[k]);
+              }
+            }
+          }
         }
       }
 
@@ -4684,23 +4732,27 @@
       tooltip.style.display = "block";
       tooltip.style.left = `${cx - rect.left + 14}px`;
       tooltip.style.top = `${cy - rect.top + 14}px`;
-      const catLabel = node.category ? node.category.replace(/_/g, " ") : "account";
-      tooltip.innerHTML = `<strong>@${escapeHtml(node.id)}</strong> <span style="color:${node.color}">(${catLabel})</span><br>
+      const rawCat = node.category ? node.category.replace(/_/g, " ") : "account";
+      const catLabel = escapeHtml(rawCat);
+      const nodeColor = escapeHtml(node.color || "#6b7280");
+      tooltip.innerHTML = `<strong>@${escapeHtml(node.id)}</strong> <span style="color:${nodeColor}">(${catLabel})</span><br>
         <span style="font-size:0.75rem;color:var(--muted)">In: ${node.in_degree || 0} · Out: ${node.out_degree || 0}${node.mutual_with_target ? " · <strong>Mutual follow</strong>" : ""}</span>`;
     }
 
     function updateInspector(node) {
       if (!inspector) return;
       inspector.hidden = false;
-      const catLabel = node.category ? node.category.replace(/_/g, " ") : "account";
+      const rawCat = node.category ? node.category.replace(/_/g, " ") : "account";
+      const catLabel = escapeHtml(rawCat);
+      const nodeColor = escapeHtml(node.color || "#6b7280");
       inspector.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <h4 style="margin:0;">@${escapeHtml(node.id)}</h4>
-          <span style="background:${node.color}33;color:${node.color};border:1px solid ${node.color};border-radius:4px;padding:2px 6px;font-size:0.72rem;font-weight:700;">${catLabel}</span>
+          <span style="background:${nodeColor}33;color:${nodeColor};border:1px solid ${nodeColor};border-radius:4px;padding:2px 6px;font-size:0.72rem;font-weight:700;">${catLabel}</span>
         </div>
         ${node.label && node.label !== node.id ? `<div class="meta-row"><span>Name</span><span>${escapeHtml(node.label)}</span></div>` : ""}
         <div class="meta-row"><span>Connections (In / Out)</span><span>${node.in_degree || 0} / ${node.out_degree || 0}</span></div>
-        <div class="meta-row"><span>Mutual with @${target}</span><span>${node.mutual_with_target ? "Yes ✓" : "No"}</span></div>
+        <div class="meta-row"><span>Mutual with @${escapeHtml(target)}</span><span>${node.mutual_with_target ? "Yes ✓" : "No"}</span></div>
         <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
           <a class="link-btn" href="https://instagram.com/${encodeURIComponent(node.id)}" target="_blank" rel="noopener" style="font-size:0.75rem;padding:3px 8px;">View Instagram ↗</a>
           <button type="button" class="export-btn" id="graph-pivot-btn" style="font-size:0.75rem;padding:3px 8px;">Target @${escapeHtml(node.id)}</button>
