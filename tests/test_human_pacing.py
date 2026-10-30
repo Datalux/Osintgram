@@ -38,10 +38,10 @@ def test_resolve_pacing_config_from_env(monkeypatch):
     cfg = resolve_pacing_config()
     assert cfg.mode == PacingMode.CONSERVATIVE
 
-    # Backwards-compatible alias
+    # "stealth" is not recognized and falls back to normal
     monkeypatch.setenv("SCRAPE_PACING", "stealth")
     cfg = resolve_pacing_config()
-    assert cfg.mode == PacingMode.CONSERVATIVE
+    assert cfg.mode == PacingMode.NORMAL
 
     monkeypatch.delenv("SCRAPE_PACING", raising=False)
     monkeypatch.setenv("OSINTGRAM_PACING", "fast")
@@ -213,6 +213,7 @@ def test_shared_pacer_persistence_across_scans():
 def test_osint_service_no_pacing_by_default_without_pacer():
     # Like HikerAPI backend: api_client has no pacer attribute
     mock_api = MagicMock()
+    del mock_api.pacer
     mock_api.user_by_username_v2.return_value = {"user": {"pk": "12345", "username": "alice", "is_private": False}}
     mock_api.user_followers_g2.side_effect = [
         {"response": {"users": [{"pk": "1", "username": "bob"}]}, "next_page_id": "cursor_2"},
@@ -227,6 +228,7 @@ def test_osint_service_no_pacing_by_default_without_pacer():
 
 def test_osint_service_pacing_integration():
     mock_api = MagicMock()
+    del mock_api.pacer
     mock_api.user_by_username_v2.return_value = {"user": {"pk": "12345", "username": "alice", "is_private": False}}
     mock_api.user_followers_g2.side_effect = [
         {"response": {"users": [{"pk": "1", "username": "bob"}]}, "next_page_id": "cursor_2"},
@@ -251,6 +253,7 @@ def test_osint_service_pacing_integration():
 
 def test_osint_service_pacing_backoff_on_throttle():
     mock_api = MagicMock()
+    del mock_api.pacer
     mock_api.user_by_username_v2.return_value = {"user": {"pk": "12345", "username": "alice", "is_private": False}}
     mock_api.user_followers_g2.side_effect = [
         {"response": {"users": [{"pk": "1", "username": "bob"}]}, "next_page_id": "cursor_2"},
@@ -298,14 +301,13 @@ def test_api_pacing_endpoints(test_client, tmp_path, monkeypatch):
     assert cred_file.exists()
     assert "conservative" in cred_file.read_text()
 
-    # Stealth alias maps to conservative
+    # Stealth alias was dropped and is rejected
     r_post2 = test_client.post(
         "/api/pacing/settings",
         json={"mode": "stealth", "remember": True},
         headers={"origin": "http://127.0.0.1:8000"},
     )
-    assert r_post2.status_code == 200
-    assert r_post2.json()["mode"] == "conservative"
+    assert r_post2.status_code == 400
 
     # 3. Validation: negative delays reject
     r_neg = test_client.post(
@@ -346,3 +348,86 @@ def test_api_pacing_endpoints(test_client, tmp_path, monkeypatch):
         headers={"origin": "http://evil-tracker.com"},
     )
     assert r_forbidden.status_code == 403
+
+
+def test_api_pacing_remember_false_applies_to_shared_pacer(test_client, tmp_path, monkeypatch):
+    cred_file = tmp_path / "credentials.ini"
+    monkeypatch.setattr("src.human_pacing.CREDENTIALS_PATH", cred_file)
+    monkeypatch.delenv("SCRAPE_PACING", raising=False)
+    monkeypatch.delenv("OSINTGRAM_PACING", raising=False)
+    reset_shared_pacer()
+
+    r = test_client.post(
+        "/api/pacing/settings",
+        json={
+            "mode": "custom",
+            "min_delay": 3.5,
+            "max_delay": 6.0,
+            "break_frequency": 12,
+            "break_min": 8.0,
+            "break_max": 16.0,
+            "adaptive_backoff": False,
+            "remember": False,
+        },
+        headers={"origin": "http://127.0.0.1:8000"},
+    )
+    assert r.status_code == 200
+    assert r.json()["saved"] is False
+
+    # credentials.ini should not exist because remember=False
+    assert not cred_file.exists()
+
+    # But shared pacer config should have the values directly applied
+    shared = get_shared_pacer()
+    assert shared.config.mode == "custom"
+    assert shared.config.min_delay == 3.5
+    assert shared.config.max_delay == 6.0
+    assert shared.config.break_frequency == 12
+    assert shared.config.break_min == 8.0
+    assert shared.config.break_max == 16.0
+    assert shared.config.adaptive_backoff is False
+
+    # GET returns the updated runtime settings
+    r_get = test_client.get("/api/pacing/settings")
+    assert r_get.status_code == 200
+    d = r_get.json()
+    assert d["mode"] == "custom"
+    assert d["min_delay"] == 3.5
+    assert d["max_delay"] == 6.0
+    assert d["break_frequency"] == 12
+    assert d["adaptive_backoff"] is False
+    reset_shared_pacer()
+
+
+def test_instagrapi_call_rate_limit_filtering():
+    from src.instagrapi_backend import InstagrapiClient
+    pacer = HumanPacer()
+    client = InstagrapiClient.__new__(InstagrapiClient)
+    client.pacer = pacer
+
+    # Non-rate-limit errors should NOT trigger record_throttle_or_error
+    for non_rate_err in [
+        ValueError("bad argument"),
+        RuntimeError("User not found"),
+        RuntimeError("Login required"),
+        PermissionError("Account is private"),
+    ]:
+        with pytest.raises(type(non_rate_err)):
+            def bad_func():
+                raise non_rate_err
+            client._call(bad_func)
+        assert pacer.consecutive_errors == 0
+
+    # Rate-limit style errors SHOULD trigger record_throttle_or_error
+    for rate_err in [
+        RuntimeError("429 Client Error: Too Many Requests"),
+        RuntimeError("feedback_required: please slow down"),
+        RuntimeError("Please wait a few minutes before trying again"),
+        RuntimeError("checkpoint_required or challenge required"),
+    ]:
+        with pytest.raises(RuntimeError):
+            def rate_func():
+                raise rate_err
+            client._call(rate_func)
+        assert pacer.consecutive_errors > 0
+        pacer.consecutive_errors = 0

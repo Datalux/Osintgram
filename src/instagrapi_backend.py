@@ -269,7 +269,15 @@ class InstagrapiClient:
         except Exception as e:
             err_name = type(e).__name__
             err_str = str(e).lower()
-            if err_name not in ("UserNotFound", "MediaNotFound") and "not found" not in err_str:
+            is_rate_limit = (
+                "429" in err_str
+                or "feedback_required" in err_str
+                or "please wait" in err_str
+                or "challenge" in err_str
+                or err_name in ("FeedbackRequired", "ChallengeRequired", "RateLimitError", "PleaseWaitFewMinutes")
+                or getattr(getattr(e, "response", None), "status_code", None) == 429
+            )
+            if is_rate_limit:
                 if pacer is not None and hasattr(pacer, "record_throttle_or_error"):
                     pacer.record_throttle_or_error()
             raise

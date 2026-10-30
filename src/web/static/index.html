@@ -2268,8 +2268,8 @@
       const resp = await fetch("/api/pacing/settings");
       if (!resp.ok) return;
       const data = await resp.json();
-      pacingModeSelect.value = data.mode === "stealth" ? "conservative" : (data.mode || "normal");
-      if (data.mode === "conservative" || data.mode === "stealth") {
+      pacingModeSelect.value = data.mode || "normal";
+      if (data.mode === "conservative") {
         pacingStatusBadge.textContent = "● Conservative Active";
         pacingStatusBadge.style.color = "var(--ok)";
       } else if (data.mode === "fast") {

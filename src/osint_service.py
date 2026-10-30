@@ -348,10 +348,8 @@ class OsintgramService:
         self._backend_client = api_client
         if pacer is not None:
             self.pacer = pacer
-        elif type(api_client).__name__ == "InstagrapiClient" or (hasattr(api_client, "pacer") and isinstance(getattr(api_client, "pacer", None), HumanPacer)):
-            self.pacer = getattr(api_client, "pacer", None)
         else:
-            self.pacer = None
+            self.pacer = getattr(api_client, "pacer", None)
         self.api = _CountingApiProxy(api_client)
         self.geolocator = Nominatim(user_agent="osintgram-web")
         # Nominatim's usage policy caps requests at 1/second; without this,

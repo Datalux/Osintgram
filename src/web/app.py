@@ -1206,8 +1206,8 @@ class PacingSettingsRequest(BaseModel):
 
 @app.get("/api/pacing/settings")
 def get_pacing_settings():
-    from src.human_pacing import resolve_pacing_config
-    cfg = resolve_pacing_config()
+    from src.human_pacing import get_shared_pacer
+    cfg = get_shared_pacer().config
     return {
         "mode": cfg.mode,
         "min_delay": cfg.min_delay,
@@ -1224,8 +1224,6 @@ def update_pacing_settings(req: PacingSettingsRequest, request: Request):
     _require_local_origin(request)
     from src.human_pacing import PacingMode, get_shared_pacer, resolve_pacing_config
     mode = (req.mode or PacingMode.NORMAL).strip().lower()
-    if mode == "stealth":
-        mode = PacingMode.CONSERVATIVE
     valid = (PacingMode.CONSERVATIVE, PacingMode.NORMAL, PacingMode.FAST, PacingMode.CUSTOM)
     if mode not in valid:
         raise HTTPException(status_code=400, detail=f"Invalid pacing mode: {mode}")
@@ -1290,7 +1288,21 @@ def update_pacing_settings(req: PacingSettingsRequest, request: Request):
 
     os.environ["SCRAPE_PACING"] = mode
     shared_pacer = get_shared_pacer()
-    shared_pacer.config = resolve_pacing_config()
+    p_cfg = resolve_pacing_config()
+    p_cfg.mode = mode
+    if req.min_delay is not None:
+        p_cfg.min_delay = req.min_delay
+    if req.max_delay is not None:
+        p_cfg.max_delay = req.max_delay
+    if req.break_frequency is not None:
+        p_cfg.break_frequency = req.break_frequency
+    if req.break_min is not None:
+        p_cfg.break_min = req.break_min
+    if req.break_max is not None:
+        p_cfg.break_max = req.break_max
+    if req.adaptive_backoff is not None:
+        p_cfg.adaptive_backoff = req.adaptive_backoff
+    shared_pacer.config = p_cfg
     return {
         "ok": True,
         "mode": mode,

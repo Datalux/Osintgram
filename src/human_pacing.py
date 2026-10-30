@@ -24,8 +24,6 @@ class PacingMode:
     FAST = "fast"                  # Minimal delays; high risk of Instagram action blocks
     CUSTOM = "custom"
 
-    # Backwards-compatible alias for existing configs
-    STEALTH = "conservative"
 
 
 @dataclass
@@ -58,8 +56,6 @@ def resolve_pacing_config() -> PacingConfig:
 
             if "mode" in sec:
                 raw_mode = sec.get("mode", "").strip().lower()
-                if raw_mode == "stealth":
-                    raw_mode = PacingMode.CONSERVATIVE
                 if raw_mode in (
                     PacingMode.CONSERVATIVE,
                     PacingMode.NORMAL,
@@ -137,8 +133,6 @@ def resolve_pacing_config() -> PacingConfig:
         PacingMode.FAST,
         PacingMode.CUSTOM,
     )
-    if env_mode == "stealth":
-        env_mode = PacingMode.CONSERVATIVE
     if env_mode in valid_modes:
         cfg.mode = env_mode
 
@@ -170,7 +164,7 @@ class HumanPacer:
             return 0.05
 
         mode = self.config.mode
-        if mode in (PacingMode.CONSERVATIVE, "stealth"):
+        if mode == PacingMode.CONSERVATIVE:
             low = 2.0
             high = 4.8
             mean = 3.2
@@ -198,7 +192,7 @@ class HumanPacer:
             and self.request_count > 0
             and (self.request_count % break_freq == 0)
         ):
-            if mode in (PacingMode.CONSERVATIVE, "stealth"):
+            if mode == PacingMode.CONSERVATIVE:
                 break_duration = random.uniform(
                     self.config.break_min, self.config.break_max
                 )
