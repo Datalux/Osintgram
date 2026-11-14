@@ -3,7 +3,7 @@ fastapi>=0.110
 uvicorn[standard]>=0.27
 
 # Instagram data backends (either one is enough - see doc/web-ui.md)
-hikerapi==1.8.1
+hikerapi>=1.8.4
 instagrapi>=2.0
 
 # Local LLM client, for AI mode (Base mode doesn't need it)
